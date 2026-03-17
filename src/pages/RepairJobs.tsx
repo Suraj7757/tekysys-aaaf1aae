@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,19 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { store } from "@/lib/store";
 import { RepairJob, JobStatus, PaymentMethod } from "@/lib/types";
-import { Plus, Search, ChevronRight } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { generateInvoicePDF } from "@/lib/invoice";
 
 const statusColors: Record<JobStatus, string> = {
   'Received': 'bg-muted text-muted-foreground',
   'In Progress': 'bg-info/10 text-info',
   'Ready': 'bg-warning/10 text-warning',
   'Delivered': 'bg-success/10 text-success',
+  'Rejected': 'bg-destructive/10 text-destructive',
+  'Unrepairable': 'bg-destructive/10 text-destructive',
 };
 
-const statusFlow: JobStatus[] = ['Received', 'In Progress', 'Ready', 'Delivered'];
+const allStatuses: JobStatus[] = ['Received', 'In Progress', 'Ready', 'Delivered', 'Rejected', 'Unrepairable'];
 
 export default function RepairJobs() {
   const [jobs, setJobs] = useState(store.getJobs());
@@ -29,6 +33,8 @@ export default function RepairJobs() {
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<RepairJob | null>(null);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [clearType, setClearType] = useState<'all' | 'delivered'>('all');
 
   // Create job form
   const [customerMobile, setCustomerMobile] = useState("");
@@ -40,8 +46,9 @@ export default function RepairJobs() {
   const [estimatedCost, setEstimatedCost] = useState("");
 
   // Payment form
+  const settings = store.getSettings();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
-  const [qrReceiver, setQrReceiver] = useState("Admin QR");
+  const [qrReceiver, setQrReceiver] = useState(settings.qrReceivers[0] || "Admin QR");
   const [customQr, setCustomQr] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
 
@@ -68,24 +75,17 @@ export default function RepairJobs() {
       toast.error("Please fill all required fields");
       return;
     }
-    // Auto-create customer if not exists
     let customer = store.findCustomerByMobile(customerMobile);
     if (!customer) {
       customer = { id: crypto.randomUUID(), name: customerName, mobile: customerMobile, createdAt: new Date().toISOString().split('T')[0] };
       store.addCustomer(customer);
     }
-
     const job: RepairJob = {
-      id: crypto.randomUUID(),
-      jobId: store.nextJobId(),
-      customerId: customer.id,
-      customerName, customerMobile, deviceBrand, deviceModel,
-      problemDescription: problem,
-      technicianName: technician || undefined,
-      status: 'Received',
+      id: crypto.randomUUID(), jobId: store.nextJobId(), customerId: customer.id,
+      customerName, customerMobile, deviceBrand, deviceModel, problemDescription: problem,
+      technicianName: technician || undefined, status: 'Received',
       estimatedCost: parseFloat(estimatedCost) || 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0], updatedAt: new Date().toISOString().split('T')[0],
     };
     store.addJob(job);
     setJobs(store.getJobs());
@@ -99,47 +99,56 @@ export default function RepairJobs() {
     setDeviceModel(""); setProblem(""); setTechnician(""); setEstimatedCost("");
   };
 
-  const advanceStatus = (job: RepairJob) => {
-    const currentIdx = statusFlow.indexOf(job.status);
-    if (currentIdx >= statusFlow.length - 1) return;
-    const nextStatus = statusFlow[currentIdx + 1];
-
-    if (nextStatus === 'Delivered') {
+  const changeStatus = (job: RepairJob, newStatus: JobStatus) => {
+    if (newStatus === 'Delivered') {
       setSelectedJob(job);
       setPaymentAmount(job.estimatedCost.toString());
       setPaymentOpen(true);
       return;
     }
-
-    store.updateJob(job.id, { status: nextStatus });
+    store.updateJob(job.id, { status: newStatus });
     setJobs(store.getJobs());
-    toast.success(`Job ${job.jobId} → ${nextStatus}`);
+    toast.success(`Job ${job.jobId} → ${newStatus}`);
+  };
+
+  const handleDeleteJob = (job: RepairJob) => {
+    store.deleteJob(job.id);
+    setJobs(store.getJobs());
+    toast.success(`Job ${job.jobId} deleted`);
   };
 
   const handlePayment = () => {
     if (!selectedJob) return;
     const amount = parseFloat(paymentAmount) || 0;
     const receiver = qrReceiver === 'Custom' ? customQr : qrReceiver;
+    const adminPct = settings.adminSharePercent / 100;
+    const staffPct = settings.staffSharePercent / 100;
 
     store.updateJob(selectedJob.id, { status: 'Delivered', deliveredAt: new Date().toISOString().split('T')[0] });
-
     store.addPayment({
-      id: crypto.randomUUID(),
-      jobId: selectedJob.jobId,
-      repairJobId: selectedJob.id,
-      amount,
-      method: paymentMethod,
+      id: crypto.randomUUID(), jobId: selectedJob.jobId, repairJobId: selectedJob.id,
+      amount, method: paymentMethod,
       qrReceiver: paymentMethod === 'UPI/QR' ? receiver : undefined,
-      adminShare: amount * 0.5,
-      staffShare: amount * 0.5,
-      settled: false,
-      createdAt: new Date().toISOString().split('T')[0],
+      adminShare: amount * adminPct, staffShare: amount * staffPct,
+      settled: false, createdAt: new Date().toISOString().split('T')[0],
     });
-
     setJobs(store.getJobs());
     setPaymentOpen(false);
     setSelectedJob(null);
     toast.success(`Job ${selectedJob.jobId} delivered & payment recorded`);
+  };
+
+  const handleClearJobs = () => {
+    if (clearType === 'all') store.clearAllJobs();
+    else store.clearDeliveredJobs();
+    setJobs(store.getJobs());
+    setClearConfirmOpen(false);
+    toast.success(clearType === 'all' ? 'All jobs cleared' : 'Delivered jobs cleared');
+  };
+
+  const handleInvoice = (job: RepairJob) => {
+    const payment = store.getPayments().find(p => p.repairJobId === job.id);
+    generateInvoicePDF(job, payment, settings);
   };
 
   return (
@@ -153,18 +162,25 @@ export default function RepairJobs() {
               <Input placeholder="Search jobs..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {statusFlow.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> New Job
-          </Button>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm"><Trash2 className="h-4 w-4 mr-1" /> Clear</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => { setClearType('delivered'); setClearConfirmOpen(true); }}>Clear Delivered Jobs</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setClearType('all'); setClearConfirmOpen(true); }} className="text-destructive">Clear All Jobs</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Job</Button>
+          </div>
         </div>
 
         {/* Jobs Table */}
@@ -177,10 +193,9 @@ export default function RepairJobs() {
                   <th className="text-left p-3 font-semibold">Customer</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Device</th>
                   <th className="text-left p-3 font-semibold hidden lg:table-cell">Problem</th>
-                  <th className="text-left p-3 font-semibold hidden md:table-cell">Technician</th>
                   <th className="text-left p-3 font-semibold">Status</th>
                   <th className="text-left p-3 font-semibold">Amount</th>
-                  <th className="text-left p-3 font-semibold">Action</th>
+                  <th className="text-left p-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -193,22 +208,39 @@ export default function RepairJobs() {
                     </td>
                     <td className="p-3 hidden md:table-cell">{job.deviceBrand} {job.deviceModel}</td>
                     <td className="p-3 hidden lg:table-cell max-w-48 truncate">{job.problemDescription}</td>
-                    <td className="p-3 hidden md:table-cell">{job.technicianName || '—'}</td>
                     <td className="p-3">
                       <Badge className={`${statusColors[job.status]} border-0 text-xs`}>{job.status}</Badge>
                     </td>
                     <td className="p-3 font-semibold">₹{job.estimatedCost.toLocaleString()}</td>
                     <td className="p-3">
-                      {job.status !== 'Delivered' && (
-                        <Button size="sm" variant="outline" onClick={() => advanceStatus(job)} className="text-xs">
-                          {statusFlow[statusFlow.indexOf(job.status) + 1]} <ChevronRight className="h-3 w-3 ml-1" />
-                        </Button>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {allStatuses.filter(s => s !== job.status).map(s => (
+                            <DropdownMenuItem key={s} onClick={() => changeStatus(job, s)}>
+                              → {s}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          {job.status === 'Delivered' && (
+                            <DropdownMenuItem onClick={() => handleInvoice(job)}>
+                              <FileText className="h-4 w-4 mr-2" /> Invoice PDF
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => handleDeleteJob(job)} className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No jobs found</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No jobs found</td></tr>
                 )}
               </tbody>
             </table>
@@ -218,43 +250,20 @@ export default function RepairJobs() {
         {/* Create Job Dialog */}
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create Repair Job</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Create Repair Job</DialogTitle></DialogHeader>
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Customer Mobile *</Label>
-                  <Input placeholder="9876543210" value={customerMobile} onChange={e => handleMobileSearch(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Customer Name *</Label>
-                  <Input value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                </div>
+                <div><Label>Customer Mobile *</Label><Input placeholder="9876543210" value={customerMobile} onChange={e => handleMobileSearch(e.target.value)} /></div>
+                <div><Label>Customer Name *</Label><Input value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Device Brand *</Label>
-                  <Input placeholder="Samsung, iPhone..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Device Model</Label>
-                  <Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} />
-                </div>
+                <div><Label>Device Brand *</Label><Input placeholder="Samsung, iPhone..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} /></div>
+                <div><Label>Device Model</Label><Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
               </div>
-              <div>
-                <Label>Problem Description *</Label>
-                <Textarea placeholder="Describe the issue..." value={problem} onChange={e => setProblem(e.target.value)} />
-              </div>
+              <div><Label>Problem Description *</Label><Textarea placeholder="Describe the issue..." value={problem} onChange={e => setProblem(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Technician</Label>
-                  <Input placeholder="Technician name" value={technician} onChange={e => setTechnician(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Estimated Cost (₹)</Label>
-                  <Input type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} />
-                </div>
+                <div><Label>Technician</Label><Input placeholder="Technician name" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
+                <div><Label>Estimated Cost (₹)</Label><Input type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} /></div>
               </div>
             </div>
             <DialogFooter>
@@ -267,14 +276,9 @@ export default function RepairJobs() {
         {/* Payment Dialog */}
         <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
           <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Record Payment — {selectedJob?.jobId}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Record Payment — {selectedJob?.jobId}</DialogTitle></DialogHeader>
             <div className="grid gap-4">
-              <div>
-                <Label>Amount (₹)</Label>
-                <Input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} />
-              </div>
+              <div><Label>Amount (₹)</Label><Input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} /></div>
               <div>
                 <Label>Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
@@ -292,8 +296,9 @@ export default function RepairJobs() {
                   <Select value={qrReceiver} onValueChange={setQrReceiver}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Admin QR">Admin QR</SelectItem>
-                      <SelectItem value="Staff QR">Staff QR</SelectItem>
+                      {settings.qrReceivers.map(qr => (
+                        <SelectItem key={qr} value={qr}>{qr}</SelectItem>
+                      ))}
                       <SelectItem value="Custom">Custom...</SelectItem>
                     </SelectContent>
                   </Select>
@@ -303,13 +308,27 @@ export default function RepairJobs() {
                 </div>
               )}
               <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
-                <div className="flex justify-between"><span>Admin Share (50%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * 0.5).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Staff Share (50%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * 0.5).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Admin Share ({settings.adminSharePercent}%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * settings.adminSharePercent / 100).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Staff Share ({settings.staffSharePercent}%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * settings.staffSharePercent / 100).toLocaleString()}</span></div>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setPaymentOpen(false)}>Cancel</Button>
               <Button onClick={handlePayment}>Confirm Payment</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Clear Confirm Dialog */}
+        <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-destructive" /> Confirm Clear</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              {clearType === 'all' ? 'This will delete ALL jobs and their payments. This cannot be undone.' : 'This will delete all delivered jobs and their payments.'}
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setClearConfirmOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleClearJobs}>Yes, Clear</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { store } from "@/lib/store";
 import { InventoryItem } from "@/lib/types";
-import { Plus, Search, AlertTriangle } from "lucide-react";
+import { Plus, Search, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Inventory() {
@@ -36,6 +36,12 @@ export default function Inventory() {
     toast.success("Item added");
   };
 
+  const handleDelete = (id: string, name: string) => {
+    store.deleteInventoryItem(id);
+    setItems(store.getInventory());
+    toast.success(`${name} removed`);
+  };
+
   return (
     <Layout title="Inventory">
       <div className="space-y-4 animate-fade-in">
@@ -59,6 +65,7 @@ export default function Inventory() {
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Cost</th>
                   <th className="text-left p-3 font-semibold">Sell Price</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">GST</th>
+                  <th className="text-left p-3 font-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -80,10 +87,15 @@ export default function Inventory() {
                     <td className="p-3 hidden md:table-cell">₹{item.costPrice}</td>
                     <td className="p-3 font-semibold">₹{item.sellPrice}</td>
                     <td className="p-3 hidden md:table-cell">{item.gstPercent}%</td>
+                    <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(item.id, item.name)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No items found</td></tr>
+                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No items found</td></tr>
                 )}
               </tbody>
             </table>
