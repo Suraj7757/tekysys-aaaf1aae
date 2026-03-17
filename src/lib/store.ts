@@ -1,4 +1,4 @@
-import { Customer, RepairJob, Payment, SettlementCycle, InventoryItem } from './types';
+import { Customer, RepairJob, Payment, SettlementCycle, InventoryItem, ShopSettings } from './types';
 
 const STORAGE_KEYS = {
   customers: 'repairshop_customers',
@@ -7,6 +7,17 @@ const STORAGE_KEYS = {
   settlements: 'repairshop_settlements',
   inventory: 'repairshop_inventory',
   jobCounter: 'repairshop_job_counter',
+  settings: 'repairshop_settings',
+};
+
+const DEFAULT_SETTINGS: ShopSettings = {
+  shopName: 'RepairDesk Mobile Shop',
+  phone: '+91 98765 43210',
+  address: '123 MG Road, Mumbai 400001',
+  gstin: '27AABCU9603R1ZM',
+  adminSharePercent: 50,
+  staffSharePercent: 50,
+  qrReceivers: ['Admin QR', 'Staff QR', 'Shop QR'],
 };
 
 function get<T>(key: string, fallback: T[]): T[] {
@@ -20,7 +31,6 @@ function set<T>(key: string, data: T[]) {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-// Seed some demo data
 function seedIfEmpty() {
   if (localStorage.getItem(STORAGE_KEYS.customers)) return;
 
@@ -72,6 +82,19 @@ export const store = {
     store.saveJobs(all);
     return all.find(j => j.id === id);
   },
+  deleteJob: (id: string) => {
+    const all = store.getJobs().filter(j => j.id !== id);
+    store.saveJobs(all);
+  },
+  clearAllJobs: () => {
+    store.saveJobs([]);
+    store.savePayments([]);
+  },
+  clearDeliveredJobs: () => {
+    const delivered = store.getJobs().filter(j => j.status === 'Delivered').map(j => j.id);
+    store.saveJobs(store.getJobs().filter(j => j.status !== 'Delivered'));
+    store.savePayments(store.getPayments().filter(p => !delivered.includes(p.repairJobId)));
+  },
   nextJobId: () => {
     const counter = parseInt(localStorage.getItem(STORAGE_KEYS.jobCounter) || '0') + 1;
     localStorage.setItem(STORAGE_KEYS.jobCounter, counter.toString());
@@ -89,8 +112,21 @@ export const store = {
   getInventory: () => get<InventoryItem>(STORAGE_KEYS.inventory, []),
   saveInventory: (i: InventoryItem[]) => set(STORAGE_KEYS.inventory, i),
   addInventoryItem: (i: InventoryItem) => { const all = store.getInventory(); all.push(i); store.saveInventory(all); },
+  deleteInventoryItem: (id: string) => {
+    store.saveInventory(store.getInventory().filter(i => i.id !== id));
+  },
   updateInventoryItem: (id: string, updates: Partial<InventoryItem>) => {
     const all = store.getInventory().map(i => i.id === id ? { ...i, ...updates } : i);
     store.saveInventory(all);
+  },
+
+  getSettings: (): ShopSettings => {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.settings);
+      return data ? JSON.parse(data) : DEFAULT_SETTINGS;
+    } catch { return DEFAULT_SETTINGS; }
+  },
+  saveSettings: (s: ShopSettings) => {
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(s));
   },
 };
