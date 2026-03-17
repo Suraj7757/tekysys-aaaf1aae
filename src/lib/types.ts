@@ -1,4 +1,4 @@
-export type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered';
+export type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
 export type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
 export type UserRole = 'admin' | 'staff';
 
@@ -13,7 +13,7 @@ export interface Customer {
 
 export interface RepairJob {
   id: string;
-  jobId: string; // auto-generated like REP-0001
+  jobId: string;
   customerId: string;
   customerName: string;
   customerMobile: string;
@@ -35,7 +35,7 @@ export interface Payment {
   repairJobId: string;
   amount: number;
   method: PaymentMethod;
-  qrReceiver?: string; // Admin QR, Staff QR, Custom
+  qrReceiver?: string;
   adminShare: number;
   staffShare: number;
   settled: boolean;
@@ -66,6 +66,16 @@ export interface InventoryItem {
   sellPrice: number;
   gstPercent: number;
   updatedAt: string;
+}
+
+export interface ShopSettings {
+  shopName: string;
+  phone: string;
+  address: string;
+  gstin: string;
+  adminSharePercent: number;
+  staffSharePercent: number;
+  qrReceivers: string[];
 }
 
 export interface DashboardStats {
