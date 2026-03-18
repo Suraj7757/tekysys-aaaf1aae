@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { store } from "@/lib/store";
-import { Customer } from "@/lib/types";
-import { Plus, Search } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(store.getCustomers());
+  const { user } = useAuth();
+  const { data: customers, loading, refetch } = useSupabaseQuery<any>('customers');
+  const { data: jobs } = useSupabaseQuery<any>('repair_jobs');
+  const { softDelete } = useSoftDelete();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -19,21 +23,35 @@ export default function Customers() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
 
-  const filtered = customers.filter(c =>
+  const filtered = customers.filter((c: any) =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.mobile.includes(search)
   );
 
-  const handleAdd = () => {
-    if (!name || !mobile) { toast.error("Name and mobile required"); return; }
-    const c: Customer = { id: crypto.randomUUID(), name, mobile, email: email || undefined, address: address || undefined, createdAt: new Date().toISOString().split('T')[0] };
-    store.addCustomer(c);
-    setCustomers(store.getCustomers());
+  const handleAdd = async () => {
+    if (!name || !mobile || !user) { toast.error("Name and mobile required"); return; }
+    const { error } = await supabase.from('customers').insert({
+      user_id: user.id, name, mobile, email: email || null, address: address || null,
+    });
+    if (error) { toast.error(error.message); return; }
+    refetch();
     setOpen(false);
     setName(""); setMobile(""); setEmail(""); setAddress("");
     toast.success("Customer added");
   };
 
-  const jobs = store.getJobs();
+  const handleDelete = async (c: any) => {
+    const ok = await softDelete('customers', c.id, c.name);
+    if (ok) {
+      toast("Customer moved to trash", {
+        action: { label: "Undo", onClick: async () => {
+          await supabase.from('customers').update({ deleted: false, deleted_at: null }).eq('id', c.id);
+          refetch();
+        }},
+        duration: 5000,
+      });
+      refetch();
+    }
+  };
 
   return (
     <Layout title="Customers">
@@ -56,20 +74,26 @@ export default function Customers() {
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Email</th>
                   <th className="text-left p-3 font-semibold">Jobs</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Since</th>
+                  <th className="text-left p-3 font-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(c => (
+                {filtered.map((c: any) => (
                   <tr key={c.id} className="border-b hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-medium">{c.name}</td>
                     <td className="p-3">{c.mobile}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{c.email || '—'}</td>
-                    <td className="p-3">{jobs.filter(j => j.customerId === c.id).length}</td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground">{c.createdAt}</td>
+                    <td className="p-3">{jobs.filter((j: any) => j.customer_id === c.id).length}</td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
+                    <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(c)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No customers found</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No customers found'}</td></tr>
                 )}
               </tbody>
             </table>

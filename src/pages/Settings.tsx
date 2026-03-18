@@ -1,41 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { store } from "@/lib/store";
-import { ShopSettings } from "@/lib/types";
+import { useShopSettings } from "@/hooks/useSupabaseData";
+import { useAuth } from "@/hooks/useAuth";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<ShopSettings>(store.getSettings());
+  const { settings, loading, saveSettings } = useShopSettings();
+  const { signOut } = useAuth();
+  const [form, setForm] = useState<any>(null);
   const [newQr, setNewQr] = useState("");
 
-  const update = (key: keyof ShopSettings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
+  useEffect(() => {
+    if (settings && !form) setForm({ ...settings });
+  }, [settings]);
+
+  if (loading || !form) return <Layout title="Settings"><div className="p-8 text-center text-muted-foreground">Loading...</div></Layout>;
+
+  const update = (key: string, value: any) => setForm((prev: any) => ({ ...prev, [key]: value }));
 
   const addQr = () => {
     if (!newQr.trim()) return;
-    if (settings.qrReceivers.includes(newQr.trim())) { toast.error("Already exists"); return; }
-    update('qrReceivers', [...settings.qrReceivers, newQr.trim()]);
+    if (form.qr_receivers.includes(newQr.trim())) { toast.error("Already exists"); return; }
+    update('qr_receivers', [...form.qr_receivers, newQr.trim()]);
     setNewQr("");
   };
 
-  const removeQr = (qr: string) => {
-    update('qrReceivers', settings.qrReceivers.filter(q => q !== qr));
-  };
+  const removeQr = (qr: string) => update('qr_receivers', form.qr_receivers.filter((q: string) => q !== qr));
 
-  const handleSave = () => {
-    // Ensure shares add to 100
-    if (settings.adminSharePercent + settings.staffSharePercent !== 100) {
-      toast.error("Admin + Staff share must equal 100%");
-      return;
+  const handleSave = async () => {
+    if (form.admin_share_percent + form.staff_share_percent !== 100) {
+      toast.error("Admin + Staff share must equal 100%"); return;
     }
-    store.saveSettings(settings);
-    toast.success("Settings saved successfully");
+    const ok = await saveSettings({
+      shop_name: form.shop_name,
+      phone: form.phone,
+      address: form.address,
+      gstin: form.gstin,
+      admin_share_percent: form.admin_share_percent,
+      staff_share_percent: form.staff_share_percent,
+      qr_receivers: form.qr_receivers,
+    });
+    if (ok) toast.success("Settings saved successfully");
   };
 
   return (
@@ -44,25 +54,25 @@ export default function SettingsPage() {
         <Card className="shadow-card">
           <CardHeader><CardTitle className="text-sm font-semibold">Shop Information</CardTitle></CardHeader>
           <CardContent className="grid gap-4">
-            <div><Label>Shop Name</Label><Input value={settings.shopName} onChange={e => update('shopName', e.target.value)} /></div>
-            <div><Label>Phone</Label><Input value={settings.phone} onChange={e => update('phone', e.target.value)} /></div>
-            <div><Label>Address</Label><Input value={settings.address} onChange={e => update('address', e.target.value)} /></div>
-            <div><Label>GSTIN</Label><Input value={settings.gstin} onChange={e => update('gstin', e.target.value)} /></div>
+            <div><Label>Shop Name</Label><Input value={form.shop_name} onChange={e => update('shop_name', e.target.value)} /></div>
+            <div><Label>Phone</Label><Input value={form.phone} onChange={e => update('phone', e.target.value)} /></div>
+            <div><Label>Address</Label><Input value={form.address} onChange={e => update('address', e.target.value)} /></div>
+            <div><Label>GSTIN</Label><Input value={form.gstin} onChange={e => update('gstin', e.target.value)} /></div>
           </CardContent>
         </Card>
 
         <Card className="shadow-card">
           <CardHeader><CardTitle className="text-sm font-semibold">Revenue Split</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
-            <div><Label>Admin Share %</Label><Input type="number" value={settings.adminSharePercent} onChange={e => update('adminSharePercent', parseInt(e.target.value) || 0)} /></div>
-            <div><Label>Staff Share %</Label><Input type="number" value={settings.staffSharePercent} onChange={e => update('staffSharePercent', parseInt(e.target.value) || 0)} /></div>
+            <div><Label>Admin Share %</Label><Input type="number" value={form.admin_share_percent} onChange={e => update('admin_share_percent', parseInt(e.target.value) || 0)} /></div>
+            <div><Label>Staff Share %</Label><Input type="number" value={form.staff_share_percent} onChange={e => update('staff_share_percent', parseInt(e.target.value) || 0)} /></div>
           </CardContent>
         </Card>
 
         <Card className="shadow-card">
           <CardHeader><CardTitle className="text-sm font-semibold">QR Receivers</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            {settings.qrReceivers.map(qr => (
+            {form.qr_receivers.map((qr: string) => (
               <div key={qr} className="flex items-center justify-between py-2 px-3 bg-muted rounded-lg">
                 <span className="text-sm font-medium">{qr}</span>
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => removeQr(qr)}>
@@ -77,7 +87,10 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleSave} className="w-full sm:w-auto">Save Settings</Button>
+        <div className="flex gap-3">
+          <Button onClick={handleSave}>Save Settings</Button>
+          <Button variant="outline" onClick={signOut}>Logout</Button>
+        </div>
       </div>
     </Layout>
   );

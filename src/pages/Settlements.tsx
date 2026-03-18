@@ -5,53 +5,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { store } from "@/lib/store";
-import { SettlementCycle } from "@/lib/types";
-import { ArrowLeftRight, CheckCircle2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeftRight, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Settlements() {
-  const [settlements, setSettlements] = useState(store.getSettlements());
+  const { user } = useAuth();
+  const { data: settlements, refetch: refetchSettlements } = useSupabaseQuery<any>('settlement_cycles');
+  const { data: payments, refetch: refetchPayments } = useSupabaseQuery<any>('payments');
+  const { softDelete } = useSoftDelete();
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const payments = store.getPayments();
-  const unsettled = payments.filter(p => !p.settled);
-  const unsettledTotal = unsettled.reduce((s, p) => s + p.amount, 0);
-  const unsettledAdmin = unsettled.reduce((s, p) => s + p.adminShare, 0);
-  const unsettledStaff = unsettled.reduce((s, p) => s + p.staffShare, 0);
+  const unsettled = payments.filter((p: any) => !p.settled);
+  const unsettledTotal = unsettled.reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const unsettledAdmin = unsettled.reduce((s: number, p: any) => s + Number(p.admin_share), 0);
+  const unsettledStaff = unsettled.reduce((s: number, p: any) => s + Number(p.staff_share), 0);
 
-  const handleSettle = () => {
-    if (!startDate || !endDate) { toast.error("Select date range"); return; }
+  const handleSettle = async () => {
+    if (!startDate || !endDate || !user) { toast.error("Select date range"); return; }
     if (unsettled.length === 0) { toast.error("No unsettled payments"); return; }
 
-    const cycle: SettlementCycle = {
-      id: crypto.randomUUID(),
-      startDate, endDate,
-      totalJobs: unsettled.length,
-      totalRevenue: unsettledTotal,
-      adminShare: unsettledAdmin,
-      staffShare: unsettledStaff,
-      settledAt: new Date().toISOString().split('T')[0],
-      settledBy: 'Admin',
-    };
+    const { data: cycle } = await supabase.from('settlement_cycles').insert({
+      user_id: user.id, start_date: startDate, end_date: endDate,
+      total_jobs: unsettled.length, total_revenue: unsettledTotal,
+      admin_share: unsettledAdmin, staff_share: unsettledStaff, settled_by: 'Admin',
+    }).select('id').single();
 
-    // Mark payments as settled
-    const allPayments = store.getPayments().map(p =>
-      !p.settled ? { ...p, settled: true, settlementCycleId: cycle.id } : p
-    );
-    store.savePayments(allPayments);
-    store.addSettlement(cycle);
-    setSettlements(store.getSettlements());
+    if (cycle) {
+      const ids = unsettled.map((p: any) => p.id);
+      await supabase.from('payments').update({ settled: true, settlement_cycle_id: cycle.id }).in('id', ids);
+    }
+    refetchSettlements(); refetchPayments();
     setOpen(false);
     toast.success("Settlement completed!");
+  };
+
+  const handleDeleteSettlement = async (s: any) => {
+    const ok = await softDelete('settlement_cycles', s.id, `${s.start_date} → ${s.end_date}`);
+    if (ok) { toast.success("Settlement moved to trash"); refetchSettlements(); }
   };
 
   return (
     <Layout title="Settlement Cycles">
       <div className="space-y-4 animate-fade-in">
-        {/* Unsettled Summary */}
         <Card className="shadow-card border-l-4 border-l-warning">
           <CardContent className="py-4 px-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -71,7 +71,6 @@ export default function Settlements() {
           </CardContent>
         </Card>
 
-        {/* Settlement History */}
         <Card className="shadow-card overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -88,28 +87,31 @@ export default function Settlements() {
                   <th className="text-left p-3 font-semibold">Admin Share</th>
                   <th className="text-left p-3 font-semibold">Staff Share</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Settled On</th>
+                  <th className="text-left p-3 font-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {settlements.map(s => (
+                {settlements.map((s: any) => (
                   <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-medium">{s.startDate} → {s.endDate}</td>
-                    <td className="p-3">{s.totalJobs}</td>
-                    <td className="p-3 font-semibold">₹{s.totalRevenue.toLocaleString()}</td>
-                    <td className="p-3">₹{s.adminShare.toLocaleString()}</td>
-                    <td className="p-3">₹{s.staffShare.toLocaleString()}</td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground">{s.settledAt}</td>
+                    <td className="p-3 font-medium">{s.start_date} → {s.end_date}</td>
+                    <td className="p-3">{s.total_jobs}</td>
+                    <td className="p-3 font-semibold">₹{Number(s.total_revenue).toLocaleString()}</td>
+                    <td className="p-3">₹{Number(s.admin_share).toLocaleString()}</td>
+                    <td className="p-3">₹{Number(s.staff_share).toLocaleString()}</td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(s.settled_at).toLocaleDateString()}</td>
+                    <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDeleteSettlement(s)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
-                {settlements.length === 0 && (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No settlements yet</td></tr>
-                )}
+                {settlements.length === 0 && (<tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No settlements yet</td></tr>)}
               </tbody>
             </table>
           </div>
         </Card>
 
-        {/* Settle Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Complete Settlement</DialogTitle></DialogHeader>

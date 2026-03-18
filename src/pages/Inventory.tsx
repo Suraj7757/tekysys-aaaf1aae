@@ -6,40 +6,50 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { store } from "@/lib/store";
-import { InventoryItem } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Inventory() {
-  const [items, setItems] = useState(store.getInventory());
+  const { user } = useAuth();
+  const { data: items, loading, refetch } = useSupabaseQuery<any>('inventory');
+  const { softDelete } = useSoftDelete();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
 
-  const filtered = items.filter(i =>
+  const filtered = items.filter((i: any) =>
     i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
-    if (!form.name || !form.sku) { toast.error("Name and SKU required"); return; }
-    const item: InventoryItem = {
-      id: crypto.randomUUID(), name: form.name, sku: form.sku, category: form.category,
-      quantity: parseInt(form.quantity) || 0, minStock: parseInt(form.minStock) || 5,
-      costPrice: parseFloat(form.costPrice) || 0, sellPrice: parseFloat(form.sellPrice) || 0,
-      gstPercent: parseFloat(form.gstPercent) || 18, updatedAt: new Date().toISOString().split('T')[0],
-    };
-    store.addInventoryItem(item);
-    setItems(store.getInventory());
+  const handleAdd = async () => {
+    if (!form.name || !form.sku || !user) { toast.error("Name and SKU required"); return; }
+    await supabase.from('inventory').insert({
+      user_id: user.id, name: form.name, sku: form.sku, category: form.category || null,
+      quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
+      cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
+      gst_percent: parseFloat(form.gstPercent) || 18,
+    });
+    refetch();
     setOpen(false);
     setForm({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
     toast.success("Item added");
   };
 
-  const handleDelete = (id: string, name: string) => {
-    store.deleteInventoryItem(id);
-    setItems(store.getInventory());
-    toast.success(`${name} removed`);
+  const handleDelete = async (item: any) => {
+    const ok = await softDelete('inventory', item.id, item.name);
+    if (ok) {
+      toast("Item moved to trash", {
+        action: { label: "Undo", onClick: async () => {
+          await supabase.from('inventory').update({ deleted: false, deleted_at: null }).eq('id', item.id);
+          refetch();
+        }},
+        duration: 5000,
+      });
+      refetch();
+    }
   };
 
   return (
@@ -69,34 +79,32 @@ export default function Inventory() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(item => (
+                {filtered.map((item: any) => (
                   <tr key={item.id} className="border-b hover:bg-muted/30 transition-colors">
                     <td className="p-3">
                       <div className="font-medium flex items-center gap-2">
                         {item.name}
-                        {item.quantity <= item.minStock && <AlertTriangle className="h-3.5 w-3.5 text-warning" />}
+                        {item.quantity <= item.min_stock && <AlertTriangle className="h-3.5 w-3.5 text-warning" />}
                       </div>
                     </td>
                     <td className="p-3 hidden md:table-cell font-mono text-xs">{item.sku}</td>
                     <td className="p-3 hidden md:table-cell">{item.category}</td>
                     <td className="p-3">
-                      <Badge className={`${item.quantity <= item.minStock ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'} border-0 text-xs`}>
+                      <Badge className={`${item.quantity <= item.min_stock ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'} border-0 text-xs`}>
                         {item.quantity}
                       </Badge>
                     </td>
-                    <td className="p-3 hidden md:table-cell">₹{item.costPrice}</td>
-                    <td className="p-3 font-semibold">₹{item.sellPrice}</td>
-                    <td className="p-3 hidden md:table-cell">{item.gstPercent}%</td>
+                    <td className="p-3 hidden md:table-cell">₹{Number(item.cost_price)}</td>
+                    <td className="p-3 font-semibold">₹{Number(item.sell_price)}</td>
+                    <td className="p-3 hidden md:table-cell">{Number(item.gst_percent)}%</td>
                     <td className="p-3">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(item.id, item.name)}>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(item)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No items found</td></tr>
-                )}
+                {filtered.length === 0 && (<tr><td colSpan={8} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No items found'}</td></tr>)}
               </tbody>
             </table>
           </div>
