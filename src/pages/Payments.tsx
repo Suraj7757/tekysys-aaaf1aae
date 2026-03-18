@@ -3,7 +3,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { store } from "@/lib/store";
+import { useSupabaseQuery } from "@/hooks/useSupabaseData";
 import { Search } from "lucide-react";
 
 const methodColors: Record<string, string> = {
@@ -13,60 +13,35 @@ const methodColors: Record<string, string> = {
 };
 
 export default function Payments() {
-  const [payments] = useState(store.getPayments());
+  const { data: payments, loading } = useSupabaseQuery<any>('payments');
   const [search, setSearch] = useState("");
-  const settings = store.getSettings();
 
-  const filtered = payments.filter(p =>
-    p.jobId.toLowerCase().includes(search.toLowerCase()) ||
+  const filtered = payments.filter((p: any) =>
+    p.job_id.toLowerCase().includes(search.toLowerCase()) ||
     p.method.toLowerCase().includes(search.toLowerCase()) ||
-    (p.qrReceiver || '').toLowerCase().includes(search.toLowerCase())
+    (p.qr_receiver || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Calculate totals
-  const cashTotal = payments.filter(p => p.method === 'Cash').reduce((s, p) => s + p.amount, 0);
-  const upiTotal = payments.filter(p => p.method === 'UPI/QR').reduce((s, p) => s + p.amount, 0);
-  const dueTotal = payments.filter(p => p.method === 'Due').reduce((s, p) => s + p.amount, 0);
+  const cashTotal = payments.filter((p: any) => p.method === 'Cash').reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const upiTotal = payments.filter((p: any) => p.method === 'UPI/QR').reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const dueTotal = payments.filter((p: any) => p.method === 'Due').reduce((s: number, p: any) => s + Number(p.amount), 0);
 
-  // QR-wise breakdown
   const qrTotals: Record<string, number> = {};
-  payments.filter(p => p.method === 'UPI/QR').forEach(p => {
-    const key = p.qrReceiver || 'Unknown';
-    qrTotals[key] = (qrTotals[key] || 0) + p.amount;
+  payments.filter((p: any) => p.method === 'UPI/QR').forEach((p: any) => {
+    const key = p.qr_receiver || 'Unknown';
+    qrTotals[key] = (qrTotals[key] || 0) + Number(p.amount);
   });
 
   return (
     <Layout title="Payments">
       <div className="space-y-4 animate-fade-in">
-        {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground font-medium">Total</p>
-              <p className="text-xl font-bold mt-1">₹{(cashTotal + upiTotal + dueTotal).toLocaleString()}</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground font-medium">💵 Cash</p>
-              <p className="text-xl font-bold mt-1 text-success">₹{cashTotal.toLocaleString()}</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground font-medium">📱 UPI/QR</p>
-              <p className="text-xl font-bold mt-1 text-info">₹{upiTotal.toLocaleString()}</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-card">
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground font-medium">📋 Due</p>
-              <p className="text-xl font-bold mt-1 text-warning">₹{dueTotal.toLocaleString()}</p>
-            </CardContent>
-          </Card>
+          <Card className="shadow-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-medium">Total</p><p className="text-xl font-bold mt-1">₹{(cashTotal + upiTotal + dueTotal).toLocaleString()}</p></CardContent></Card>
+          <Card className="shadow-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-medium">💵 Cash</p><p className="text-xl font-bold mt-1 text-success">₹{cashTotal.toLocaleString()}</p></CardContent></Card>
+          <Card className="shadow-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-medium">📱 UPI/QR</p><p className="text-xl font-bold mt-1 text-info">₹{upiTotal.toLocaleString()}</p></CardContent></Card>
+          <Card className="shadow-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-medium">📋 Due</p><p className="text-xl font-bold mt-1 text-warning">₹{dueTotal.toLocaleString()}</p></CardContent></Card>
         </div>
 
-        {/* QR-wise Breakdown */}
         {Object.keys(qrTotals).length > 0 && (
           <Card className="shadow-card">
             <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">QR-wise Breakdown</CardTitle></CardHeader>
@@ -104,23 +79,19 @@ export default function Payments() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(p => (
+                {filtered.map((p: any) => (
                   <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-mono font-semibold text-primary">{p.jobId}</td>
-                    <td className="p-3 font-semibold">₹{p.amount.toLocaleString()}</td>
-                    <td className="p-3"><Badge className={`${methodColors[p.method]} border-0 text-xs`}>{p.method}</Badge></td>
-                    <td className="p-3 hidden md:table-cell">{p.qrReceiver || '—'}</td>
-                    <td className="p-3">₹{p.adminShare.toLocaleString()}</td>
-                    <td className="p-3">₹{p.staffShare.toLocaleString()}</td>
-                    <td className="p-3 hidden md:table-cell">
-                      <Badge variant={p.settled ? "default" : "outline"} className="text-xs">{p.settled ? 'Yes' : 'No'}</Badge>
-                    </td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground">{p.createdAt}</td>
+                    <td className="p-3 font-mono font-semibold text-primary">{p.job_id}</td>
+                    <td className="p-3 font-semibold">₹{Number(p.amount).toLocaleString()}</td>
+                    <td className="p-3"><Badge className={`${methodColors[p.method] || ''} border-0 text-xs`}>{p.method}</Badge></td>
+                    <td className="p-3 hidden md:table-cell">{p.qr_receiver || '—'}</td>
+                    <td className="p-3">₹{Number(p.admin_share).toLocaleString()}</td>
+                    <td className="p-3">₹{Number(p.staff_share).toLocaleString()}</td>
+                    <td className="p-3 hidden md:table-cell"><Badge variant={p.settled ? "default" : "outline"} className="text-xs">{p.settled ? 'Yes' : 'No'}</Badge></td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No payments found</td></tr>
-                )}
+                {filtered.length === 0 && (<tr><td colSpan={8} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No payments found'}</td></tr>)}
               </tbody>
             </table>
           </div>

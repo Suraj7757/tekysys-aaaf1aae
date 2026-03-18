@@ -1,9 +1,8 @@
 import { 
   LayoutDashboard, Users, Wrench, CreditCard, BarChart3, 
-  Package, FileText, Settings, ArrowLeftRight, Smartphone
+  Package, FileText, Settings, ArrowLeftRight, Smartphone, Trash2
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -22,6 +21,7 @@ const secondaryItems = [
   { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Reports", url: "/reports", icon: FileText },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Trash", url: "/trash", icon: Trash2 },
 ];
 
 export function AppSidebar() {
@@ -31,7 +31,6 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="bg-sidebar pt-4">
-        {/* Logo */}
         <div className={`flex items-center gap-3 px-4 mb-6 ${collapsed ? 'justify-center' : ''}`}>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
             <Smartphone className="h-5 w-5 text-primary-foreground" />
@@ -53,12 +52,7 @@ export function AppSidebar() {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
-                    >
+                    <NavLink to={item.url} end={item.url === "/"} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span className="text-sm">{item.title}</span>}
                     </NavLink>
@@ -78,11 +72,7 @@ export function AppSidebar() {
               {secondaryItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
-                    >
+                    <NavLink to={item.url} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span className="text-sm">{item.title}</span>}
                     </NavLink>
