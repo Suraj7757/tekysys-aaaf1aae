@@ -13,7 +13,7 @@ export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
   const refetch = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    let query = supabase.from(table).select('*').eq('user_id', user.id);
+    let query = supabase.from(table).select('*').eq('user_id', user.id) as any;
     if (!includeDeleted && table !== 'activity_log' && table !== 'shop_settings') {
       query = query.eq('deleted', false);
     }
