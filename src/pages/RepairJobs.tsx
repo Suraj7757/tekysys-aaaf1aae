@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseQuery, useSoftDelete, useShopSettings, getNextJobId } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
 
@@ -39,11 +39,13 @@ export default function RepairJobs() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearType, setClearType] = useState<'all' | 'delivered'>('all');
 
+  // Create form
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [deviceBrand, setDeviceBrand] = useState("");
@@ -52,6 +54,16 @@ export default function RepairJobs() {
   const [technician, setTechnician] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
 
+  // Edit form
+  const [editName, setEditName] = useState("");
+  const [editMobile, setEditMobile] = useState("");
+  const [editBrand, setEditBrand] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editProblem, setEditProblem] = useState("");
+  const [editTech, setEditTech] = useState("");
+  const [editCost, setEditCost] = useState("");
+
+  // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [qrReceiver, setQrReceiver] = useState(settings?.qr_receivers?.[0] || "Admin QR");
   const [customQr, setCustomQr] = useState("");
@@ -78,7 +90,6 @@ export default function RepairJobs() {
     if (!customerName || !customerMobile || !deviceBrand || !problem || !user) {
       toast.error("Please fill all required fields"); return;
     }
-    // Ensure customer exists
     let { data: customer } = await supabase.from('customers').select('id').eq('user_id', user.id).eq('mobile', customerMobile).eq('deleted', false).maybeSingle();
     if (!customer) {
       const { data: newC } = await supabase.from('customers').insert({ user_id: user.id, name: customerName, mobile: customerMobile }).select('id').single();
@@ -96,6 +107,34 @@ export default function RepairJobs() {
     setCreateOpen(false);
     setCustomerMobile(""); setCustomerName(""); setDeviceBrand(""); setDeviceModel(""); setProblem(""); setTechnician(""); setEstimatedCost("");
     toast.success(`Job ${jobId} created`);
+  };
+
+  const openEdit = (job: any) => {
+    setSelectedJob(job);
+    setEditName(job.customer_name);
+    setEditMobile(job.customer_mobile);
+    setEditBrand(job.device_brand);
+    setEditModel(job.device_model || '');
+    setEditProblem(job.problem_description);
+    setEditTech(job.technician_name || '');
+    setEditCost(String(job.estimated_cost));
+    setEditOpen(true);
+  };
+
+  const handleEditJob = async () => {
+    if (!selectedJob || !editName || !editMobile || !editBrand || !editProblem) {
+      toast.error("Please fill all required fields"); return;
+    }
+    await supabase.from('repair_jobs').update({
+      customer_name: editName, customer_mobile: editMobile,
+      device_brand: editBrand, device_model: editModel || null,
+      problem_description: editProblem, technician_name: editTech || null,
+      estimated_cost: parseFloat(editCost) || 0,
+    }).eq('id', selectedJob.id);
+    refetch();
+    setEditOpen(false);
+    setSelectedJob(null);
+    toast.success(`Job ${selectedJob.job_id} updated`);
   };
 
   const changeStatus = async (job: any, newStatus: JobStatus) => {
@@ -138,10 +177,8 @@ export default function RepairJobs() {
       qr_receiver: paymentMethod === 'UPI/QR' ? receiver : null,
       admin_share: amount * adminPct, staff_share: amount * staffPct,
     });
-    refetch();
-    refetchPayments();
-    setPaymentOpen(false);
-    setSelectedJob(null);
+    refetch(); refetchPayments();
+    setPaymentOpen(false); setSelectedJob(null);
     toast.success(`Job ${selectedJob.job_id} delivered & payment recorded`);
   };
 
@@ -233,6 +270,8 @@ export default function RepairJobs() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(job)}><Pencil className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           {allStatuses.filter(s => s !== job.status).map(s => (
                             <DropdownMenuItem key={s} onClick={() => changeStatus(job, s)}>→ {s}</DropdownMenuItem>
                           ))}
@@ -274,6 +313,32 @@ export default function RepairJobs() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
               <Button onClick={handleCreateJob}>Create Job</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Job Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Edit Job — {selectedJob?.job_id}</DialogTitle></DialogHeader>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Customer Mobile *</Label><Input value={editMobile} onChange={e => setEditMobile(e.target.value)} /></div>
+                <div><Label>Customer Name *</Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Device Brand *</Label><Input value={editBrand} onChange={e => setEditBrand(e.target.value)} /></div>
+                <div><Label>Device Model</Label><Input value={editModel} onChange={e => setEditModel(e.target.value)} /></div>
+              </div>
+              <div><Label>Problem Description *</Label><Textarea value={editProblem} onChange={e => setEditProblem(e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Technician</Label><Input value={editTech} onChange={e => setEditTech(e.target.value)} /></div>
+                <div><Label>Estimated Cost (₹)</Label><Input type="number" value={editCost} onChange={e => setEditCost(e.target.value)} /></div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditJob}>Save Changes</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
