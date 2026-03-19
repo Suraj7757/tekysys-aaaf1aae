@@ -1,0 +1,87 @@
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Bell, LogOut, User, Settings } from 'lucide-react';
+import { useSupabaseQuery } from '@/hooks/useSupabaseData';
+
+export function HeaderUserMenu() {
+  const { user, signOut, role } = useAuth();
+  const navigate = useNavigate();
+  const { data: jobs } = useSupabaseQuery<any>('repair_jobs');
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'U';
+  const initial = displayName.charAt(0).toUpperCase();
+
+  // Notifications: new jobs (today) + status updates (today)
+  const today = new Date().toDateString();
+  const newJobsToday = jobs.filter((j: any) => new Date(j.created_at).toDateString() === today);
+  const readyJobs = jobs.filter((j: any) => j.status === 'Ready');
+  const notifications = [
+    ...newJobsToday.map((j: any) => ({ id: j.id, text: `New job: ${j.job_id} - ${j.customer_name}`, type: 'new' as const })),
+    ...readyJobs.map((j: any) => ({ id: j.id + '-ready', text: `${j.job_id} is Ready for pickup`, type: 'update' as const })),
+  ];
+
+  return (
+    <div className="flex items-center gap-2">
+      <Popover open={notifOpen} onOpenChange={setNotifOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-4 w-4" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold flex items-center justify-center text-destructive-foreground">
+                {notifications.length > 9 ? '9+' : notifications.length}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-0" align="end">
+          <div className="p-3 border-b font-semibold text-sm">Notifications</div>
+          <div className="max-h-64 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <p className="p-4 text-sm text-muted-foreground text-center">No notifications</p>
+            ) : (
+              notifications.slice(0, 20).map(n => (
+                <div key={n.id} className="px-3 py-2 border-b last:border-0 hover:bg-muted/50 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px] shrink-0">
+                      {n.type === 'new' ? '🆕' : '🔔'}
+                    </Badge>
+                    <span>{n.text}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground cursor-pointer hover:opacity-90 transition-opacity">
+            {initial}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <div className="px-3 py-2">
+            <p className="text-sm font-semibold">{displayName}</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+            {role && <Badge variant="outline" className="mt-1 text-[10px]">{role}</Badge>}
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate('/settings')}>
+            <Settings className="h-4 w-4 mr-2" /> Settings
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={signOut} className="text-destructive">
+            <LogOut className="h-4 w-4 mr-2" /> Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
