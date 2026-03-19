@@ -1,8 +1,9 @@
 import { 
   LayoutDashboard, Users, Wrench, CreditCard, BarChart3, 
-  Package, FileText, Settings, ArrowLeftRight, Smartphone, Trash2
+  Package, FileText, Settings, ArrowLeftRight, Smartphone, Trash2, Shield
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -26,6 +27,7 @@ const secondaryItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const { role } = useAuth();
   const collapsed = state === "collapsed";
 
   return (
@@ -79,6 +81,16 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {role === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/users" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
+                      <Shield className="h-4 w-4 shrink-0" />
+                      {!collapsed && <span className="text-sm">Users</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

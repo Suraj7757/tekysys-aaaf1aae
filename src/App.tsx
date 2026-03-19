@@ -14,6 +14,8 @@ import Reports from "./pages/Reports";
 import SettingsPage from "./pages/Settings";
 import Trash from "./pages/Trash";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,7 @@ function ProtectedRoutes() {
       <Route path="/reports" element={<Reports />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/trash" element={<Trash />} />
+      <Route path="/users" element={<UserManagement />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -54,6 +57,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </AuthProvider>
