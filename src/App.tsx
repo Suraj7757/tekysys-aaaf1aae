@@ -67,3 +67,4 @@ const App = () => (
 );
 
 export default App;
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
