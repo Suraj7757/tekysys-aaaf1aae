@@ -1,136 +1,23 @@
-import { generateOTP } from '@/lib/otp';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+export const useAuth = () => {
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  role: 'admin' | 'staff' | null;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+  // existing code...
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<'admin' | 'staff' | null>(null);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchRole(session.user.id), 0);
-      } else {
-        setRole(null);
-      }
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchRole(session.user.id);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    setRole((data?.role as 'admin' | 'staff') ?? 'staff');
+  const sendSignupOTP = async (email: string) => {
+    // code
   };
 
-  const signUp = async (email: string, password: string, displayName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName }, emailRedirectTo: window.location.origin },
-    });
-    if (error) throw error;
+  const verifyOTP = async (email: string, otp: string, type: string) => {
+    // code
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+  const sendResetOTP = async (email: string) => {
+    // code
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  return {
+    // existing values
+    sendSignupOTP,
+    verifyOTP,
+    sendResetOTP
   };
-
-  return (
-    <AuthContext.Provider value={{ user, session, loading, role, signUp, signIn, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
-}
-const sendSignupOTP = async (email: string) => {
-  const otp = generateOTP();
-
-  await supabase.from('otp_codes').insert({
-    email,
-    otp,
-    type: 'signup',
-    expires_at: new Date(Date.now() + 5 * 60 * 1000)
-  });
-
-  await supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: true }
-  });
-
-  console.log("OTP:", otp); // testing ke liye
-};
-const verifyOTP = async (email: string, otp: string, type: string) => {
-  const { data } = await supabase
-    .from('otp_codes')
-    .select('*')
-    .eq('email', email)
-    .eq('otp', otp)
-    .eq('type', type)
-    .single();
-
-  if (!data) throw new Error("Invalid OTP");
-
-  if (new Date(data.expires_at) < new Date()) {
-    throw new Error("OTP expired");
-  }
-
-  return true;
-};
-const sendResetOTP = async (email: string) => {
-  const otp = generateOTP();
-
-  await supabase.from('otp_codes').insert({
-    email,
-    otp,
-    type: 'reset',
-    expires_at: new Date(Date.now() + 5 * 60 * 1000)
-  });
-
-  console.log("Reset OTP:", otp);
-};
-return {
-  ...existing,
-  sendSignupOTP,
-  verifyOTP,
-  sendResetOTP
 };
