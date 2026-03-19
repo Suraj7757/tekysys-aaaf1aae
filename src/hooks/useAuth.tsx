@@ -1,3 +1,4 @@
+import { generateOTP } from '@/lib/otp';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,3 +82,55 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
+const sendSignupOTP = async (email: string) => {
+  const otp = generateOTP();
+
+  await supabase.from('otp_codes').insert({
+    email,
+    otp,
+    type: 'signup',
+    expires_at: new Date(Date.now() + 5 * 60 * 1000)
+  });
+
+  await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true }
+  });
+
+  console.log("OTP:", otp); // testing ke liye
+};
+const verifyOTP = async (email: string, otp: string, type: string) => {
+  const { data } = await supabase
+    .from('otp_codes')
+    .select('*')
+    .eq('email', email)
+    .eq('otp', otp)
+    .eq('type', type)
+    .single();
+
+  if (!data) throw new Error("Invalid OTP");
+
+  if (new Date(data.expires_at) < new Date()) {
+    throw new Error("OTP expired");
+  }
+
+  return true;
+};
+const sendResetOTP = async (email: string) => {
+  const otp = generateOTP();
+
+  await supabase.from('otp_codes').insert({
+    email,
+    otp,
+    type: 'reset',
+    expires_at: new Date(Date.now() + 5 * 60 * 1000)
+  });
+
+  console.log("Reset OTP:", otp);
+};
+return {
+  ...existing,
+  sendSignupOTP,
+  verifyOTP,
+  sendResetOTP
+};
