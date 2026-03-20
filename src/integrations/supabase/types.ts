@@ -155,6 +155,36 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          type: string
+          verified: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          type: string
+          verified?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          type?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           admin_share: number
@@ -366,6 +396,7 @@ export type Database = {
           id: string
           phone: string
           qr_receivers: string[]
+          revenue_split_enabled: boolean | null
           shop_name: string
           staff_share_percent: number
           updated_at: string
@@ -379,6 +410,7 @@ export type Database = {
           id?: string
           phone?: string
           qr_receivers?: string[]
+          revenue_split_enabled?: boolean | null
           shop_name?: string
           staff_share_percent?: number
           updated_at?: string
@@ -392,6 +424,7 @@ export type Database = {
           id?: string
           phone?: string
           qr_receivers?: string[]
+          revenue_split_enabled?: boolean | null
           shop_name?: string
           staff_share_percent?: number
           updated_at?: string
