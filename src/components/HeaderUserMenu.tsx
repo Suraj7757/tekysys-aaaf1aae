@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Bell, LogOut, User, Settings } from 'lucide-react';
+import { Bell, LogOut, Settings } from 'lucide-react';
 import { useSupabaseQuery } from '@/hooks/useSupabaseData';
 
 export function HeaderUserMenu() {
@@ -17,14 +17,21 @@ export function HeaderUserMenu() {
   const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'U';
   const initial = displayName.charAt(0).toUpperCase();
 
-  // Notifications: new jobs (today) + status updates (today)
   const today = new Date().toDateString();
   const newJobsToday = jobs.filter((j: any) => new Date(j.created_at).toDateString() === today);
   const readyJobs = jobs.filter((j: any) => j.status === 'Ready');
+  const inProgressJobs = jobs.filter((j: any) => j.status === 'In Progress');
+
   const notifications = [
-    ...newJobsToday.map((j: any) => ({ id: j.id, text: `New job: ${j.job_id} - ${j.customer_name}`, type: 'new' as const })),
-    ...readyJobs.map((j: any) => ({ id: j.id + '-ready', text: `${j.job_id} is Ready for pickup`, type: 'update' as const })),
+    ...newJobsToday.map((j: any) => ({ id: j.id, text: `New job: ${j.job_id} - ${j.customer_name}`, type: 'new' as const, jobId: j.job_id })),
+    ...readyJobs.map((j: any) => ({ id: j.id + '-ready', text: `${j.job_id} is Ready for pickup`, type: 'update' as const, jobId: j.job_id })),
+    ...inProgressJobs.map((j: any) => ({ id: j.id + '-progress', text: `${j.job_id} is In Progress`, type: 'update' as const, jobId: j.job_id })),
   ];
+
+  const handleNotifClick = (n: any) => {
+    setNotifOpen(false);
+    navigate('/jobs');
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -46,7 +53,11 @@ export function HeaderUserMenu() {
               <p className="p-4 text-sm text-muted-foreground text-center">No notifications</p>
             ) : (
               notifications.slice(0, 20).map(n => (
-                <div key={n.id} className="px-3 py-2 border-b last:border-0 hover:bg-muted/50 text-sm">
+                <div
+                  key={n.id}
+                  className="px-3 py-2 border-b last:border-0 hover:bg-muted/50 text-sm cursor-pointer"
+                  onClick={() => handleNotifClick(n)}
+                >
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {n.type === 'new' ? '🆕' : '🔔'}
