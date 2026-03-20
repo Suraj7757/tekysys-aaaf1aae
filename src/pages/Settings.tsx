@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useShopSettings } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/hooks/useAuth";
 import { Plus, Trash2 } from "lucide-react";
@@ -33,7 +34,7 @@ export default function SettingsPage() {
   const removeQr = (qr: string) => update('qr_receivers', form.qr_receivers.filter((q: string) => q !== qr));
 
   const handleSave = async () => {
-    if (form.admin_share_percent + form.staff_share_percent !== 100) {
+    if (form.revenue_split_enabled && (form.admin_share_percent + form.staff_share_percent !== 100)) {
       toast.error("Admin + Staff share must equal 100%"); return;
     }
     const ok = await saveSettings({
@@ -44,6 +45,7 @@ export default function SettingsPage() {
       admin_share_percent: form.admin_share_percent,
       staff_share_percent: form.staff_share_percent,
       qr_receivers: form.qr_receivers,
+      revenue_split_enabled: form.revenue_split_enabled,
     });
     if (ok) toast.success("Settings saved successfully");
   };
@@ -62,11 +64,21 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-sm font-semibold">Revenue Split</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div><Label>Admin Share %</Label><Input type="number" value={form.admin_share_percent} onChange={e => update('admin_share_percent', parseInt(e.target.value) || 0)} /></div>
-            <div><Label>Staff Share %</Label><Input type="number" value={form.staff_share_percent} onChange={e => update('staff_share_percent', parseInt(e.target.value) || 0)} /></div>
-          </CardContent>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold">Revenue Split</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="split-toggle" className="text-xs text-muted-foreground">Enable Split</Label>
+                <Switch id="split-toggle" checked={form.revenue_split_enabled !== false} onCheckedChange={v => update('revenue_split_enabled', v)} />
+              </div>
+            </div>
+          </CardHeader>
+          {form.revenue_split_enabled !== false && (
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div><Label>Admin Share %</Label><Input type="number" value={form.admin_share_percent} onChange={e => update('admin_share_percent', parseInt(e.target.value) || 0)} /></div>
+              <div><Label>Staff Share %</Label><Input type="number" value={form.staff_share_percent} onChange={e => update('staff_share_percent', parseInt(e.target.value) || 0)} /></div>
+            </CardContent>
+          )}
         </Card>
 
         <Card className="shadow-card">

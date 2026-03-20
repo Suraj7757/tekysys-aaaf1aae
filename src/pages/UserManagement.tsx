@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 interface UserProfile {
   user_id: string;
   display_name: string;
+  email?: string;
   created_at: string;
   role?: 'admin' | 'staff';
 }
@@ -28,9 +29,7 @@ export default function UserManagement() {
     if (!user || role !== 'admin') return;
     setLoading(true);
 
-    // Get all profiles
     const { data: profiles } = await supabase.from('profiles').select('*');
-    // Get all roles
     const { data: roles } = await supabase.from('user_roles').select('*');
 
     const roleMap: Record<string, 'admin' | 'staff'> = {};
@@ -50,7 +49,6 @@ export default function UserManagement() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const changeRole = async (userId: string, newRole: 'admin' | 'staff') => {
-    // Upsert role
     const { data: existing } = await supabase.from('user_roles').select('id').eq('user_id', userId).maybeSingle();
     if (existing) {
       await supabase.from('user_roles').update({ role: newRole } as any).eq('user_id', userId);
@@ -63,7 +61,6 @@ export default function UserManagement() {
 
   const handleRemoveUser = async () => {
     if (!targetUser) return;
-    // Delete profile and role (can't delete auth.users from client)
     await supabase.from('user_roles').delete().eq('user_id', targetUser.user_id);
     await supabase.from('profiles').delete().eq('user_id', targetUser.user_id);
     toast.success('User removed from system');
@@ -81,7 +78,7 @@ export default function UserManagement() {
       <div className="space-y-4 animate-fade-in">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">All Registered Users ({users.length})</h3>
+          <h3 className="text-lg font-semibold">Registered Users ({users.length})</h3>
         </div>
 
         <Card className="shadow-card overflow-hidden">
@@ -103,8 +100,10 @@ export default function UserManagement() {
                         <div className="h-7 w-7 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
                           {u.display_name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium">{u.display_name}</span>
-                        {u.user_id === user?.id && <Badge variant="outline" className="text-[10px]">You</Badge>}
+                        <div>
+                          <span className="font-medium">{u.display_name}</span>
+                          {u.user_id === user?.id && <Badge variant="outline" className="ml-1 text-[10px]">You</Badge>}
+                        </div>
                       </div>
                     </td>
                     <td className="p-3">

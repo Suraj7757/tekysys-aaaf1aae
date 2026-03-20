@@ -67,7 +67,3 @@ const App = () => (
 );
 
 export default App;
-import { useAuth } from "@/hooks/useAuth";
-git add .
-git commit -m "Fix AuthProvider error"
-git push

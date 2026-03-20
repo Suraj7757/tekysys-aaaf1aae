@@ -3,8 +3,17 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useSupabaseQuery } from "@/hooks/useSupabaseData";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
+import { useSupabaseQuery, useShopSettings } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { Search, Pencil } from "lucide-react";
+import { toast } from "sonner";
+
+type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
 
 const methodColors: Record<string, string> = {
   'Cash': 'bg-success/10 text-success',
@@ -13,8 +22,15 @@ const methodColors: Record<string, string> = {
 };
 
 export default function Payments() {
-  const { data: payments, loading } = useSupabaseQuery<any>('payments');
+  const { user } = useAuth();
+  const { data: payments, loading, refetch } = useSupabaseQuery<any>('payments');
+  const { settings } = useShopSettings();
   const [search, setSearch] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [editMethod, setEditMethod] = useState<PaymentMethod>("Cash");
+  const [editQr, setEditQr] = useState("");
+  const [editAmount, setEditAmount] = useState("");
 
   const filtered = payments.filter((p: any) =>
     p.job_id.toLowerCase().includes(search.toLowerCase()) ||
@@ -31,6 +47,36 @@ export default function Payments() {
     const key = p.qr_receiver || 'Unknown';
     qrTotals[key] = (qrTotals[key] || 0) + Number(p.amount);
   });
+
+  const openEditPayment = (p: any) => {
+    setSelectedPayment(p);
+    setEditMethod(p.method);
+    setEditQr(p.qr_receiver || '');
+    setEditAmount(String(p.amount));
+    setEditOpen(true);
+  };
+
+  const handleEditPayment = async () => {
+    if (!selectedPayment || !user) return;
+    const amount = parseFloat(editAmount) || Number(selectedPayment.amount);
+    const splitEnabled = settings?.revenue_split_enabled !== false;
+    const adminPct = splitEnabled ? (settings?.admin_share_percent ?? 50) / 100 : 1;
+    const staffPct = splitEnabled ? (settings?.staff_share_percent ?? 50) / 100 : 0;
+
+    await supabase.from('payments').update({
+      method: editMethod as any,
+      amount,
+      qr_receiver: editMethod === 'UPI/QR' ? editQr : null,
+      admin_share: amount * adminPct,
+      staff_share: amount * staffPct,
+    }).eq('id', selectedPayment.id);
+    refetch();
+    setEditOpen(false);
+    toast.success('Payment updated');
+  };
+
+  const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
+  const splitEnabled = settings?.revenue_split_enabled !== false;
 
   return (
     <Layout title="Payments">
@@ -72,10 +118,11 @@ export default function Payments() {
                   <th className="text-left p-3 font-semibold">Amount</th>
                   <th className="text-left p-3 font-semibold">Method</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">QR Receiver</th>
-                  <th className="text-left p-3 font-semibold">Admin</th>
-                  <th className="text-left p-3 font-semibold">Staff</th>
+                  {splitEnabled && <th className="text-left p-3 font-semibold">Admin</th>}
+                  {splitEnabled && <th className="text-left p-3 font-semibold">Staff</th>}
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Settled</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Date</th>
+                  <th className="text-left p-3 font-semibold">Edit</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,17 +132,58 @@ export default function Payments() {
                     <td className="p-3 font-semibold">₹{Number(p.amount).toLocaleString()}</td>
                     <td className="p-3"><Badge className={`${methodColors[p.method] || ''} border-0 text-xs`}>{p.method}</Badge></td>
                     <td className="p-3 hidden md:table-cell">{p.qr_receiver || '—'}</td>
-                    <td className="p-3">₹{Number(p.admin_share).toLocaleString()}</td>
-                    <td className="p-3">₹{Number(p.staff_share).toLocaleString()}</td>
+                    {splitEnabled && <td className="p-3">₹{Number(p.admin_share).toLocaleString()}</td>}
+                    {splitEnabled && <td className="p-3">₹{Number(p.staff_share).toLocaleString()}</td>}
                     <td className="p-3 hidden md:table-cell"><Badge variant={p.settled ? "default" : "outline"} className="text-xs">{p.settled ? 'Yes' : 'No'}</Badge></td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
+                    <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditPayment(p)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (<tr><td colSpan={8} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No payments found'}</td></tr>)}
+                {filtered.length === 0 && (<tr><td colSpan={splitEnabled ? 10 : 8} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No payments found'}</td></tr>)}
               </tbody>
             </table>
           </div>
         </Card>
+
+        {/* Edit Payment Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Edit Payment — {selectedPayment?.job_id}</DialogTitle></DialogHeader>
+            <div className="grid gap-4">
+              <div><Label>Amount (₹)</Label><Input type="number" value={editAmount} onChange={e => setEditAmount(e.target.value)} /></div>
+              <div>
+                <Label>Payment Method</Label>
+                <Select value={editMethod} onValueChange={v => setEditMethod(v as PaymentMethod)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cash">💵 Cash</SelectItem>
+                    <SelectItem value="UPI/QR">📱 UPI/QR</SelectItem>
+                    <SelectItem value="Due">📋 Due</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {editMethod === 'UPI/QR' && (
+                <div>
+                  <Label>QR Receiver</Label>
+                  <Select value={editQr} onValueChange={setEditQr}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {qrReceivers.map((qr: string) => (<SelectItem key={qr} value={qr}>{qr}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditPayment}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
