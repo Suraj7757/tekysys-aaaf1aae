@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useSupabaseQuery } from "@/hooks/useSupabaseData";
-import { Wrench, AlertTriangle, IndianRupee, Smartphone, Users, Trash2 } from "lucide-react";
+import { useSupabaseQuery, useShopSettings } from "@/hooks/useSupabaseData";
+import { Wrench, AlertTriangle, IndianRupee, Smartphone, Trash2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = ['hsl(234,85%,55%)', 'hsl(152,69%,40%)', 'hsl(38,92%,50%)', 'hsl(0,72%,51%)'];
@@ -15,6 +15,9 @@ export default function Dashboard() {
   const { data: inventory } = useSupabaseQuery<any>('inventory');
   const { data: deletedCustomers } = useSupabaseQuery<any>('customers', true);
   const { data: deletedJobs } = useSupabaseQuery<any>('repair_jobs', true);
+  const { settings } = useShopSettings();
+
+  const splitEnabled = settings?.revenue_split_enabled !== false;
 
   const deletedCount = useMemo(() => {
     return deletedCustomers.filter((c: any) => c.deleted).length + deletedJobs.filter((j: any) => j.deleted).length;
@@ -58,7 +61,7 @@ export default function Dashboard() {
           <CardContent className="py-5 px-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-primary-foreground/80">Full Month Earnings (Admin)</p>
+                <p className="text-sm font-medium text-primary-foreground/80">Total Earnings</p>
                 <p className="text-3xl font-extrabold text-primary-foreground mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
               </div>
               <div className="text-right">
@@ -77,23 +80,25 @@ export default function Dashboard() {
           <StatCard icon={Trash2} label="Deleted" value={deletedCount} sub="In trash" variant="primary" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="shadow-card">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Admin Share (50%)</CardTitle></CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-primary">₹{stats.adminShare.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">Unsettled admin earnings</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-card">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Staff Share (50%)</CardTitle></CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-success">₹{stats.staffShare.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">Unsettled staff earnings</p>
-              <p className="text-xs text-muted-foreground">Settlements this month: {settlements.length}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {splitEnabled && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="shadow-card">
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Admin Share ({settings?.admin_share_percent ?? 50}%)</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-primary">₹{stats.adminShare.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">Unsettled admin earnings</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card">
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Staff Share ({settings?.staff_share_percent ?? 50}%)</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-success">₹{stats.staffShare.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">Unsettled staff earnings</p>
+                <p className="text-xs text-muted-foreground">Settlements: {settlements.length}</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="shadow-card">

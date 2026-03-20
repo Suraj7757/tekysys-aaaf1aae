@@ -28,7 +28,15 @@ const statusColors: Record<string, string> = {
   'Unrepairable': 'bg-destructive/10 text-destructive',
 };
 
-const allStatuses: JobStatus[] = ['Received', 'In Progress', 'Ready', 'Delivered', 'Rejected', 'Unrepairable'];
+// Define allowed next statuses for each status
+const nextStatuses: Record<JobStatus, JobStatus[]> = {
+  'Received': ['In Progress'],
+  'In Progress': ['Delivered', 'Rejected', 'Unrepairable'],
+  'Ready': ['Delivered'],
+  'Delivered': [],
+  'Rejected': [],
+  'Unrepairable': [],
+};
 
 export default function RepairJobs() {
   const { user } = useAuth();
@@ -45,7 +53,6 @@ export default function RepairJobs() {
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearType, setClearType] = useState<'all' | 'delivered'>('all');
 
-  // Create form
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [deviceBrand, setDeviceBrand] = useState("");
@@ -54,7 +61,6 @@ export default function RepairJobs() {
   const [technician, setTechnician] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
 
-  // Edit form
   const [editName, setEditName] = useState("");
   const [editMobile, setEditMobile] = useState("");
   const [editBrand, setEditBrand] = useState("");
@@ -63,11 +69,12 @@ export default function RepairJobs() {
   const [editTech, setEditTech] = useState("");
   const [editCost, setEditCost] = useState("");
 
-  // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [qrReceiver, setQrReceiver] = useState(settings?.qr_receivers?.[0] || "Admin QR");
   const [customQr, setCustomQr] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
+
+  const allStatuses: JobStatus[] = ['Received', 'In Progress', 'Ready', 'Delivered', 'Rejected', 'Unrepairable'];
 
   const filtered = jobs.filter((j: any) => {
     const matchSearch = j.job_id.toLowerCase().includes(search.toLowerCase()) ||
@@ -167,8 +174,9 @@ export default function RepairJobs() {
     if (!selectedJob || !user) return;
     const amount = parseFloat(paymentAmount) || 0;
     const receiver = qrReceiver === 'Custom' ? customQr : qrReceiver;
-    const adminPct = (settings?.admin_share_percent ?? 50) / 100;
-    const staffPct = (settings?.staff_share_percent ?? 50) / 100;
+    const splitEnabled = settings?.revenue_split_enabled !== false;
+    const adminPct = splitEnabled ? (settings?.admin_share_percent ?? 50) / 100 : 1;
+    const staffPct = splitEnabled ? (settings?.staff_share_percent ?? 50) / 100 : 0;
 
     await supabase.from('repair_jobs').update({ status: 'Delivered' as any, delivered_at: new Date().toISOString() }).eq('id', selectedJob.id);
     await supabase.from('payments').insert({
@@ -188,6 +196,8 @@ export default function RepairJobs() {
     if (clearType === 'all') {
       await supabase.from('repair_jobs').update({ deleted: true, deleted_at: now }).eq('user_id', user.id).eq('deleted', false);
       await supabase.from('payments').update({ deleted: true, deleted_at: now }).eq('user_id', user.id).eq('deleted', false);
+      // Reset job counter
+      await supabase.from('job_counter').update({ counter: 0 } as any).eq('user_id', user.id);
     } else {
       const deliveredIds = jobs.filter((j: any) => j.status === 'Delivered').map((j: any) => j.id);
       if (deliveredIds.length > 0) {
@@ -197,7 +207,7 @@ export default function RepairJobs() {
     }
     refetch(); refetchPayments();
     setClearConfirmOpen(false);
-    toast.success(clearType === 'all' ? 'All jobs moved to trash' : 'Delivered jobs moved to trash');
+    toast.success(clearType === 'all' ? 'All jobs cleared & ID reset' : 'Delivered jobs moved to trash');
   };
 
   const handleInvoice = (job: any) => {
@@ -211,6 +221,7 @@ export default function RepairJobs() {
   };
 
   const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
+  const splitEnabled = settings?.revenue_split_enabled !== false;
 
   return (
     <Layout title="Repair Jobs">
@@ -236,7 +247,7 @@ export default function RepairJobs() {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => { setClearType('delivered'); setClearConfirmOpen(true); }}>Clear Delivered Jobs</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setClearType('all'); setClearConfirmOpen(true); }} className="text-destructive">Clear All Jobs</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setClearType('all'); setClearConfirmOpen(true); }} className="text-destructive">Clear All Jobs (Reset ID)</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Job</Button>
@@ -258,33 +269,36 @@ export default function RepairJobs() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((job: any) => (
-                  <tr key={job.id} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-mono font-semibold text-primary">{job.job_id}</td>
-                    <td className="p-3"><div>{job.customer_name}</div><div className="text-xs text-muted-foreground">{job.customer_mobile}</div></td>
-                    <td className="p-3 hidden md:table-cell">{job.device_brand} {job.device_model}</td>
-                    <td className="p-3 hidden lg:table-cell max-w-48 truncate">{job.problem_description}</td>
-                    <td className="p-3"><Badge className={`${statusColors[job.status] || ''} border-0 text-xs`}>{job.status}</Badge></td>
-                    <td className="p-3 font-semibold">₹{Number(job.estimated_cost).toLocaleString()}</td>
-                    <td className="p-3">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(job)}><Pencil className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {allStatuses.filter(s => s !== job.status).map(s => (
-                            <DropdownMenuItem key={s} onClick={() => changeStatus(job, s)}>→ {s}</DropdownMenuItem>
-                          ))}
-                          <DropdownMenuSeparator />
-                          {job.status === 'Delivered' && (
-                            <DropdownMenuItem onClick={() => handleInvoice(job)}><FileText className="h-4 w-4 mr-2" /> Invoice PDF</DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => handleDeleteJob(job)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((job: any) => {
+                  const allowedNext = nextStatuses[job.status as JobStatus] || [];
+                  return (
+                    <tr key={job.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-mono font-semibold text-primary">{job.job_id}</td>
+                      <td className="p-3"><div>{job.customer_name}</div><div className="text-xs text-muted-foreground">{job.customer_mobile}</div></td>
+                      <td className="p-3 hidden md:table-cell">{job.device_brand} {job.device_model}</td>
+                      <td className="p-3 hidden lg:table-cell max-w-48 truncate">{job.problem_description}</td>
+                      <td className="p-3"><Badge className={`${statusColors[job.status] || ''} border-0 text-xs`}>{job.status}</Badge></td>
+                      <td className="p-3 font-semibold">₹{Number(job.estimated_cost).toLocaleString()}</td>
+                      <td className="p-3">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEdit(job)}><Pencil className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
+                            {allowedNext.length > 0 && <DropdownMenuSeparator />}
+                            {allowedNext.map(s => (
+                              <DropdownMenuItem key={s} onClick={() => changeStatus(job, s)}>→ {s}</DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            {job.status === 'Delivered' && (
+                              <DropdownMenuItem onClick={() => handleInvoice(job)}><FileText className="h-4 w-4 mr-2" /> Invoice PDF</DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => handleDeleteJob(job)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (<tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No jobs found</td></tr>)}
               </tbody>
             </table>
@@ -373,10 +387,12 @@ export default function RepairJobs() {
                   {qrReceiver === 'Custom' && (<Input className="mt-2" placeholder="Enter QR name" value={customQr} onChange={e => setCustomQr(e.target.value)} />)}
                 </div>
               )}
-              <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
-                <div className="flex justify-between"><span>Admin Share ({settings?.admin_share_percent ?? 50}%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * (settings?.admin_share_percent ?? 50) / 100).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Staff Share ({settings?.staff_share_percent ?? 50}%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * (settings?.staff_share_percent ?? 50) / 100).toLocaleString()}</span></div>
-              </div>
+              {splitEnabled && (
+                <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+                  <div className="flex justify-between"><span>Admin Share ({settings?.admin_share_percent ?? 50}%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * (settings?.admin_share_percent ?? 50) / 100).toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span>Staff Share ({settings?.staff_share_percent ?? 50}%)</span><span className="font-semibold">₹{((parseFloat(paymentAmount) || 0) * (settings?.staff_share_percent ?? 50) / 100).toLocaleString()}</span></div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setPaymentOpen(false)}>Cancel</Button>
@@ -390,7 +406,7 @@ export default function RepairJobs() {
           <DialogContent className="max-w-sm">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-destructive" /> Move to Trash?</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">
-              {clearType === 'all' ? 'All jobs will be moved to trash.' : 'All delivered jobs will be moved to trash.'}
+              {clearType === 'all' ? 'All jobs will be moved to trash and job ID counter will reset to 1.' : 'All delivered jobs will be moved to trash.'}
             </p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setClearConfirmOpen(false)}>Cancel</Button>
