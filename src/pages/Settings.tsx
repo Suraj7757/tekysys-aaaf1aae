@@ -1,73 +1,202 @@
-import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { useState, useEffect } from 'react';
+import { Layout } from '@/components/Layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
+import { useShopSettings } from '@/hooks/useSupabaseData';
+import { supabase } from '@/integrations/supabase/client';
+import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 export default function Settings() {
-  const [qrCodes, setQrCodes] = useState([]);
+  const { user } = useAuth();
+  const { settings, loading, saveSettings, refetch } = useShopSettings();
+  const { theme, setTheme } = useTheme();
 
-  // Fetch QR codes from the database
-  const fetchQRCodes = async () => {
-    const { data, error } = await supabase.from("qr_codes").select();
-    if (error) {
-      alert("Error fetching QR codes.");
-    } else {
-      setQrCodes(data);
-    }
-  };
+  const [shopName, setShopName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [adminShare, setAdminShare] = useState('50');
+  const [staffShare, setStaffShare] = useState('50');
+  const [splitEnabled, setSplitEnabled] = useState(true);
+  const [qrReceivers, setQrReceivers] = useState<string[]>(['Admin QR', 'Staff QR', 'Shop QR']);
+
+  // Profile
+  const [displayName, setDisplayName] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
-    fetchQRCodes();
-  }, []);
+    if (settings) {
+      setShopName(settings.shop_name || '');
+      setPhone(settings.phone || '');
+      setAddress(settings.address || '');
+      setGstin(settings.gstin || '');
+      setAdminShare(String(settings.admin_share_percent ?? 50));
+      setStaffShare(String(settings.staff_share_percent ?? 50));
+      setSplitEnabled(settings.revenue_split_enabled !== false);
+      setQrReceivers(settings.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR']);
+    }
+  }, [settings]);
 
-  // Add QR Code
-  const handleAddQR = async () => {
-    const name = prompt("Enter QR name");
-    const upi_id = prompt("Enter UPI ID");
-    const image = prompt("Enter QR image URL");
-    if (name && upi_id && image) {
-      const { error } = await supabase.from("qr_codes").insert([{ name, upi_id, image }]);
-      if (error) alert("Error adding QR code.");
-      else fetchQRCodes();
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || '');
+    }
+  }, [user]);
+
+  const handleSaveShop = async () => {
+    const ok = await saveSettings({
+      shop_name: shopName, phone, address, gstin,
+      admin_share_percent: parseInt(adminShare) || 50,
+      staff_share_percent: parseInt(staffShare) || 50,
+      revenue_split_enabled: splitEnabled,
+      qr_receivers: qrReceivers.filter(q => q.trim()),
+    });
+    if (ok) toast.success('Shop settings saved');
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!displayName.trim()) { toast.error('Name is required'); return; }
+    const { error } = await supabase.auth.updateUser({ data: { display_name: displayName } });
+    if (error) toast.error(error.message);
+    else {
+      if (user) {
+        await supabase.from('profiles').update({ display_name: displayName }).eq('user_id', user.id);
+      }
+      toast.success('Profile updated');
     }
   };
 
-  // Edit QR Code
-  const handleEditQR = async (id) => {
-    const name = prompt("Enter new name");
-    const upi_id = prompt("Enter new UPI ID");
-    const image = prompt("Enter new image URL");
-    if (name && upi_id && image) {
-      const { error } = await supabase.from("qr_codes").update({ name, upi_id, image }).eq("id", id);
-      if (error) alert("Error updating QR code.");
-      else fetchQRCodes();
-    }
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return; }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) toast.error(error.message);
+    else { toast.success('Password updated'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); }
   };
 
-  // Delete QR Code
-  const handleDeleteQR = async (id) => {
-    const { error } = await supabase.from("qr_codes").delete().eq("id", id);
-    if (error) alert("Error deleting QR code.");
-    else fetchQRCodes();
+  const updateQr = (index: number, value: string) => {
+    const next = [...qrReceivers];
+    next[index] = value;
+    setQrReceivers(next);
   };
+
+  const addQr = () => setQrReceivers([...qrReceivers, '']);
+  const removeQr = (index: number) => setQrReceivers(qrReceivers.filter((_, i) => i !== index));
+
+  if (loading) return <Layout title="Settings"><p className="text-center p-8 text-muted-foreground">Loading...</p></Layout>;
 
   return (
-    <div>
-      <h2>QR Code Management</h2>
-      <button onClick={handleAddQR}>Add QR</button>
-      <div>
-        {qrCodes.length > 0 ? (
-          <ul>
-            {qrCodes.map((qr) => (
-              <li key={qr.id}>
-                <span>{qr.name}</span> - <span>{qr.upi_id}</span>
-                <button onClick={() => handleEditQR(qr.id)}>Edit</button>
-                <button onClick={() => handleDeleteQR(qr.id)}>Delete</button>
-              </li>
+    <Layout title="Settings">
+      <div className="space-y-6 animate-fade-in max-w-2xl">
+        {/* Profile */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Profile</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
+            <div><Label>Email</Label><Input value={user?.email || ''} disabled className="bg-muted" /></div>
+            <Button size="sm" onClick={handleUpdateProfile}><Save className="h-4 w-4 mr-1" /> Update Profile</Button>
+          </CardContent>
+        </Card>
+
+        {/* Change Password */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Lock className="h-4 w-4" /> Change Password</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div><Label>New Password</Label><Input type="password" placeholder="Min 6 characters" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>
+            <div><Label>Confirm Password</Label><Input type="password" placeholder="Confirm" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></div>
+            <Button size="sm" onClick={handleChangePassword}><Lock className="h-4 w-4 mr-1" /> Change Password</Button>
+          </CardContent>
+        </Card>
+
+        {/* Theme */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> Theme</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Button variant={theme === 'light' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('light')}>
+                <Sun className="h-4 w-4 mr-1" /> Light
+              </Button>
+              <Button variant={theme === 'dark' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('dark')}>
+                <Moon className="h-4 w-4 mr-1" /> Dark
+              </Button>
+              <Button variant={theme === 'system' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('system')}>
+                System
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Shop Info */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Store className="h-4 w-4" /> Shop Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div><Label>Shop Name</Label><Input value={shopName} onChange={e => setShopName(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} /></div>
+              <div><Label>GSTIN</Label><Input value={gstin} onChange={e => setGstin(e.target.value)} /></div>
+            </div>
+            <div><Label>Address</Label><Input value={address} onChange={e => setAddress(e.target.value)} /></div>
+          </CardContent>
+        </Card>
+
+        {/* Revenue Split */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Percent className="h-4 w-4" /> Revenue Split</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Switch checked={splitEnabled} onCheckedChange={setSplitEnabled} />
+              <span className="text-sm">{splitEnabled ? 'Enabled' : 'Disabled'}</span>
+            </div>
+            {splitEnabled && (
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Admin Share %</Label><Input type="number" value={adminShare} onChange={e => setAdminShare(e.target.value)} /></div>
+                <div><Label>Staff Share %</Label><Input type="number" value={staffShare} onChange={e => setStaffShare(e.target.value)} /></div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* QR Receivers */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><QrCode className="h-4 w-4" /> QR Receivers</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {qrReceivers.map((qr, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={qr} onChange={e => updateQr(i, e.target.value)} placeholder={`QR Receiver ${i + 1}`} />
+                {qrReceivers.length > 1 && (
+                  <Button variant="outline" size="sm" onClick={() => removeQr(i)} className="shrink-0 text-destructive">✕</Button>
+                )}
+              </div>
             ))}
-          </ul>
-        ) : (
-          <p>No QR codes available</p>
-        )}
+            <Button variant="outline" size="sm" onClick={addQr}>+ Add QR Receiver</Button>
+          </CardContent>
+        </Card>
+
+        <Button className="w-full" onClick={handleSaveShop}>
+          <Save className="h-4 w-4 mr-1" /> Save All Settings
+        </Button>
       </div>
-    </div>
+    </Layout>
   );
 }
