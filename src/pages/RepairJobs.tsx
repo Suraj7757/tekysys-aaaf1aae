@@ -301,6 +301,7 @@ export default function RepairJobs() {
                             {job.status === 'Delivered' && (
                               <DropdownMenuItem onClick={() => handleInvoice(job)}><FileText className="h-4 w-4 mr-2" /> Invoice PDF</DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onClick={() => shareWhatsApp(job)}><Share2 className="h-4 w-4 mr-2" /> WhatsApp</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteJob(job)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
