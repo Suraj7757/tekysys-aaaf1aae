@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseQuery, useSoftDelete, useShopSettings, getNextJobId } from "@/hooks/useSupabaseData";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
 
