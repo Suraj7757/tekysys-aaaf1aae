@@ -220,6 +220,15 @@ export default function RepairJobs() {
     );
   };
 
+  const shareWhatsApp = (job: any) => {
+    const payment = payments.find((p: any) => p.repair_job_id === job.id);
+    const shopName = settings?.shop_name || 'RepairDesk';
+    let msg = `*${shopName} - Job Update*\n\nJob ID: ${job.job_id}\nCustomer: ${job.customer_name}\nDevice: ${job.device_brand} ${job.device_model || ''}\nProblem: ${job.problem_description}\nStatus: ${job.status}\nEstimated Cost: ₹${Number(job.estimated_cost).toLocaleString()}`;
+    if (payment) msg += `\n\nPayment: ₹${Number(payment.amount).toLocaleString()} (${payment.method})`;
+    const url = `https://wa.me/${job.customer_mobile.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+
   const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
   const splitEnabled = settings?.revenue_split_enabled !== false;
 
