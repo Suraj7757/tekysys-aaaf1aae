@@ -31,11 +31,11 @@ const statusColors: Record<string, string> = {
 // Define allowed next statuses for each status
 const nextStatuses: Record<JobStatus, JobStatus[]> = {
   'Received': ['In Progress'],
-  'In Progress': ['Delivered', 'Rejected', 'Unrepairable'],
+  'In Progress': ['Ready', 'Delivered', 'Rejected', 'Unrepairable'],
   'Ready': ['Delivered'],
   'Delivered': [],
-  'Rejected': [],
-  'Unrepairable': [],
+  'Rejected': ['In Progress'],
+  'Unrepairable': ['In Progress'],
 };
 
 export default function RepairJobs() {
