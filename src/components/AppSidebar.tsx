@@ -1,6 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { NavLink } from '@/components/NavLink';
-import { useAuth } from '@/hooks/useAuth';
+import { SidebarNavLink } from '@/components/SidebarNavLink';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, useSidebar,
 } from '@/components/ui/sidebar';
@@ -44,7 +43,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">Main Menu</SidebarGroupLabel>
           <SidebarMenu>
             {mainItems.map(item => (
-              <NavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
+              <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
             ))}
           </SidebarMenu>
         </SidebarGroup>
@@ -53,7 +52,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">Management</SidebarGroupLabel>
           <SidebarMenu>
             {secondaryItems.map(item => (
-              <NavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
+              <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
             ))}
           </SidebarMenu>
         </SidebarGroup>
