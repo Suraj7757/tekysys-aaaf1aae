@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { HeaderUserMenu } from "@/components/HeaderUserMenu";
+import { WhatsAppHelpButton } from "@/components/WhatsAppHelpButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export function Layout({ children, title }: LayoutProps) {
             {children}
           </main>
         </div>
+        <WhatsAppHelpButton />
       </div>
     </SidebarProvider>
   );
