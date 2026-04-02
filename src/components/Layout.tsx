@@ -25,6 +25,7 @@ export function Layout({ children, title }: LayoutProps) {
             {children}
           </main>
         </div>
+        <WhatsAppHelpButton />
       </div>
     </SidebarProvider>
   );
