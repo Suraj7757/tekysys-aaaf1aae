@@ -111,6 +111,9 @@ export default function Auth() {
             {mode === 'forgot' && (
               <button onClick={() => setMode('login')} className="text-primary hover:underline">Back to Sign In</button>
             )}
+            <div className="pt-2 border-t">
+              <a href="/track" className="text-primary hover:underline text-sm">📦 Track Your Order</a>
+            </div>
           </div>
         </CardContent>
       </Card>
