@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 
 import Auth from '@/pages/Auth';
+import TrackOrder from '@/pages/TrackOrder';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
 import RepairJobs from '@/pages/RepairJobs';
