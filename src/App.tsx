@@ -35,6 +35,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/track" element={<TrackOrder />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
