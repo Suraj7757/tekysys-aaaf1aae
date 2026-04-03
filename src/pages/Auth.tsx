@@ -32,7 +32,7 @@ export default function Auth() {
     setLoading(true);
     const { error } = await signUp(email, password, displayName);
     if (error) toast.error(error);
-    else { toast.success('Account created! Check your email to verify.'); setMode('login'); }
+    else { toast.success('Account created! You can now sign in.'); setMode('login'); }
     setLoading(false);
   };
 
