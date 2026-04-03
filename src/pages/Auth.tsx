@@ -32,7 +32,7 @@ export default function Auth() {
     setLoading(true);
     const { error } = await signUp(email, password, displayName);
     if (error) toast.error(error);
-    else { toast.success('Account created! Check your email to verify.'); setMode('login'); }
+    else { toast.success('Account created! You can now sign in.'); setMode('login'); }
     setLoading(false);
   };
 
@@ -111,6 +111,9 @@ export default function Auth() {
             {mode === 'forgot' && (
               <button onClick={() => setMode('login')} className="text-primary hover:underline">Back to Sign In</button>
             )}
+            <div className="pt-2 border-t">
+              <a href="/track" className="text-primary hover:underline text-sm">📦 Track Your Order</a>
+            </div>
           </div>
         </CardContent>
       </Card>

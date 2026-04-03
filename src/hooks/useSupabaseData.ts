@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log';
+type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells';
 
 export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
   const { user } = useAuth();
@@ -14,7 +14,7 @@ export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
     if (!user) return;
     setLoading(true);
     let query = supabase.from(table).select('*').eq('user_id', user.id) as any;
-    if (!includeDeleted && table !== 'activity_log' && table !== 'shop_settings') {
+    if (!includeDeleted && !['activity_log', 'shop_settings'].includes(table)) {
       query = query.eq('deleted', false);
     }
     query = query.order('created_at', { ascending: false });

@@ -339,6 +339,89 @@ export type Database = {
           },
         ]
       }
+      sell_counter: {
+        Row: {
+          counter: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          counter?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          counter?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sells: {
+        Row: {
+          created_at: string
+          customer_mobile: string
+          customer_name: string
+          deleted: boolean
+          deleted_at: string | null
+          id: string
+          inventory_item_id: string | null
+          item_name: string
+          item_sku: string
+          payment_method: string
+          quantity: number
+          sell_id: string
+          sell_price: number
+          status: string
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_mobile?: string
+          customer_name?: string
+          deleted?: boolean
+          deleted_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          item_name: string
+          item_sku?: string
+          payment_method?: string
+          quantity?: number
+          sell_id: string
+          sell_price?: number
+          status?: string
+          total?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_mobile?: string
+          customer_name?: string
+          deleted?: boolean
+          deleted_at?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          item_name?: string
+          item_sku?: string
+          payment_method?: string
+          quantity?: number
+          sell_id?: string
+          sell_price?: number
+          status?: string
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sells_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settlement_cycles: {
         Row: {
           admin_share: number
@@ -463,6 +546,8 @@ export type Database = {
         Returns: boolean
       }
       next_job_id: { Args: { _user_id: string }; Returns: string }
+      next_sell_id: { Args: { _user_id: string }; Returns: string }
+      track_order: { Args: { _tracking_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "staff"

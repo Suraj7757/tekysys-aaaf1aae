@@ -225,6 +225,7 @@ export default function RepairJobs() {
     const shopName = settings?.shop_name || 'RepairDesk';
     let msg = `*${shopName} - Job Update*\n\nJob ID: ${job.job_id}\nCustomer: ${job.customer_name}\nDevice: ${job.device_brand} ${job.device_model || ''}\nProblem: ${job.problem_description}\nStatus: ${job.status}\nEstimated Cost: ₹${Number(job.estimated_cost).toLocaleString()}`;
     if (payment) msg += `\n\nPayment: ₹${Number(payment.amount).toLocaleString()} (${payment.method})`;
+    msg += `\n\n📦 Track your order: ${window.location.origin}/track?id=${job.job_id}`;
     const url = `https://wa.me/${job.customer_mobile.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
