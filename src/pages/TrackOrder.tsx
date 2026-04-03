@@ -32,10 +32,28 @@ const statusColors: Record<string, string> = {
 };
 
 export default function TrackOrder() {
-  const [trackingId, setTrackingId] = useState('');
+  const [searchParams] = useSearchParams();
+  const [trackingId, setTrackingId] = useState(searchParams.get('id')?.toUpperCase() || '');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      setTrackingId(id.toUpperCase());
+      handleTrackDirect(id.toUpperCase());
+    }
+  }, []);
+
+  const handleTrackDirect = async (id: string) => {
+    setLoading(true);
+    setSearched(true);
+    const { data, error } = await supabase.rpc('track_order', { _tracking_id: id });
+    if (error) { console.error(error); setResult(null); }
+    else setResult(data);
+    setLoading(false);
+  };
 
   const handleTrack = async () => {
     if (!trackingId.trim()) return;
