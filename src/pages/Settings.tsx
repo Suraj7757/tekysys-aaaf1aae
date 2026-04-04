@@ -109,6 +109,17 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* Change Email */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Mail className="h-4 w-4" /> Change Email</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div><Label>New Email</Label><Input type="email" placeholder="new@example.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
+            <Button size="sm" onClick={handleChangeEmail}><Mail className="h-4 w-4 mr-1" /> Update Email</Button>
+          </CardContent>
+        </Card>
+
         {/* Change Password */}
         <Card className="shadow-card">
           <CardHeader className="pb-3">
