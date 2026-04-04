@@ -5,8 +5,10 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Wrench, IndianRupee, ArrowLeftRight, Package, ShoppingCart,
-  FileText, Settings, Trash2, Smartphone,
+  FileText, Settings, Trash2, Smartphone, MessageCircle,
 } from 'lucide-react';
+
+const ADMIN_WHATSAPP = '917070888119';
 
 const mainItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
@@ -28,6 +30,10 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const collapsed = state === 'collapsed';
+
+  const openWhatsApp = () => {
+    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello Admin, I need help with RepairDesk CRM')}`, '_blank');
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -54,6 +60,19 @@ export function AppSidebar() {
             {secondaryItems.map(item => (
               <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
             ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">Support</SidebarGroupLabel>
+          <SidebarMenu>
+            <button
+              onClick={openWhatsApp}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full ${collapsed ? 'justify-center' : ''}`}
+            >
+              <MessageCircle className="h-4 w-4 text-green-500 shrink-0" />
+              {!collapsed && <span>WhatsApp Help</span>}
+            </button>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useShopSettings } from '@/hooks/useSupabaseData';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon } from 'lucide-react';
+import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
@@ -32,6 +32,7 @@ export default function Settings() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
   useEffect(() => {
     if (settings) {
@@ -75,6 +76,13 @@ export default function Settings() {
     }
   };
 
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim()) { toast.error('Email is required'); return; }
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    if (error) toast.error(error.message);
+    else { toast.success('Confirmation email sent to new address'); setNewEmail(''); }
+  };
+
   const handleChangePassword = async () => {
     if (newPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return; }
@@ -106,6 +114,17 @@ export default function Settings() {
             <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
             <div><Label>Email</Label><Input value={user?.email || ''} disabled className="bg-muted" /></div>
             <Button size="sm" onClick={handleUpdateProfile}><Save className="h-4 w-4 mr-1" /> Update Profile</Button>
+          </CardContent>
+        </Card>
+
+        {/* Change Email */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Mail className="h-4 w-4" /> Change Email</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div><Label>New Email</Label><Input type="email" placeholder="new@example.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
+            <Button size="sm" onClick={handleChangeEmail}><Mail className="h-4 w-4 mr-1" /> Update Email</Button>
           </CardContent>
         </Card>
 
