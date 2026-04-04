@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useShopSettings } from '@/hooks/useSupabaseData';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon } from 'lucide-react';
+import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
