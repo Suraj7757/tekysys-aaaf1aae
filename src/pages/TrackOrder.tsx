@@ -5,18 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Smartphone, Package, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Search, Smartphone, Clock, CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const statusIcons: Record<string, any> = {
-  'Received': Clock,
-  'In Progress': AlertTriangle,
-  'Ready': CheckCircle,
-  'Delivered': CheckCircle,
-  'Rejected': XCircle,
-  'Unrepairable': XCircle,
-  'Completed': CheckCircle,
-  'Pending': Clock,
-  'Returned': XCircle,
+  'Received': Clock, 'In Progress': AlertTriangle, 'Ready': CheckCircle,
+  'Delivered': CheckCircle, 'Rejected': XCircle, 'Unrepairable': XCircle,
+  'Completed': CheckCircle, 'Pending': Clock, 'Returned': XCircle,
 };
 
 const statusColors: Record<string, string> = {
@@ -40,29 +36,53 @@ export default function TrackOrder() {
 
   useEffect(() => {
     const id = searchParams.get('id');
-    if (id) {
-      setTrackingId(id.toUpperCase());
-      handleTrackDirect(id.toUpperCase());
-    }
+    if (id) { setTrackingId(id.toUpperCase()); handleTrackDirect(id.toUpperCase()); }
   }, []);
 
   const handleTrackDirect = async (id: string) => {
-    setLoading(true);
-    setSearched(true);
+    setLoading(true); setSearched(true);
     const { data, error } = await supabase.rpc('track_order', { _tracking_id: id });
-    if (error) { console.error(error); setResult(null); }
-    else setResult(data);
+    if (error) { console.error(error); setResult(null); } else setResult(data);
     setLoading(false);
   };
 
   const handleTrack = async () => {
     if (!trackingId.trim()) return;
-    setLoading(true);
-    setSearched(true);
-    const { data, error } = await supabase.rpc('track_order', { _tracking_id: trackingId.trim().toUpperCase() });
-    if (error) { console.error(error); setResult(null); }
-    else setResult(data);
-    setLoading(false);
+    handleTrackDirect(trackingId.trim().toUpperCase());
+  };
+
+  const downloadInvoicePDF = () => {
+    if (!result) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+    doc.text(result.type === 'job' ? 'REPAIR INVOICE' : 'SALES INVOICE', 14, 20);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text(`ID: ${result.tracking_id}`, 14, 28);
+    doc.text(`Date: ${new Date(result.created_at).toLocaleDateString()}`, 14, 34);
+    doc.line(14, 38, 196, 38);
+
+    if (result.type === 'job') {
+      doc.text(`Customer: ${result.customer_name}`, 14, 46);
+      doc.text(`Device: ${result.device_brand} ${result.device_model || ''}`, 14, 52);
+      doc.text(`Problem: ${result.problem}`, 14, 58);
+      doc.text(`Status: ${result.status}`, 14, 64);
+      autoTable(doc, {
+        startY: 72, head: [['Service', 'Status', 'Amount']],
+        body: [[result.problem, result.status, `Rs.${Number(result.estimated_cost).toLocaleString()}`]],
+        theme: 'striped', headStyles: { fillColor: [67, 56, 202] },
+      });
+    } else {
+      doc.text(`Item: ${result.item_name}`, 14, 46);
+      doc.text(`Quantity: ${result.quantity}`, 14, 52);
+      autoTable(doc, {
+        startY: 60, head: [['Item', 'Qty', 'Total']],
+        body: [[result.item_name, String(result.quantity), `Rs.${Number(result.total).toLocaleString()}`]],
+        theme: 'striped', headStyles: { fillColor: [67, 56, 202] },
+      });
+    }
+
+    doc.setFontSize(8); doc.text('Thank you!', 14, 280);
+    doc.save(`Invoice-${result.tracking_id}.pdf`);
   };
 
   const StatusIcon = result ? (statusIcons[result.status] || Clock) : Clock;
@@ -79,35 +99,21 @@ export default function TrackOrder() {
         </div>
 
         <div className="flex gap-2">
-          <Input
-            placeholder="e.g. JOB000001 or SELL000001"
-            value={trackingId}
+          <Input placeholder="e.g. JOB000001 or SELL000001" value={trackingId}
             onChange={e => setTrackingId(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && handleTrack()}
-            className="font-mono"
-          />
-          <Button onClick={handleTrack} disabled={loading}>
-            <Search className="h-4 w-4" />
-          </Button>
+            onKeyDown={e => e.key === 'Enter' && handleTrack()} className="font-mono" />
+          <Button onClick={handleTrack} disabled={loading}><Search className="h-4 w-4" /></Button>
         </div>
 
-        {loading && (
-          <div className="text-center p-8">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          </div>
-        )}
+        {loading && <div className="text-center p-8"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" /></div>}
 
         {!loading && searched && !result && (
           <Card className="border-destructive/30">
             <CardContent className="p-6 text-center">
               <XCircle className="h-12 w-12 text-destructive/50 mx-auto mb-3" />
               <h3 className="font-semibold">Not Found</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                No order found with this ID. It may have expired or the ID is incorrect.
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Jobs are trackable until 3 days after delivery. Sales are trackable for 30 days.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">No order found. It may have expired or ID is incorrect.</p>
+              <p className="text-xs text-muted-foreground mt-2">Jobs trackable 3 days after delivery. Sales trackable for 30 days.</p>
             </CardContent>
           </Card>
         )}
@@ -118,8 +124,7 @@ export default function TrackOrder() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-mono">{result.tracking_id}</CardTitle>
                 <Badge className={`${statusColors[result.status] || ''} border-0`}>
-                  <StatusIcon className="h-3 w-3 mr-1" />
-                  {result.status}
+                  <StatusIcon className="h-3 w-3 mr-1" />{result.status}
                 </Badge>
               </div>
             </CardHeader>
@@ -129,7 +134,7 @@ export default function TrackOrder() {
                   <InfoRow label="Customer" value={result.customer_name} />
                   <InfoRow label="Device" value={`${result.device_brand} ${result.device_model || ''}`} />
                   <InfoRow label="Problem" value={result.problem} />
-                  <InfoRow label="Estimated Cost" value={`₹${Number(result.estimated_cost).toLocaleString()}`} />
+                  <InfoRow label="Estimated Cost" value={`Rs.${Number(result.estimated_cost).toLocaleString()}`} />
                   <InfoRow label="Created" value={new Date(result.created_at).toLocaleDateString('en-IN')} />
                   {result.delivered_at && <InfoRow label="Delivered" value={new Date(result.delivered_at).toLocaleDateString('en-IN')} />}
                 </>
@@ -137,10 +142,13 @@ export default function TrackOrder() {
                 <>
                   <InfoRow label="Item" value={result.item_name} />
                   <InfoRow label="Quantity" value={String(result.quantity)} />
-                  <InfoRow label="Total" value={`₹${Number(result.total).toLocaleString()}`} />
+                  <InfoRow label="Total" value={`Rs.${Number(result.total).toLocaleString()}`} />
                   <InfoRow label="Date" value={new Date(result.created_at).toLocaleDateString('en-IN')} />
                 </>
               )}
+              <Button className="w-full mt-3" variant="outline" size="sm" onClick={downloadInvoicePDF}>
+                <FileText className="h-4 w-4 mr-2" /> Download Invoice PDF
+              </Button>
             </CardContent>
           </Card>
         )}
