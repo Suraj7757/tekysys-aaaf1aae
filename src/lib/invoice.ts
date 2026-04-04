@@ -2,10 +2,22 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RepairJob, Payment, ShopSettings } from './types';
 
+export interface SellInvoiceData {
+  sellId: string;
+  itemName: string;
+  itemSku: string;
+  quantity: number;
+  sellPrice: number;
+  total: number;
+  customerName: string;
+  customerMobile: string;
+  paymentMethod: string;
+  createdAt: string;
+}
+
 export function generateInvoicePDF(job: RepairJob, payment: Payment | undefined, settings: ShopSettings) {
   const doc = new jsPDF();
 
-  // Header
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.text(settings.shopName || 'RepairDesk', 14, 20);
@@ -16,20 +28,17 @@ export function generateInvoicePDF(job: RepairJob, payment: Payment | undefined,
   if (settings.address) doc.text(`Address: ${settings.address}`, 14, 32);
   if (settings.gstin) doc.text(`GSTIN: ${settings.gstin}`, 14, 37);
 
-  // Invoice title
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('INVOICE', 150, 20);
+  doc.text('REPAIR INVOICE', 140, 20);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Job ID: ${job.jobId}`, 150, 27);
-  doc.text(`Date: ${new Date(job.createdAt).toLocaleDateString()}`, 150, 32);
+  doc.text(`Job ID: ${job.jobId}`, 140, 27);
+  doc.text(`Date: ${new Date(job.createdAt).toLocaleDateString()}`, 140, 32);
 
-  // Line
   doc.setLineWidth(0.5);
   doc.line(14, 42, 196, 42);
 
-  // Customer Info
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Customer Details', 14, 50);
@@ -38,7 +47,6 @@ export function generateInvoicePDF(job: RepairJob, payment: Payment | undefined,
   doc.text(`Name: ${job.customerName}`, 14, 57);
   doc.text(`Mobile: ${job.customerMobile}`, 14, 62);
 
-  // Device Info
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Device Details', 14, 72);
@@ -49,9 +57,8 @@ export function generateInvoicePDF(job: RepairJob, payment: Payment | undefined,
   doc.text(`Problem: ${job.problemDescription}`, 14, 89);
   doc.text(`Status: ${job.status}`, 14, 94);
 
-  // Payment Table
   const tableData: any[][] = [];
-  tableData.push(['Repair Service', job.problemDescription, '1', `₹${job.estimatedCost}`]);
+  tableData.push(['Repair Service', job.problemDescription, '1', `Rs.${job.estimatedCost}`]);
 
   autoTable(doc, {
     startY: 102,
@@ -63,22 +70,19 @@ export function generateInvoicePDF(job: RepairJob, payment: Payment | undefined,
 
   const finalY = (doc as any).lastAutoTable?.finalY || 130;
 
-  // Payment details
   if (payment) {
     doc.setFontSize(10);
     doc.text(`Payment Method: ${payment.method}`, 14, finalY + 10);
     if (payment.qrReceiver) doc.text(`QR Receiver: ${payment.qrReceiver}`, 14, finalY + 16);
-    doc.text(`Amount Paid: ₹${payment.amount}`, 14, finalY + 22);
-    if (payment.adminShare > 0) doc.text(`Admin Share: ₹${payment.adminShare}`, 120, finalY + 16);
-    if (payment.staffShare > 0) doc.text(`Staff Share: ₹${payment.staffShare}`, 120, finalY + 22);
+    doc.text(`Amount Paid: Rs.${payment.amount}`, 14, finalY + 22);
+    if (payment.adminShare > 0) doc.text(`Admin Share: Rs.${payment.adminShare}`, 120, finalY + 16);
+    if (payment.staffShare > 0) doc.text(`Staff Share: Rs.${payment.staffShare}`, 120, finalY + 22);
   }
 
-  // Total
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Total: ₹${payment ? payment.amount : job.estimatedCost}`, 150, finalY + 35);
+  doc.text(`Total: Rs.${payment ? payment.amount : job.estimatedCost}`, 150, finalY + 35);
 
-  // Footer
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.text('Thank you for your business!', 14, 280);
@@ -90,4 +94,66 @@ export function generateInvoicePDF(job: RepairJob, payment: Payment | undefined,
 export function downloadInvoice(job: RepairJob, payment: Payment | undefined, settings: ShopSettings) {
   const doc = generateInvoicePDF(job, payment, settings);
   doc.save(`Invoice-${job.jobId}.pdf`);
+}
+
+export function generateSellInvoicePDF(sell: SellInvoiceData, settings: ShopSettings) {
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(settings.shopName || 'RepairDesk', 14, 20);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  if (settings.phone) doc.text(`Phone: ${settings.phone}`, 14, 27);
+  if (settings.address) doc.text(`Address: ${settings.address}`, 14, 32);
+  if (settings.gstin) doc.text(`GSTIN: ${settings.gstin}`, 14, 37);
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SALES INVOICE', 140, 20);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Sale ID: ${sell.sellId}`, 140, 27);
+  doc.text(`Date: ${new Date(sell.createdAt).toLocaleDateString()}`, 140, 32);
+
+  doc.setLineWidth(0.5);
+  doc.line(14, 42, 196, 42);
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Customer Details', 14, 50);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Name: ${sell.customerName}`, 14, 57);
+  doc.text(`Mobile: ${sell.customerMobile || 'N/A'}`, 14, 62);
+
+  autoTable(doc, {
+    startY: 72,
+    head: [['Item', 'SKU', 'Qty', 'Price', 'Total']],
+    body: [[sell.itemName, sell.itemSku, String(sell.quantity), `Rs.${sell.sellPrice}`, `Rs.${sell.total}`]],
+    theme: 'striped',
+    headStyles: { fillColor: [67, 56, 202] },
+  });
+
+  const finalY = (doc as any).lastAutoTable?.finalY || 100;
+
+  doc.setFontSize(10);
+  doc.text(`Payment Method: ${sell.paymentMethod}`, 14, finalY + 10);
+
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Total: Rs.${sell.total}`, 150, finalY + 25);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Thank you for your purchase!', 14, 280);
+  doc.text(`Generated by ${settings.shopName || 'RepairDesk'}`, 14, 285);
+
+  return doc;
+}
+
+export function downloadSellInvoice(sell: SellInvoiceData, settings: ShopSettings) {
+  const doc = generateSellInvoicePDF(sell, settings);
+  doc.save(`Invoice-${sell.sellId}.pdf`);
 }

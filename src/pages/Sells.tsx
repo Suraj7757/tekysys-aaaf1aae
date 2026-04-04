@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
-import { useSupabaseQuery, useShopSettings } from '@/hooks/useSupabaseData';
+import { useSupabaseQuery, useSoftDelete, useShopSettings } from '@/hooks/useSupabaseData';
 import { supabase } from '@/integrations/supabase/client';
-import { ShoppingCart, Search, Package, Minus, Plus, Share2, FileText } from 'lucide-react';
+import { ShoppingCart, Search, Package, Minus, Plus, Share2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { downloadSellInvoice, SellInvoiceData } from '@/lib/invoice';
 
 async function getNextSellId(userId: string): Promise<string> {
   const { data, error } = await supabase.rpc('next_sell_id', { _user_id: userId });
@@ -24,6 +26,7 @@ export default function Sells() {
   const { data: inventory, refetch: refetchInventory } = useSupabaseQuery<any>('inventory');
   const { data: sells, refetch: refetchSells } = useSupabaseQuery<any>('sells' as any);
   const { settings } = useShopSettings();
+  const { softDelete } = useSoftDelete();
   const [search, setSearch] = useState('');
   const [sellOpen, setSellOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -60,30 +63,47 @@ export default function Sells() {
 
     await supabase.from('inventory').update({ quantity: newQty }).eq('id', selectedItem.id);
     await supabase.from('sells' as any).insert({
-      user_id: user.id,
-      sell_id: sellId,
-      inventory_item_id: selectedItem.id,
-      item_name: selectedItem.name,
-      item_sku: selectedItem.sku,
-      quantity: qty,
-      sell_price: parseFloat(sellPrice) || 0,
-      total,
-      customer_name: customerName,
-      customer_mobile: customerMobile,
-      payment_method: paymentMethod,
-      status: 'Completed',
+      user_id: user.id, sell_id: sellId, inventory_item_id: selectedItem.id,
+      item_name: selectedItem.name, item_sku: selectedItem.sku,
+      quantity: qty, sell_price: parseFloat(sellPrice) || 0, total,
+      customer_name: customerName, customer_mobile: customerMobile,
+      payment_method: paymentMethod, status: 'Completed',
     } as any);
 
-    refetchInventory();
-    refetchSells();
+    refetchInventory(); refetchSells();
     setSellOpen(false);
     toast.success(`Sold ${qty}x ${selectedItem.name} — ${sellId}`);
   };
 
   const shareWhatsApp = (sell: any) => {
     const shopName = settings?.shop_name || 'RepairDesk';
-    const msg = `*${shopName} - Sale Receipt*\n\nSale ID: ${sell.sell_id}\nItem: ${sell.item_name}\nQty: ${sell.quantity}\nTotal: ₹${Number(sell.total).toLocaleString()}\nPayment: ${sell.payment_method}\n\nTrack your order: ${window.location.origin}/track?id=${sell.sell_id}`;
+    const msg = `*${shopName} - Sale Receipt*\n\nSale ID: ${sell.sell_id}\nItem: ${sell.item_name}\nQty: ${sell.quantity}\nTotal: Rs.${Number(sell.total).toLocaleString()}\nPayment: ${sell.payment_method}\n\nTrack: ${window.location.origin}/track?id=${sell.sell_id}`;
     window.open(`https://wa.me/${(sell.customer_mobile || '').replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const handleInvoice = (sell: any) => {
+    const s = settings || { shop_name: 'RepairDesk', phone: '', address: '', gstin: '', admin_share_percent: 50, staff_share_percent: 50, qr_receivers: [] };
+    const data: SellInvoiceData = {
+      sellId: sell.sell_id, itemName: sell.item_name, itemSku: sell.item_sku,
+      quantity: sell.quantity, sellPrice: Number(sell.sell_price), total: Number(sell.total),
+      customerName: sell.customer_name, customerMobile: sell.customer_mobile,
+      paymentMethod: sell.payment_method, createdAt: sell.created_at,
+    };
+    downloadSellInvoice(data, { shopName: s.shop_name, phone: s.phone, address: s.address, gstin: s.gstin, adminSharePercent: s.admin_share_percent, staffSharePercent: s.staff_share_percent, qrReceivers: s.qr_receivers });
+  };
+
+  const handleDeleteSell = async (sell: any) => {
+    const ok = await softDelete('sells' as any, sell.id, sell.sell_id);
+    if (ok) {
+      toast("Sale moved to trash", {
+        action: { label: "Undo", onClick: async () => {
+          await supabase.from('sells' as any).update({ deleted: false, deleted_at: null } as any).eq('id', sell.id);
+          refetchSells();
+        }},
+        duration: 5000,
+      });
+      refetchSells();
+    }
   };
 
   return (
@@ -118,7 +138,7 @@ export default function Sells() {
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold">₹{Number(item.sell_price).toLocaleString()}</span>
+                      <span className="text-lg font-bold">Rs.{Number(item.sell_price).toLocaleString()}</span>
                       <Button size="sm" onClick={() => openSell(item)} disabled={item.quantity <= 0}>
                         <ShoppingCart className="h-4 w-4 mr-1" /> Sell
                       </Button>
@@ -158,14 +178,23 @@ export default function Sells() {
                       <td className="p-3">{s.item_name}</td>
                       <td className="p-3 hidden sm:table-cell">{s.customer_name || '—'}</td>
                       <td className="p-3">{s.quantity}</td>
-                      <td className="p-3 font-semibold">₹{Number(s.total).toLocaleString()}</td>
+                      <td className="p-3 font-semibold">Rs.{Number(s.total).toLocaleString()}</td>
                       <td className="p-3 hidden md:table-cell">{s.payment_method}</td>
                       <td className="p-3">
-                        {s.customer_mobile && (
-                          <Button size="sm" variant="ghost" onClick={() => shareWhatsApp(s)}>
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleInvoice(s)}><FileText className="h-4 w-4 mr-2" /> Invoice PDF</DropdownMenuItem>
+                            {s.customer_mobile && (
+                              <DropdownMenuItem onClick={() => shareWhatsApp(s)}><Share2 className="h-4 w-4 mr-2" /> WhatsApp</DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => handleDeleteSell(s)} className="text-destructive">
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -190,20 +219,20 @@ export default function Sells() {
               </div>
               <div><Label>Customer Name *</Label><Input placeholder="Customer name" value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
               <div><Label>Customer Mobile</Label><Input placeholder="9876543210" value={customerMobile} onChange={e => setCustomerMobile(e.target.value)} /></div>
-              <div><Label>Sell Price (₹)</Label><Input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} /></div>
+              <div><Label>Sell Price (Rs.)</Label><Input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} /></div>
               <div>
                 <Label>Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash">💵 Cash</SelectItem>
-                    <SelectItem value="UPI/QR">📱 UPI/QR</SelectItem>
-                    <SelectItem value="Due">📋 Due</SelectItem>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="UPI/QR">UPI/QR</SelectItem>
+                    <SelectItem value="Due">Due</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="bg-muted rounded-lg p-3 text-sm">
-                <div className="flex justify-between"><span>Total</span><strong>₹{(qty * (parseFloat(sellPrice) || 0)).toLocaleString()}</strong></div>
+                <div className="flex justify-between"><span>Total</span><strong>Rs.{(qty * (parseFloat(sellPrice) || 0)).toLocaleString()}</strong></div>
               </div>
             </div>
             <DialogFooter>
