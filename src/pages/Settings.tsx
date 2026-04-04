@@ -76,6 +76,13 @@ export default function Settings() {
     }
   };
 
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim()) { toast.error('Email is required'); return; }
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    if (error) toast.error(error.message);
+    else { toast.success('Confirmation email sent to new address'); setNewEmail(''); }
+  };
+
   const handleChangePassword = async () => {
     if (newPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return; }
