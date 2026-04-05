@@ -5,13 +5,15 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Wrench, IndianRupee, ArrowLeftRight, Package, ShoppingCart,
-  FileText, Settings, Trash2, Smartphone, MessageCircle,
+  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const ADMIN_WHATSAPP = '917070888119';
+const ADMIN_EMAIL = 'krs715665@gmail.com';
 
 const mainItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Customers', url: '/customers', icon: Users },
   { title: 'Repair Jobs', url: '/jobs', icon: Wrench },
   { title: 'Payments', url: '/payments', icon: IndianRupee },
@@ -21,6 +23,7 @@ const mainItems = [
 const secondaryItems = [
   { title: 'Inventory', url: '/inventory', icon: Package },
   { title: 'Sells', url: '/sells', icon: ShoppingCart },
+  { title: 'Wallet', url: '/wallet', icon: Wallet },
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Settings', url: '/settings', icon: Settings },
   { title: 'Trash', url: '/trash', icon: Trash2 },
@@ -29,7 +32,9 @@ const secondaryItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const { user, role } = useAuth();
   const collapsed = state === 'collapsed';
+  const isAdmin = user?.email === ADMIN_EMAIL || role === 'admin';
 
   const openWhatsApp = () => {
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello Admin, I need help with RepairDesk CRM')}`, '_blank');
@@ -62,6 +67,15 @@ export function AppSidebar() {
             ))}
           </SidebarMenu>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">Admin</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarNavLink to="/admin" icon={Shield} label="Admin Panel" active={location.pathname === '/admin'} collapsed={collapsed} />
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-muted text-xs uppercase tracking-wider">Support</SidebarGroupLabel>
