@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Smartphone, Mail, Lock, User } from 'lucide-react';
+import { Smartphone, Mail, Lock, User, Gift, Tag } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -11,10 +12,13 @@ type AuthMode = 'login' | 'signup' | 'forgot';
 
 export default function Auth() {
   const { signIn, signUp, sendPasswordReset } = useAuth();
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<AuthMode>((searchParams.get('mode') as AuthMode) || 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
+  const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -62,7 +66,7 @@ export default function Auth() {
           <CardTitle className="text-2xl font-bold">RepairDesk</CardTitle>
           <p className="text-sm text-muted-foreground">
             {mode === 'login' && 'Sign in to your account'}
-            {mode === 'signup' && 'Create a new account'}
+            {mode === 'signup' && 'Create a new account — 7 days free trial!'}
             {mode === 'forgot' && 'Reset your password'}
           </p>
         </CardHeader>
@@ -93,6 +97,24 @@ export default function Auth() {
                 </div>
               </div>
             )}
+            {mode === 'signup' && (
+              <>
+                <div>
+                  <Label>Referral Code <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                  <div className="relative mt-1">
+                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input className="pl-9" placeholder="e.g. RD1A2B3C" value={referralCode} onChange={e => setReferralCode(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Coupon Code <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                  <div className="relative mt-1">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input className="pl-9" placeholder="Enter coupon code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                  </div>
+                </div>
+              </>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
             </Button>
@@ -111,8 +133,9 @@ export default function Auth() {
             {mode === 'forgot' && (
               <button onClick={() => setMode('login')} className="text-primary hover:underline">Back to Sign In</button>
             )}
-            <div className="pt-2 border-t">
-              <a href="/track" className="text-primary hover:underline text-sm">📦 Track Your Order</a>
+            <div className="pt-2 border-t space-y-1">
+              <Link to="/track" className="text-primary hover:underline text-sm block">📦 Track Your Order</Link>
+              <Link to="/" className="text-muted-foreground hover:underline text-xs block">← Back to Home</Link>
             </div>
           </div>
         </CardContent>

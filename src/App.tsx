@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 
+import Landing from '@/pages/Landing';
 import Auth from '@/pages/Auth';
 import TrackOrder from '@/pages/TrackOrder';
 import Dashboard from '@/pages/Dashboard';
@@ -17,6 +18,8 @@ import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import Trash from '@/pages/Trash';
 import ResetPassword from '@/pages/ResetPassword';
+import AdminPanel from '@/pages/AdminPanel';
+import WalletPage from '@/pages/WalletPage';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -34,10 +37,11 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Landing />} />
+      <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
       <Route path="/track" element={<TrackOrder />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
       <Route path="/jobs" element={<ProtectedRoute><RepairJobs /></ProtectedRoute>} />
       <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
@@ -47,6 +51,8 @@ function AppRoutes() {
       <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/trash" element={<ProtectedRoute><Trash /></ProtectedRoute>} />
+      <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
