@@ -5,7 +5,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Wrench, IndianRupee, ArrowLeftRight, Package, ShoppingCart,
-  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield,
+  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -24,6 +24,7 @@ const secondaryItems = [
   { title: 'Inventory', url: '/inventory', icon: Package },
   { title: 'Sells', url: '/sells', icon: ShoppingCart },
   { title: 'Wallet', url: '/wallet', icon: Wallet },
+  { title: 'Subscription', url: '/subscription', icon: Crown },
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Settings', url: '/settings', icon: Settings },
   { title: 'Trash', url: '/trash', icon: Trash2 },
