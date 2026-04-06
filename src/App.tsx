@@ -20,6 +20,7 @@ import Trash from '@/pages/Trash';
 import ResetPassword from '@/pages/ResetPassword';
 import AdminPanel from '@/pages/AdminPanel';
 import WalletPage from '@/pages/WalletPage';
+import Subscription from '@/pages/Subscription';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/trash" element={<ProtectedRoute><Trash /></ProtectedRoute>} />
       <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+      <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -262,6 +262,45 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_submissions: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          plan: string
+          processed_at: string | null
+          screenshot_url: string | null
+          status: string
+          user_id: string
+          utr_number: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          plan?: string
+          processed_at?: string | null
+          screenshot_url?: string | null
+          status?: string
+          user_id: string
+          utr_number: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          plan?: string
+          processed_at?: string | null
+          screenshot_url?: string | null
+          status?: string
+          user_id?: string
+          utr_number?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           admin_share: number
@@ -348,6 +387,42 @@ export type Database = {
           referral_code?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          created_by: string
+          expiry_date: string | null
+          id: string
+          usage_limit: number
+          used_count: number
+          validity_days: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          created_by: string
+          expiry_date?: string | null
+          id?: string
+          usage_limit?: number
+          used_count?: number
+          validity_days?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string
+          expiry_date?: string | null
+          id?: string
+          usage_limit?: number
+          used_count?: number
+          validity_days?: number
         }
         Relationships: []
       }
