@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-const ADMIN_WHATSAPP = '917070888119';
+const ADMIN_WHATSAPP = '917319884599';
 const ADMIN_EMAIL = 'krs715665@gmail.com';
 
 const mainItems = [
