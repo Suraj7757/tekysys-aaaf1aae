@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSupabaseQuery, useShopSettings } from "@/hooks/useSupabaseData";
 import { Wrench, AlertTriangle, IndianRupee, Smartphone, Trash2 } from "lucide-react";
@@ -55,29 +56,38 @@ export default function Dashboard() {
   qrPayments.forEach((p: any) => { const key = p.qr_receiver || 'Unknown'; qrTotals[key] = (qrTotals[key] || 0) + Number(p.amount); });
 
   return (
-    <Layout title="Dashboard">
+    <MainLayout title="Dashboard">
       <div className="space-y-6 animate-fade-in">
-        <Card className="gradient-primary border-0 shadow-card">
-          <CardContent className="py-5 px-6">
-            <div className="flex items-center justify-between">
+        <Card className="gradient-primary border-0 shadow-2xl shadow-primary/30 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <CardContent className="py-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-primary-foreground/70 uppercase tracking-widest">Total Platform Revenue</p>
+              <h2 className="text-5xl font-black text-primary-foreground tracking-tight">₹{stats.totalRevenue.toLocaleString()}</h2>
+              <p className="text-xs text-primary-foreground/60 flex items-center gap-1 mt-2">
+                <Badge variant="secondary" className="bg-white/20 border-0 text-white text-[10px] h-5">+12.5% from last month</Badge>
+              </p>
+            </div>
+            <div className="flex gap-8 border-l border-white/10 pl-8 h-full items-center">
               <div>
-                <p className="text-sm font-medium text-primary-foreground/80">Total Earnings</p>
-                <p className="text-3xl font-extrabold text-primary-foreground mt-1">₹{stats.totalRevenue.toLocaleString()}</p>
+                <p className="text-xs font-bold text-primary-foreground/60 uppercase tracking-widest">Unsettled</p>
+                <p className="text-3xl font-black text-primary-foreground">₹{stats.unsettledEarnings.toLocaleString()}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-primary-foreground/80">Unsettled Balance</p>
-                <p className="text-2xl font-bold text-primary-foreground mt-1">₹{stats.unsettledEarnings.toLocaleString()}</p>
+              <div className="h-10 w-[1px] bg-white/10 hidden md:block" />
+              <div>
+                <p className="text-xs font-bold text-primary-foreground/60 uppercase tracking-widest">Dues</p>
+                <p className="text-3xl font-black text-primary-foreground">₹{stats.dueTotal.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCard icon={Wrench} label="Total Jobs" value={stats.totalJobs} sub={`${stats.activeJobs} active`} variant="primary" />
-          <StatCard icon={IndianRupee} label="Cash" value={`₹${stats.cashTotal.toLocaleString()}`} sub="Total cash" variant="success" />
-          <StatCard icon={Smartphone} label="UPI/QR" value={`₹${stats.upiTotal.toLocaleString()}`} sub="Digital payments" variant="info" />
-          <StatCard icon={AlertTriangle} label="Due" value={`₹${stats.dueTotal.toLocaleString()}`} sub="Pending dues" variant="warning" />
-          <StatCard icon={Trash2} label="Deleted" value={deletedCount} sub="In trash" variant="primary" />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-5">
+          <StatCard icon={Wrench} label="Total Jobs" value={stats.totalJobs} sub={`${stats.activeJobs} active`} variant="primary" link="/jobs" />
+          <StatCard icon={IndianRupee} label="Cash" value={`₹${stats.cashTotal.toLocaleString()}`} sub="In-hand cash" variant="success" link="/payments" />
+          <StatCard icon={Smartphone} label="Digital" value={`₹${stats.upiTotal.toLocaleString()}`} sub="UPI & QR" variant="info" link="/payments" />
+          <StatCard icon={AlertTriangle} label="Low Stock" value={lowStockItems.length} sub="Items needing restock" variant="warning" link="/inventory" />
+          <StatCard icon={Trash2} label="Trash" value={deletedCount} sub="Recoverable items" variant="primary" link="/admin" />
         </div>
 
         {splitEnabled && (
@@ -173,20 +183,34 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }
 
-function StatCard({ icon: Icon, label, value, sub, variant }: { icon: any; label: string; value: string | number; sub: string; variant: 'primary' | 'success' | 'warning' | 'info' }) {
+function StatCard({ icon: Icon, label, value, sub, variant, link }: { icon: any; label: string; value: string | number; sub: string; variant: 'primary' | 'success' | 'warning' | 'info'; link?: string }) {
   const bgMap = { primary: 'gradient-primary', success: 'gradient-success', warning: 'gradient-warning', info: 'gradient-info' };
-  return (
-    <Card className="shadow-card hover:shadow-card-hover transition-shadow">
-      <CardContent className="p-4">
+  const borderMap = { primary: 'border-primary/10', success: 'border-success/10', warning: 'border-warning/10', info: 'border-info/10' };
+  
+  const content = (
+    <Card className={`h-full border ${borderMap[variant]} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-card/50 backdrop-blur-md group overflow-hidden`}>
+      <CardContent className="p-6 relative">
+        <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-br from-white/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex items-start justify-between">
-          <div><p className="text-xs font-medium text-muted-foreground">{label}</p><p className="text-xl font-bold mt-1">{value}</p><p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p></div>
-          <div className={`h-9 w-9 rounded-lg ${bgMap[variant]} flex items-center justify-center`}><Icon className="h-4 w-4 text-primary-foreground" /></div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{label}</p>
+            <p className="text-2xl font-black tracking-tight">{value}</p>
+            <p className="text-[11px] font-medium text-muted-foreground/80 mt-1 flex items-center gap-1 group-hover:text-primary transition-colors italic">
+              {sub}
+            </p>
+          </div>
+          <div className={`h-12 w-12 rounded-xl ${bgMap[variant]} flex items-center justify-center shadow-lg shadow-primary/10 group-hover:scale-110 transition-transform`}>
+            <Icon className="h-6 w-6 text-primary-foreground" />
+          </div>
         </div>
       </CardContent>
     </Card>
   );
+
+  if (link) return <Link to={link}>{content}</Link>;
+  return content;
 }

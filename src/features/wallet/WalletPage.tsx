@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Wallet, ArrowDownCircle, ArrowUpCircle, Gift, Copy, Share2, Monitor, IndianRupee } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/services/supabase';
+import { Wallet, ArrowDownCircle, ArrowUpCircle, Gift, Copy, Share2, Monitor, IndianRupee, TrendingUp, History, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function WalletPage() {
@@ -87,51 +87,92 @@ export default function WalletPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  if (loading) return <Layout title="Wallet"><p className="text-center p-8 text-muted-foreground">Loading...</p></Layout>;
+  if (loading) return <MainLayout title="Wallet"><p className="text-center p-8 text-muted-foreground">Loading...</p></MainLayout>;
 
   return (
-    <Layout title="Wallet & Earnings">
+    <MainLayout title="Wallet & Earnings">
       <div className="space-y-6 animate-fade-in">
-        {/* Balance Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="p-4 text-center">
-            <Wallet className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">₹{Number(wallet?.balance || 0).toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Balance</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4 text-center">
-            <ArrowDownCircle className="h-6 w-6 text-green-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">₹{Number(wallet?.total_earned || 0).toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Total Earned</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4 text-center">
-            <ArrowUpCircle className="h-6 w-6 text-destructive mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">₹{Number(wallet?.total_withdrawn || 0).toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Withdrawn</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4 text-center">
-            <Gift className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">{referrals.length}</p>
-            <p className="text-xs text-muted-foreground">Referrals</p>
-          </CardContent></Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="gradient-primary border-0 shadow-xl shadow-primary/20 relative overflow-hidden group col-span-1 md:col-span-2">
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            <CardContent className="p-8 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="space-y-2">
+                <p className="text-sm font-bold text-primary-foreground/70 uppercase tracking-widest flex items-center gap-2">
+                  <Wallet className="h-4 w-4" /> Available Balance
+                </p>
+                <h2 className="text-5xl font-black text-primary-foreground tracking-tight">₹{Number(wallet?.balance || 0).toLocaleString()}</h2>
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={() => setWithdrawOpen(true)} variant="secondary" className="bg-white/20 hover:bg-white/30 border-0 text-white font-bold h-10">
+                    <ArrowUpCircle className="h-4 w-4 mr-2" /> Withdraw
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-10 border-l border-white/10 pl-8">
+                <div>
+                  <p className="text-[10px] font-bold text-primary-foreground/60 uppercase tracking-widest mb-1">Total Earned</p>
+                  <p className="text-2xl font-black text-primary-foreground">₹{Number(wallet?.total_earned || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-primary-foreground/60 uppercase tracking-widest mb-1">Withdrawn</p>
+                  <p className="text-2xl font-black text-primary-foreground">₹{Number(wallet?.total_withdrawn || 0).toLocaleString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/10 shadow-lg bg-card/50 backdrop-blur-md overflow-hidden relative group">
+            <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-4">
+               <div className="h-16 w-16 rounded-2xl gradient-warning flex items-center justify-center shadow-lg shadow-warning/20 group-hover:scale-110 transition-transform">
+                 <Gift className="h-8 w-8 text-white" />
+               </div>
+               <div>
+                 <h3 className="text-2xl font-black tracking-tight">{referrals.length}</h3>
+                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Referrals</p>
+               </div>
+               <Badge className="bg-warning/10 text-warning border-warning/20">Active Program</Badge>
+            </CardContent>
+          </Card>
         </div>
 
-        <Button onClick={() => setWithdrawOpen(true)} className="w-full md:w-auto">
-          <ArrowUpCircle className="h-4 w-4 mr-1" /> Request Withdrawal
-        </Button>
-
-        {/* Referral Card */}
-        <Card className="shadow-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Gift className="h-4 w-4" /> Your Referral Code</CardTitle>
+        <Card className="shadow-2xl border-primary/5 bg-gradient-to-br from-card to-muted/30 overflow-hidden">
+          <CardHeader className="pb-3 px-8 pt-8">
+            <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+              <Coins className="h-5 w-5 text-warning" /> Referral Program
+            </CardTitle>
+            <CardDescription>Share your unique code and earn ₹50 for every verified business signup.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="bg-muted px-4 py-2 rounded-lg font-mono text-lg font-bold text-foreground">{profile?.referral_code || 'N/A'}</div>
-              <Button size="sm" variant="outline" onClick={copyReferralCode}><Copy className="h-4 w-4" /></Button>
-              <Button size="sm" variant="outline" onClick={shareReferral}><Share2 className="h-4 w-4" /></Button>
+          <CardContent className="px-8 pb-8">
+            <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
+              <div className="flex items-center gap-4 bg-muted/50 p-6 rounded-2xl border border-dashed border-primary/20 w-full md:w-auto">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Your Code</p>
+                  <p className="text-4xl font-black text-primary tracking-tighter">{profile?.referral_code || 'MSM-PRO'}</p>
+                </div>
+                <div className="h-12 w-[1px] bg-primary/10 mx-2" />
+                <div className="flex flex-col gap-2">
+                  <Button size="icon" variant="ghost" onClick={copyReferralCode} className="hover:bg-primary/10 hover:text-primary transition-colors">
+                    <Copy className="h-5 w-5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={shareReferral} className="hover:bg-green-500/10 hover:text-green-600 transition-colors">
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-600 font-bold text-xs shadow-sm">1</div>
+                  <p className="text-sm font-medium">Friend joins using your link or code during signup.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-bold text-xs shadow-sm">2</div>
+                  <p className="text-sm font-medium">They complete their first settlement cycle.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-600 font-bold text-xs shadow-sm">3</div>
+                  <p className="text-sm font-bold text-primary">You both receive rewards in your wallets!</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Share with friends to earn rewards on their signup!</p>
           </CardContent>
         </Card>
 
@@ -206,6 +247,6 @@ export default function WalletPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

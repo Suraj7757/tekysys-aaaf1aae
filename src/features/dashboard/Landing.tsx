@@ -6,7 +6,8 @@ import {
   Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail,
 } from 'lucide-react';
 
-const ADMIN_WHATSAPP = '917070888119';
+const ADMIN_WHATSAPP = '917319884599';
+const ADMIN_EMAIL = 'krs715665@gmail.com';
 
 const features = [
   { icon: Wrench, title: 'Repair Job Management', desc: 'Track repair jobs with unique IDs, status updates, and customer notifications.' },
@@ -34,10 +35,10 @@ export default function Landing() {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center">
-              <Smartphone className="h-5 w-5 text-primary-foreground" />
+            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <Smartphone className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">RepairDesk</span>
+            <span className="text-2xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM CRM</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
@@ -59,8 +60,8 @@ export default function Landing() {
           <Zap className="h-4 w-4 text-primary" />
           7-Day Free Trial • No Credit Card Required
         </div>
-        <h1 className="text-4xl md:text-6xl font-extrabold text-foreground leading-tight max-w-4xl mx-auto">
-          The Complete <span className="text-primary">Mobile Repair</span> & Earning Platform
+        <h1 className="text-5xl md:text-7xl font-black text-foreground leading-[1.1] max-w-4xl mx-auto tracking-tighter">
+          The Ultimate <span className="text-primary italic">SaaS CRM</span> for Service Experts
         </h1>
         <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
           Manage repair jobs, inventory, sales, earnings & referrals — all in one powerful CRM platform built for mobile repair shops.
@@ -173,8 +174,8 @@ export default function Landing() {
               <Smartphone className="h-8 w-8 text-primary mx-auto mb-3" />
               <h3 className="font-semibold text-foreground mb-2">Call Us</h3>
               <p className="text-sm text-muted-foreground mb-4">Mon-Sat, 10am-7pm</p>
-              <Button size="sm" variant="outline" onClick={() => window.location.href = 'tel:+917070888119'}>
-                +91 7070888119
+              <Button size="sm" variant="outline" onClick={() => window.location.href = `tel:+91${ADMIN_WHATSAPP}`}>
+                +91 {ADMIN_WHATSAPP}
               </Button>
             </CardContent>
           </Card>
@@ -185,12 +186,12 @@ export default function Landing() {
       <footer className="border-t bg-muted/30 py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+            <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-md">
               <Smartphone className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-foreground">RepairDesk</span>
+            <span className="font-black text-lg text-foreground tracking-tight">MSM CRM</span>
           </div>
-          <p>© {new Date().getFullYear()} RepairDesk CRM. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Multi Service Manager CRM. Premium SaaS Solution.</p>
           <div className="mt-3 flex justify-center gap-4">
             <Link to="/track" className="hover:text-foreground">Track Order</Link>
             <Link to="/auth" className="hover:text-foreground">Sign In</Link>

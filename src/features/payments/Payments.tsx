@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layout } from "@/components/Layout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useShopSettings } from "@/hooks/useSupabaseData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase";
 import { Search, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
@@ -79,7 +79,7 @@ export default function Payments() {
   const splitEnabled = settings?.revenue_split_enabled !== false;
 
   return (
-    <Layout title="Payments">
+    <MainLayout title="Payments">
       <div className="space-y-4 animate-fade-in">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="shadow-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground font-medium">Total</p><p className="text-xl font-bold mt-1">₹{(cashTotal + upiTotal + dueTotal).toLocaleString()}</p></CardContent></Card>
@@ -185,6 +185,6 @@ export default function Payments() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

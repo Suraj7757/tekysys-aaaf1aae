@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { supabase } from '@/services/supabase';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells';

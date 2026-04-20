@@ -9,8 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/services/supabase';
 import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -154,20 +154,20 @@ export default function AdminPanel() {
 
   if (!isAdmin) {
     return (
-      <Layout title="Admin Panel">
+      <MainLayout title="Admin Panel">
         <Card className="shadow-card"><CardContent className="p-8 text-center">
           <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-xl font-bold text-foreground">Access Denied</h2>
           <p className="text-muted-foreground mt-2">Only admin users can access this panel.</p>
         </CardContent></Card>
-      </Layout>
+      </MainLayout>
     );
   }
 
-  if (loading) return <Layout title="Admin Panel"><p className="text-center p-8 text-muted-foreground">Loading...</p></Layout>;
+  if (loading) return <MainLayout title="Admin Panel"><p className="text-center p-8 text-muted-foreground">Loading...</p></MainLayout>;
 
   return (
-    <Layout title="Admin Panel">
+    <MainLayout title="Admin Panel">
       <div className="space-y-6 animate-fade-in">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -466,6 +466,6 @@ export default function AdminPanel() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

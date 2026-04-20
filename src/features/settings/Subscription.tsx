@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/services/supabase';
 import { Crown, Clock, Upload, Tag, IndianRupee, CheckCircle, XCircle, AlertTriangle, QrCode, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -137,10 +137,10 @@ export default function Subscription() {
     toast.success('UPI ID copied!');
   };
 
-  if (loading) return <Layout title="Subscription"><p className="text-center p-8 text-muted-foreground">Loading...</p></Layout>;
+  if (loading) return <MainLayout title="Subscription"><p className="text-center p-8 text-muted-foreground">Loading...</p></MainLayout>;
 
   return (
-    <Layout title="Subscription">
+    <MainLayout title="Subscription">
       <div className="space-y-6 animate-fade-in max-w-3xl">
         {/* Status Card */}
         <Card className={`shadow-card ${isExpired ? 'border-destructive' : 'border-primary/30'}`}>
@@ -288,6 +288,6 @@ export default function Subscription() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

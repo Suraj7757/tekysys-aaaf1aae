@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Layout } from "@/components/Layout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase";
 import { ArrowLeftRight, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ export default function Settlements() {
   };
 
   return (
-    <Layout title="Settlement Cycles">
+    <MainLayout title="Settlement Cycles">
       <div className="space-y-4 animate-fade-in">
         <Card className="shadow-card border-l-4 border-l-warning">
           <CardContent className="py-4 px-6">
@@ -134,6 +134,6 @@ export default function Settlements() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

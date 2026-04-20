@@ -1,0 +1,39 @@
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
+import { Chatbot } from "@/components/common/Chatbot";
+
+interface LayoutProps {
+  children: React.ReactNode;
+  title?: string;
+}
+
+export function MainLayout({ children, title }: LayoutProps) {
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background/95 backdrop-blur-sm">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-16 flex items-center justify-between border-b bg-card/50 backdrop-blur-md px-6 sticky top-0 z-10 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="hover:bg-accent transition-colors" />
+              {title && (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-[2px] bg-primary/20 rounded-full hidden md:block" />
+                  <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                    {title}
+                  </h1>
+                </div>
+              )}
+            </div>
+            <Header />
+          </header>
+          <main className="flex-1 p-6 lg:p-8 animate-fade-in overflow-auto">
+            {children}
+          </main>
+          <Chatbot />
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}

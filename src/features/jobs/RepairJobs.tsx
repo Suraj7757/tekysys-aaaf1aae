@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layout } from "@/components/Layout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete, useShopSettings, getNextJobId } from "@/hooks/useSupabaseData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase";
 import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
@@ -234,7 +234,7 @@ export default function RepairJobs() {
   const splitEnabled = settings?.revenue_split_enabled !== false;
 
   return (
-    <Layout title="Repair Jobs">
+    <MainLayout title="Repair Jobs">
       <div className="space-y-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="flex gap-2 flex-1 w-full sm:w-auto">
@@ -424,6 +424,6 @@ export default function RepairJobs() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { useShopSettings } from '@/hooks/useSupabaseData';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabase';
 import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
@@ -100,10 +100,10 @@ export default function Settings() {
   const addQr = () => setQrReceivers([...qrReceivers, '']);
   const removeQr = (index: number) => setQrReceivers(qrReceivers.filter((_, i) => i !== index));
 
-  if (loading) return <Layout title="Settings"><p className="text-center p-8 text-muted-foreground">Loading...</p></Layout>;
+  if (loading) return <MainLayout title="Settings"><p className="text-center p-8 text-muted-foreground">Loading...</p></MainLayout>;
 
   return (
-    <Layout title="Settings">
+    <MainLayout title="Settings">
       <div className="space-y-6 animate-fade-in max-w-2xl">
         {/* Profile */}
         <Card className="shadow-card">
@@ -216,6 +216,6 @@ export default function Settings() {
           <Save className="h-4 w-4 mr-1" /> Save All Settings
         </Button>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

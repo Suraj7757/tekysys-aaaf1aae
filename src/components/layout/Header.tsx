@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -9,7 +9,7 @@ import { Bell, LogOut, Settings, Sun, Moon, Trash2, X } from 'lucide-react';
 import { useSupabaseQuery } from '@/hooks/useSupabaseData';
 import { useTheme } from 'next-themes';
 
-export function HeaderUserMenu() {
+export function Header() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { data: jobs } = useSupabaseQuery<any>('repair_jobs');

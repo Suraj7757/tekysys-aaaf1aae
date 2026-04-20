@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Layout } from "@/components/Layout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSupabaseQuery } from "@/hooks/useSupabaseData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
@@ -27,7 +27,7 @@ export default function Reports() {
   , [settlements]);
 
   return (
-    <Layout title="Reports">
+    <MainLayout title="Reports">
       <div className="space-y-6 animate-fade-in">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="shadow-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total Customers</p><p className="text-2xl font-bold mt-1">{customers.length}</p></CardContent></Card>
@@ -76,6 +76,6 @@ export default function Reports() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

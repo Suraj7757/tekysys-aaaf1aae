@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { useSoftDelete } from '@/hooks/useSupabaseData';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabase';
 import { Search, RotateCcw, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -124,7 +124,7 @@ export default function Trash() {
   const isAdmin = role === 'admin';
 
   return (
-    <Layout title="🗑️ Trash">
+    <MainLayout title="🗑️ Trash">
       <div className="space-y-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <div className="relative flex-1 max-w-sm">
@@ -222,6 +222,6 @@ export default function Trash() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Layout } from "@/components/Layout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabase";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,7 +54,7 @@ export default function Customers() {
   };
 
   return (
-    <Layout title="Customers">
+    <MainLayout title="Customers">
       <div className="space-y-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <div className="relative flex-1 max-w-sm">
@@ -116,6 +116,6 @@ export default function Customers() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

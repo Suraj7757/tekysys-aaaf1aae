@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { useSupabaseQuery, useSoftDelete, useShopSettings } from '@/hooks/useSupabaseData';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabase';
 import { ShoppingCart, Search, Package, Minus, Plus, Share2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadSellInvoice, SellInvoiceData } from '@/lib/invoice';
@@ -107,7 +107,7 @@ export default function Sells() {
   };
 
   return (
-    <Layout title="Sell Inventory">
+    <MainLayout title="Sell Inventory">
       <div className="space-y-4 animate-fade-in">
         <div className="flex gap-2 mb-4">
           <Button variant={tab === 'shop' ? 'default' : 'outline'} size="sm" onClick={() => setTab('shop')}>
@@ -242,6 +242,6 @@ export default function Sells() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

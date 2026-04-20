@@ -5,8 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Smartphone, Mail, Lock, User, Gift, Tag } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/services/supabase';
+import {
+  REGEXP_ONLY_DIGITS_AND_CHARS,
+} from "input-otp"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -15,28 +24,48 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>((searchParams.get('mode') as AuthMode) || 'login');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) { toast.error('Email and password required'); return; }
+  const handleSendOtp = async () => {
+    if (!email) { toast.error('Email is required'); return; }
     setLoading(true);
-    const { error } = await signIn(email, password);
-    if (error) toast.error(error);
-    else toast.success('Login successful!');
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: mode === 'signup' ? { display_name: displayName, referral_code: referralCode } : undefined
+      }
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('OTP sent to your email!');
+      setShowOtp(true);
+    }
     setLoading(false);
   };
 
-  const handleSignup = async () => {
-    if (!email || !password || !displayName) { toast.error('All fields required'); return; }
-    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 6) { toast.error('Enter 6-digit OTP'); return; }
     setLoading(true);
-    const { error } = await signUp(email, password, displayName);
-    if (error) toast.error(error);
-    else { toast.success('Account created! You can now sign in.'); setMode('login'); }
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'email',
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Authenticated successfully!');
+      // Navigation is handled by AppRoutes based on session change
+    }
     setLoading(false);
   };
 
@@ -51,19 +80,19 @@ export default function Auth() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'login') handleLogin();
-    else if (mode === 'signup') handleSignup();
-    else handleForgotPassword();
+    if (mode === 'forgot') handleForgotPassword();
+    else if (!showOtp) handleSendOtp();
+    else handleVerifyOtp();
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center space-y-3">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl gradient-primary">
-            <Smartphone className="h-7 w-7 text-primary-foreground" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-lg shadow-primary/20">
+            <Smartphone className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">RepairDesk</CardTitle>
+          <CardTitle className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM CRM</CardTitle>
           <p className="text-sm text-muted-foreground">
             {mode === 'login' && 'Sign in to your account'}
             {mode === 'signup' && 'Create a new account — 7 days free trial!'}
@@ -72,29 +101,50 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <div>
-                <Label>Display Name</Label>
-                <div className="relative mt-1">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input className="pl-9" placeholder="Your name" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+            {!showOtp ? (
+              <>
+                {mode === 'signup' && (
+                  <div>
+                    <Label>Display Name</Label>
+                    <div className="relative mt-1">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input className="pl-9 h-11" placeholder="Your name" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <Label>Email</Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input className="pl-9 h-11" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+                  </div>
                 </div>
-              </div>
-            )}
-            <div>
-              <Label>Email</Label>
-              <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input className="pl-9" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
-              </div>
-            </div>
-            {mode !== 'forgot' && (
-              <div>
-                <Label>Password</Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input className="pl-9" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
-                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center space-y-4 py-2">
+                <Label className="text-center w-full">Enter 6-digit OTP sent to {email}</Label>
+                <InputOTP
+                  maxLength={6}
+                  value={otp}
+                  onChange={(v) => setOtp(v)}
+                  pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                >
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="rounded-md border h-12 w-10 text-lg font-bold" />
+                    <InputOTPSlot index={1} className="rounded-md border h-12 w-10 text-lg font-bold" />
+                    <InputOTPSlot index={2} className="rounded-md border h-12 w-10 text-lg font-bold" />
+                    <InputOTPSlot index={3} className="rounded-md border h-12 w-10 text-lg font-bold" />
+                    <InputOTPSlot index={4} className="rounded-md border h-12 w-10 text-lg font-bold" />
+                    <InputOTPSlot index={5} className="rounded-md border h-12 w-10 text-lg font-bold" />
+                  </InputOTPGroup>
+                </InputOTP>
+                <button 
+                  type="button" 
+                  onClick={() => setShowOtp(false)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Change Email
+                </button>
               </div>
             )}
             {mode === 'signup' && (
@@ -115,8 +165,8 @@ export default function Auth() {
                 </div>
               </>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+            <Button type="submit" className="w-full h-11 font-bold text-lg shadow-lg shadow-primary/20" disabled={loading}>
+              {loading ? 'Please wait...' : showOtp ? 'Verify OTP' : mode === 'login' ? 'Send Login OTP' : mode === 'signup' ? 'Send Sign Up OTP' : 'Send Reset Link'}
             </Button>
           </form>
 
