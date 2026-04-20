@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout } from '@/components/Layout';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -170,12 +170,7 @@ export default function AdminPanel() {
     <MainLayout title="Admin Panel">
       <div className="space-y-6 animate-fade-in">
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card><CardContent className="p-4 text-center">
-            <Users className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">{users.length}</p>
-            <p className="text-xs text-muted-foreground">Users</p>
-          </CardContent></Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card><CardContent className="p-4 text-center">
             <Wallet className="h-6 w-6 text-primary mx-auto mb-1" />
             <p className="text-2xl font-bold text-foreground">₹{wallets.reduce((s, w) => s + Number(w.balance), 0).toFixed(0)}</p>
@@ -199,12 +194,11 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="payments">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="promos">Promos</TabsTrigger>
-            <TabsTrigger value="ads">Ads</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
+            <TabsTrigger value="trash">Trash (Soft Deleted)</TabsTrigger>
           </TabsList>
 
           {/* Payment Verification Tab */}
@@ -400,6 +394,20 @@ export default function AdminPanel() {
                   {withdrawals.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No withdrawal requests</TableCell></TableRow>}
                 </TableBody>
               </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="trash">
+            <div className="space-y-4">
+               <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+                 <p className="text-xs font-bold text-primary uppercase tracking-widest">Trash Recovery Center</p>
+                 <p className="text-sm text-muted-foreground">This section shows items that were soft-deleted. Reach out to the items in their respective modules to restore them.</p>
+               </div>
+               <Card className="shadow-card p-6 text-center">
+                 <Trash2 className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-20" />
+                 <p className="text-sm font-medium">Coming Soon: Full Trash Management UI</p>
+                 <p className="text-xs text-muted-foreground">Currently, trash data is managed in individual modules (Inventory, Jobs) via the Undo notification.</p>
+               </Card>
             </div>
           </TabsContent>
         </Tabs>

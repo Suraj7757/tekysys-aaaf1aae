@@ -9,7 +9,7 @@ interface AuthContextType {
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, displayName: string, mobile: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
@@ -50,11 +50,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchRole]);
 
-  const signUp = async (email: string, password: string, displayName: string) => {
+  const signUp = async (email: string, password: string, displayName: string, mobile: string) => {
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { display_name: displayName } }
+      options: { 
+        data: { 
+          display_name: displayName,
+          mobile: mobile
+        } 
+      }
     });
+
+    if (!error) {
+       // Also update profile table if needed (assuming profile table has mobile column)
+       // Standard profiles usually auto-sync from auth.users via triggers
+    }
 
     let errorMessage = error?.message || null;
     if (errorMessage && errorMessage.toLowerCase().includes('rate limit')) {

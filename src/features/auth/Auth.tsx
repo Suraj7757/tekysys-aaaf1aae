@@ -17,6 +17,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [mobile, setMobile] = useState('');
   const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,8 @@ export default function Auth() {
       } else if (mode === 'signup') {
         if (!password) { toast.error('Password is required'); setLoading(false); return; }
         if (password.length < 6) { toast.error('Password must be at least 6 characters'); setLoading(false); return; }
-        const { error } = await signUp(email, password, displayName);
+        if (!mobile || mobile.length < 10) { toast.error('Valid 10-digit mobile number is required'); setLoading(false); return; }
+        const { error } = await signUp(email, password, displayName, mobile);
         if (error) {
           toast.error(error);
         } else {
@@ -91,6 +93,20 @@ export default function Auth() {
                         placeholder="E.g. Mobile Hub" 
                         value={displayName} 
                         onChange={e => setDisplayName(e.target.value)} 
+                        required={mode === 'signup'}
+                      />
+                    </div>
+                  </div>
+                {mode === 'signup' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Phone Number (Mandatory)</Label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                      <Input 
+                        className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
+                        placeholder="10-digit mobile number" 
+                        value={mobile} 
+                        onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} 
                         required={mode === 'signup'}
                       />
                     </div>

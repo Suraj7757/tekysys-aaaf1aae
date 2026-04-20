@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layout } from '@/components/Layout';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,9 @@ import { supabase } from '@/services/supabase';
 import { ShoppingCart, Search, Package, Minus, Plus, Share2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadSellInvoice, SellInvoiceData } from '@/lib/invoice';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { formatTrackingId } from '@/utils/idGenerator';
 
 async function getNextSellId(userId: string): Promise<string> {
   const { data, error } = await supabase.rpc('next_sell_id', { _user_id: userId });
@@ -36,6 +39,8 @@ export default function Sells() {
   const [customerMobile, setCustomerMobile] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [tab, setTab] = useState<'shop' | 'history'>('shop');
+  const [selectedSell, setSelectedSell] = useState<any>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const filtered = inventory.filter((i: any) =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,8 +61,10 @@ export default function Sells() {
     if (!selectedItem || !user) return;
     if (qty > selectedItem.quantity) { toast.error('Not enough stock'); return; }
     if (!customerName.trim()) { toast.error('Customer name required'); return; }
+    if (!user) return;
 
-    const sellId = await getNextSellId(user.id);
+    const rawSellId = await getNextSellId(user.id);
+    const sellId = formatTrackingId(user, 'sell', rawSellId);
     const total = qty * (parseFloat(sellPrice) || 0);
     const newQty = selectedItem.quantity - qty;
 
@@ -106,6 +113,47 @@ export default function Sells() {
     }
   };
 
+  const exportSellsToExcel = () => {
+    const headers = ["Sell ID", "Date", "Item", "SKU", "Qty", "Price", "Total", "Customer", "Payment"];
+    const rows = (sells as any[]).map(s => [
+      s.sell_id,
+      new Date(s.created_at).toLocaleDateString(),
+      s.item_name,
+      s.item_sku,
+      s.quantity,
+      s.sell_price,
+      s.total,
+      s.customer_name,
+      s.payment_method
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `sales_report_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success("Excel (CSV) exported");
+  };
+
+  const exportSellsToPDF = () => {
+    const doc = jsPDF() as any;
+    doc.text("Sales History Report", 14, 15);
+    const tableData = (sells as any[]).map(s => [
+      s.sell_id,
+      s.item_name,
+      s.quantity,
+      'Rs.' + Number(s.total).toLocaleString(),
+      s.payment_method
+    ]);
+    doc.autoTable({
+      head: [['ID', 'Item', 'Qty', 'Total', 'Payment']],
+      body: tableData,
+      startY: 20,
+    });
+    doc.save(`sales_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success("PDF exported");
+  };
+
   return (
     <MainLayout title="Sell Inventory">
       <div className="space-y-4 animate-fade-in">
@@ -116,6 +164,12 @@ export default function Sells() {
           <Button variant={tab === 'history' ? 'default' : 'outline'} size="sm" onClick={() => setTab('history')}>
             <FileText className="h-4 w-4 mr-1" /> Sales History
           </Button>
+          {tab === 'history' && (
+            <div className="ml-auto flex gap-2">
+              <Button variant="outline" size="sm" onClick={exportSellsToExcel}>Excel</Button>
+              <Button variant="outline" size="sm" onClick={exportSellsToPDF}>PDF</Button>
+            </div>
+          )}
         </div>
 
         {tab === 'shop' && (
@@ -186,6 +240,7 @@ export default function Sells() {
                             <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setSelectedSell(s); setDetailsOpen(true); }}><FileText className="h-4 w-4 mr-2" /> View Details</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleInvoice(s)}><FileText className="h-4 w-4 mr-2" /> Invoice PDF</DropdownMenuItem>
                             {s.customer_mobile && (
                               <DropdownMenuItem onClick={() => shareWhatsApp(s)}><Share2 className="h-4 w-4 mr-2" /> WhatsApp</DropdownMenuItem>
@@ -238,6 +293,29 @@ export default function Sells() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setSellOpen(false)}>Cancel</Button>
               <Button onClick={handleSell}>Confirm Sale</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {/* Sell Details Dialog */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Sale Details — {selectedSell?.sell_id}</DialogTitle></DialogHeader>
+            {selectedSell && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><p className="text-xs text-muted-foreground">Item Name</p><p className="font-semibold">{selectedSell.item_name}</p></div>
+                  <div><p className="text-xs text-muted-foreground">SKU</p><p className="font-mono text-xs">{selectedSell.item_sku}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Quantity</p><p className="font-semibold">{selectedSell.quantity}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Total Amount</p><p className="font-semibold text-primary">Rs.{Number(selectedSell.total).toLocaleString()}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Customer</p><p className="font-semibold">{selectedSell.customer_name || 'N/A'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Mobile</p><p className="font-semibold">{selectedSell.customer_mobile || 'N/A'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Payment Method</p><Badge variant="outline">{selectedSell.payment_method}</Badge></div>
+                  <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold">{new Date(selectedSell.created_at).toLocaleDateString()}</p></div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setDetailsOpen(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -29,14 +29,14 @@ const statusColors: Record<string, string> = {
 
 export default function TrackOrder() {
   const [searchParams] = useSearchParams();
-  const [trackingId, setTrackingId] = useState(searchParams.get('id')?.toUpperCase() || '');
+  const [trackingId, setTrackingId] = useState(searchParams.get('id') || '');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   useEffect(() => {
     const id = searchParams.get('id');
-    if (id) { setTrackingId(id.toUpperCase()); handleTrackDirect(id.toUpperCase()); }
+    if (id) { setTrackingId(id); handleTrackDirect(id); }
   }, []);
 
   const handleTrackDirect = async (id: string) => {
@@ -48,7 +48,7 @@ export default function TrackOrder() {
 
   const handleTrack = async () => {
     if (!trackingId.trim()) return;
-    handleTrackDirect(trackingId.trim().toUpperCase());
+    handleTrackDirect(trackingId.trim());
   };
 
   const downloadInvoicePDF = () => {
@@ -99,8 +99,8 @@ export default function TrackOrder() {
         </div>
 
         <div className="flex gap-2">
-          <Input placeholder="e.g. JOB000001 or SELL000001" value={trackingId}
-            onChange={e => setTrackingId(e.target.value.toUpperCase())}
+          <Input placeholder="e.g. hari4599job00001" value={trackingId}
+            onChange={e => setTrackingId(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleTrack()} className="font-mono" />
           <Button onClick={handleTrack} disabled={loading}><Search className="h-4 w-4" /></Button>
         </div>

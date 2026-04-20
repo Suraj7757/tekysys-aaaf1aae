@@ -33,6 +33,7 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [mobile, setMobile] = useState('');
 
   useEffect(() => {
     if (settings) {
@@ -50,6 +51,7 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || '');
+      setMobile(user.user_metadata?.mobile || '');
     }
   }, [user]);
 
@@ -66,7 +68,7 @@ export default function Settings() {
 
   const handleUpdateProfile = async () => {
     if (!displayName.trim()) { toast.error('Name is required'); return; }
-    const { error } = await supabase.auth.updateUser({ data: { display_name: displayName } });
+    const { error } = await supabase.auth.updateUser({ data: { display_name: displayName, mobile } });
     if (error) toast.error(error.message);
     else {
       if (user) {
@@ -112,6 +114,7 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
+            <div><Label>Registered Mobile Number</Label><Input value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} /></div>
             <div><Label>Email</Label><Input value={user?.email || ''} disabled className="bg-muted" /></div>
             <Button size="sm" onClick={handleUpdateProfile}><Save className="h-4 w-4 mr-1" /> Update Profile</Button>
           </CardContent>

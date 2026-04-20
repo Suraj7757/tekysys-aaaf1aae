@@ -6,6 +6,9 @@ import {
   Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { NewsTicker } from '@/components/layout/NewsTicker';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const ADMIN_WHATSAPP = '7319884599';
 const ADMIN_EMAIL = 'krs715665@gmail.com';
@@ -41,8 +44,12 @@ const updates = [
 ];
 
 export default function Landing() {
+  const [selectedFeature, setSelectedFeature] = useState<any>(null);
+  const [selectedRoadmap, setSelectedRoadmap] = useState<any>(null);
+
   return (
     <div className="min-h-screen bg-background">
+      <NewsTicker />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -53,9 +60,10 @@ export default function Landing() {
             <span className="text-2xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM CRM</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-            <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Features</a>
+            <a href="#roadmap" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Roadmap</a>
+            <a href="#updates" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Updates</a>
+            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Pricing</a>
             <Link to="/track"><Button variant="outline" size="sm">Track Order</Button></Link>
             <Link to="/auth"><Button size="sm">Sign In</Button></Link>
           </nav>
@@ -105,13 +113,16 @@ export default function Landing() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
-            <Card key={i} className="hover:shadow-lg transition-shadow border">
+            <Card key={i} className="hover:shadow-xl hover:-translate-y-1 transition-all border group cursor-pointer" onClick={() => setSelectedFeature(f)}>
               <CardContent className="p-6">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <f.icon className="h-5 w-5 text-primary" />
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <f.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
+                <h3 className="font-bold text-lg text-foreground mb-2">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <div className="mt-4 flex items-center text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                  View Details <ArrowRight className="ml-1 h-3 w-3" />
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -127,9 +138,9 @@ export default function Landing() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {roadmap.map((step, i) => (
-            <div key={i} className="relative group">
+            <div key={i} className="relative group cursor-pointer" onClick={() => setSelectedRoadmap(step)}>
               <div className="absolute -inset-2 bg-gradient-to-r from-primary to-blue-600 rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity blur-xl" />
-              <Card className="relative h-full border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden pt-8">
+              <Card className="relative h-full border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden pt-8 group-hover:border-primary/30 transition-colors">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 to-transparent" />
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
@@ -309,6 +320,71 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Feature Details Dialog */}
+      <Dialog open={!!selectedFeature} onOpenChange={() => setSelectedFeature(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              {selectedFeature?.icon && <selectedFeature.icon className="h-6 w-6 text-primary" />}
+            </div>
+            <DialogTitle className="text-2xl font-black">{selectedFeature?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-muted-foreground leading-relaxed">{selectedFeature?.desc}</p>
+            <div className="bg-muted p-4 rounded-2xl space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-widest text-primary">Key Benefits</h4>
+              <ul className="grid grid-cols-1 gap-2">
+                {[
+                  "Optimized for speed and efficiency",
+                  "Real-time data synchronization",
+                  "Secure and encrypted data handling",
+                  "Mobile-friendly interface"
+                ].map((text, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm">
+                    <CheckCircle className="h-4 w-4 text-green-500" /> {text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button className="w-full" onClick={() => setSelectedFeature(null)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Roadmap Details Dialog */}
+      <Dialog open={!!selectedRoadmap} onOpenChange={() => setSelectedRoadmap(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-between mb-4">
+              <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">{selectedRoadmap?.phase}</Badge>
+              <Badge variant={selectedRoadmap?.status === 'Completed' ? 'default' : selectedRoadmap?.status === 'In Progress' ? 'secondary' : 'outline'}>
+                {selectedRoadmap?.status}
+              </Badge>
+            </div>
+            <DialogTitle className="text-2xl font-black">{selectedRoadmap?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Scheduled for {selectedRoadmap?.date}</p>
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold">Planned Achievements:</h4>
+              <div className="space-y-2">
+                {selectedRoadmap?.items.map((item: string, i: number) => (
+                  <div key={i} className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl">
+                    <Zap className="h-4 w-4 text-primary mt-0.5" />
+                    <p className="text-sm font-medium">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button className="w-full" onClick={() => setSelectedRoadmap(null)}>Close View</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

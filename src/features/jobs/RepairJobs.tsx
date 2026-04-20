@@ -15,6 +15,9 @@ import { supabase } from "@/services/supabase";
 import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { formatTrackingId } from "@/utils/idGenerator";
 
 type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
 type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
@@ -53,6 +56,7 @@ export default function RepairJobs() {
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearType, setClearType] = useState<'all' | 'delivered'>('all');
 
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [deviceBrand, setDeviceBrand] = useState("");
@@ -102,7 +106,8 @@ export default function RepairJobs() {
       const { data: newC } = await supabase.from('customers').insert({ user_id: user.id, name: customerName, mobile: customerMobile }).select('id').single();
       customer = newC;
     }
-    const jobId = await getNextJobId(user.id);
+    const rawJobId = await getNextJobId(user.id);
+    const jobId = formatTrackingId(user, 'job', rawJobId);
     await supabase.from('repair_jobs').insert({
       user_id: user.id, job_id: jobId, customer_id: customer?.id,
       customer_name: customerName, customer_mobile: customerMobile,
@@ -230,6 +235,47 @@ export default function RepairJobs() {
     window.open(url, '_blank');
   };
 
+  const exportToExcel = () => {
+    const headers = ["Job ID", "Date", "Customer", "Mobile", "Device", "Problem", "Status", "Cost"];
+    const rows = filtered.map(j => [
+      j.job_id,
+      new Date(j.created_at).toLocaleDateString(),
+      j.customer_name,
+      j.customer_mobile,
+      `${j.device_brand} ${j.device_model || ''}`,
+      j.problem_description,
+      j.status,
+      j.estimated_cost
+    ]);
+    
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `repair_jobs_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success("Excel (CSV) exported");
+  };
+
+  const exportToPDF = () => {
+    const doc = jsPDF() as any;
+    doc.text("Repair Jobs Report", 14, 15);
+    const tableData = filtered.map(j => [
+      j.job_id,
+      j.customer_name,
+      j.device_brand + ' ' + (j.device_model || ''),
+      j.status,
+      'Rs.' + Number(j.estimated_cost).toLocaleString()
+    ]);
+    doc.autoTable({
+      head: [['ID', 'Customer', 'Device', 'Status', 'Cost']],
+      body: tableData,
+      startY: 20,
+    });
+    doc.save(`repair_jobs_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success("PDF exported");
+  };
+
   const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
   const splitEnabled = settings?.revenue_split_enabled !== false;
 
@@ -251,6 +297,15 @@ export default function RepairJobs() {
             </Select>
           </div>
           <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm"><FileText className="h-4 w-4 mr-1" /> Export</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={exportToExcel}>Export to Excel (CSV)</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToPDF}>Export to PDF</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm"><Trash2 className="h-4 w-4 mr-1" /> Clear</Button>
@@ -293,6 +348,7 @@ export default function RepairJobs() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setSelectedJob(job); setDetailsOpen(true); }}><FileText className="h-4 w-4 mr-2" /> View Details</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEdit(job)}><Pencil className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
                             {allowedNext.length > 0 && <DropdownMenuSeparator />}
                             {allowedNext.map(s => (
@@ -406,6 +462,38 @@ export default function RepairJobs() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setPaymentOpen(false)}>Cancel</Button>
               <Button onClick={handlePayment}>Confirm Payment</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Job Details Dialog */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Job Details — {selectedJob?.job_id}</DialogTitle></DialogHeader>
+            {selectedJob && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><p className="text-xs text-muted-foreground">Customer</p><p className="font-semibold">{selectedJob.customer_name}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Mobile</p><p className="font-semibold">{selectedJob.customer_mobile}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Device</p><p className="font-semibold">{selectedJob.device_brand} {selectedJob.device_model}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Status</p><Badge className={statusColors[selectedJob.status]}>{selectedJob.status}</Badge></div>
+                  <div><p className="text-xs text-muted-foreground">Cost</p><p className="font-semibold">₹{Number(selectedJob.estimated_cost).toLocaleString()}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold">{new Date(selectedJob.created_at).toLocaleDateString()}</p></div>
+                </div>
+                <div className="border-t pt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Problem Description</p>
+                  <p className="text-sm p-3 bg-muted rounded-lg">{selectedJob.problem_description}</p>
+                </div>
+                {selectedJob.technician_name && (
+                  <div><p className="text-xs text-muted-foreground">Technician</p><p className="font-medium">{selectedJob.technician_name}</p></div>
+                )}
+                {selectedJob.delivered_at && (
+                  <div><p className="text-xs text-muted-foreground">Delivered At</p><p className="font-medium text-success">{new Date(selectedJob.delivered_at).toLocaleString()}</p></div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setDetailsOpen(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
