@@ -1,21 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Smartphone, Mail, Lock, User, Gift, Tag } from 'lucide-react';
+import { Smartphone, Mail, Lock, User, Gift, Tag, KeyRound } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
-import { supabase } from '@/services/supabase';
-import {
-  REGEXP_ONLY_DIGITS_AND_CHARS,
-} from "input-otp"
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp"
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -24,172 +15,185 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>((searchParams.get('mode') as AuthMode) || 'login');
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
+  const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = async () => {
-    if (!email) { toast.error('Email is required'); return; }
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: mode === 'signup' ? { display_name: displayName, referral_code: referralCode } : undefined
-      }
-    });
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('OTP sent to your email!');
-      setShowOtp(true);
-    }
-    setLoading(false);
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 6) { toast.error('Enter 6-digit OTP'); return; }
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email',
-    });
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Authenticated successfully!');
-      // Navigation is handled by AppRoutes based on session change
-    }
-    setLoading(false);
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email) { toast.error('Enter your email'); return; }
-    setLoading(true);
-    const { error } = await sendPasswordReset(email);
-    if (error) toast.error(error);
-    else toast.success('Password reset link sent to your email!');
-    setLoading(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'forgot') handleForgotPassword();
-    else if (!showOtp) handleSendOtp();
-    else handleVerifyOtp();
+    if (!email) { toast.error('Email is required'); return; }
+    
+    setLoading(true);
+    try {
+      if (mode === 'forgot') {
+        const { error } = await sendPasswordReset(email);
+        if (error) {
+          toast.error(error);
+        } else {
+          toast.success('Magic reset link sent to your email!');
+          setMode('login');
+        }
+      } else if (mode === 'login') {
+        if (!password) { toast.error('Password is required'); setLoading(false); return; }
+        const { error } = await signIn(email, password);
+        if (error) toast.error(error);
+        else toast.success('Welcome back!');
+      } else if (mode === 'signup') {
+        if (!password) { toast.error('Password is required'); setLoading(false); return; }
+        if (password.length < 6) { toast.error('Password must be at least 6 characters'); setLoading(false); return; }
+        const { error } = await signUp(email, password, displayName);
+        if (error) {
+          toast.error(error);
+        } else {
+          toast.success('Account created successfully!');
+          // In "normal signup without verification", the user is usually logged in automatically 
+          // or needs to log in if confirmation is ON in Supabase.
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-card">
-        <CardHeader className="text-center space-y-3">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-lg shadow-primary/20">
-            <Smartphone className="h-8 w-8 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 flex-col gap-8">
+      <Card className="w-full max-w-md shadow-2xl border-primary/5 bg-card/80 backdrop-blur-xl relative overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-1 gradient-primary opacity-50" />
+        <CardHeader className="text-center space-y-3 pb-8">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-2xl shadow-primary/30 rotate-3 transform transition-transform hover:rotate-0">
+            <Smartphone className="h-10 w-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM CRM</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {mode === 'login' && 'Sign in to your account'}
-            {mode === 'signup' && 'Create a new account — 7 days free trial!'}
-            {mode === 'forgot' && 'Reset your password'}
+          <CardTitle className="text-4xl font-black tracking-tighter text-foreground">
+            MSM <span className="text-primary italic">CRM</span>
+          </CardTitle>
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest px-8">
+            {mode === 'login' && 'Premium Business Access'}
+            {mode === 'signup' && 'Partner Registration'}
+            {mode === 'forgot' && 'Account Recovery'}
           </p>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!showOtp ? (
-              <>
-                {mode === 'signup' && (
-                  <div>
-                    <Label>Display Name</Label>
-                    <div className="relative mt-1">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-9 h-11" placeholder="Your name" value={displayName} onChange={e => setDisplayName(e.target.value)} />
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <Label>Email</Label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input className="pl-9 h-11" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
-                  </div>
+        <CardContent className="px-8 pb-8">
+          <form onSubmit={handleAuth} className="space-y-5">
+            {mode === 'signup' && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Business Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                  <Input 
+                    className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
+                    placeholder="E.g. Mobile Hub" 
+                    value={displayName} 
+                    onChange={e => setDisplayName(e.target.value)} 
+                    required={mode === 'signup'}
+                  />
                 </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center space-y-4 py-2">
-                <Label className="text-center w-full">Enter 6-digit OTP sent to {email}</Label>
-                <InputOTP
-                  maxLength={6}
-                  value={otp}
-                  onChange={(v) => setOtp(v)}
-                  pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-                >
-                  <InputOTPGroup className="gap-2">
-                    <InputOTPSlot index={0} className="rounded-md border h-12 w-10 text-lg font-bold" />
-                    <InputOTPSlot index={1} className="rounded-md border h-12 w-10 text-lg font-bold" />
-                    <InputOTPSlot index={2} className="rounded-md border h-12 w-10 text-lg font-bold" />
-                    <InputOTPSlot index={3} className="rounded-md border h-12 w-10 text-lg font-bold" />
-                    <InputOTPSlot index={4} className="rounded-md border h-12 w-10 text-lg font-bold" />
-                    <InputOTPSlot index={5} className="rounded-md border h-12 w-10 text-lg font-bold" />
-                  </InputOTPGroup>
-                </InputOTP>
-                <button 
-                  type="button" 
-                  onClick={() => setShowOtp(false)}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Change Email
-                </button>
               </div>
             )}
-            {mode === 'signup' && (
-              <>
-                <div>
-                  <Label>Referral Code <span className="text-muted-foreground text-xs">(optional)</span></Label>
-                  <div className="relative mt-1">
-                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input className="pl-9" placeholder="e.g. RD1A2B3C" value={referralCode} onChange={e => setReferralCode(e.target.value)} />
-                  </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                <Input 
+                  className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
+                  type="email" 
+                  placeholder="admin@msmcrm.com" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required
+                />
+              </div>
+            </div>
+
+            {mode !== 'forgot' && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Secret Key</Label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                  <Input 
+                    className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all font-mono" 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)} 
+                    required={mode !== 'forgot'}
+                  />
                 </div>
-                <div>
-                  <Label>Coupon Code <span className="text-muted-foreground text-xs">(optional)</span></Label>
-                  <div className="relative mt-1">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input className="pl-9" placeholder="Enter coupon code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
-                  </div>
-                </div>
-              </>
+              </div>
             )}
-            <Button type="submit" className="w-full h-11 font-bold text-lg shadow-lg shadow-primary/20" disabled={loading}>
-              {loading ? 'Please wait...' : showOtp ? 'Verify OTP' : mode === 'login' ? 'Send Login OTP' : mode === 'signup' ? 'Send Sign Up OTP' : 'Send Reset Link'}
+
+            {mode === 'signup' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Ref Code</Label>
+                  <div className="relative">
+                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-400" />
+                    <Input className="pl-9 h-10 bg-muted/30 border-0 text-xs" placeholder="Optional" value={referralCode} onChange={e => setReferralCode(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Coupon</Label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-blue-400" />
+                    <Input className="pl-9 h-10 bg-muted/30 border-0 text-xs" placeholder="OFF20" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full h-12 font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/30 gradient-primary transition-all active:scale-95" disabled={loading}>
+              {loading ? 'Processing...' : mode === 'login' ? 'Enter Dashboard' : mode === 'signup' ? 'Claim My License' : 'Send Reset Link'}
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm space-y-2">
-            {mode === 'login' && (
-              <>
-                <button onClick={() => setMode('forgot')} className="text-primary hover:underline block w-full">Forgot password?</button>
-                <p className="text-muted-foreground">Don't have an account? <button onClick={() => setMode('signup')} className="text-primary hover:underline">Sign Up</button></p>
-              </>
-            )}
-            {mode === 'signup' && (
-              <p className="text-muted-foreground">Already have an account? <button onClick={() => setMode('login')} className="text-primary hover:underline">Sign In</button></p>
-            )}
-            {mode === 'forgot' && (
-              <button onClick={() => setMode('login')} className="text-primary hover:underline">Back to Sign In</button>
-            )}
-            <div className="pt-2 border-t space-y-1">
-              <Link to="/track" className="text-primary hover:underline text-sm block">📦 Track Your Order</Link>
-              <Link to="/" className="text-muted-foreground hover:underline text-xs block">← Back to Home</Link>
+          <div className="mt-8 pt-6 border-t border-muted-foreground/10 text-center space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <button 
+                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} 
+                className="text-[11px] font-bold uppercase tracking-widest text-primary hover:text-primary/70 transition-colors"
+                type="button"
+              >
+                {mode === 'login' ? 'Create Account' : 'Back to Login'}
+              </button>
+              {mode === 'login' && (
+                <button 
+                  onClick={() => setMode('forgot')} 
+                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                  type="button"
+                >
+                  Forgot Key?
+                </button>
+              )}
+              {mode === 'forgot' && (
+                <button 
+                  onClick={() => setMode('login')} 
+                  className="text-[11px] font-bold uppercase tracking-widest text-primary transition-colors"
+                  type="button"
+                >
+                  Recall Access
+                </button>
+              )}
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <Link to="/track" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-2">
+                <Tag className="h-3 w-3" /> External Order Tracking
+              </Link>
+              <Link to="/" className="text-[10px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary">
+                Return to Global Home
+              </Link>
             </div>
           </div>
         </CardContent>
       </Card>
+      
+      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-50">
+        Secured by MSM Enterprise Infrastructure
+      </p>
     </div>
   );
 }
