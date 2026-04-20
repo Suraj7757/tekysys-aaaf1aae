@@ -55,7 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email, password,
       options: { data: { display_name: displayName } }
     });
-    return { error: error?.message || null };
+
+    let errorMessage = error?.message || null;
+    if (errorMessage && errorMessage.toLowerCase().includes('rate limit')) {
+      errorMessage = "Security: Too many signup attempts (Supabase Rate Limit). To test freely, please go to your Supabase Dashboard -> Authentication -> Providers -> Email and disable 'Confirm Email', or increase your Rate Limits in Auth -> Rate Limits.";
+    }
+
+    return { error: errorMessage };
   };
 
   const signIn = async (email: string, password: string) => {

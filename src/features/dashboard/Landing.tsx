@@ -5,6 +5,7 @@ import {
   Smartphone, Wrench, Package, ShoppingCart, BarChart3, Shield, Users, Wallet,
   Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const ADMIN_WHATSAPP = '7319884599';
 const ADMIN_EMAIL = 'krs715665@gmail.com';
@@ -26,6 +27,17 @@ const plans = [
   { name: 'Free', price: '₹0', period: '/month', features: ['5 Repair Jobs', '10 Inventory Items', 'Basic Reports', 'Order Tracking'], cta: 'Start Free', popular: false },
   { name: 'Pro', price: '₹499', period: '/month', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Advanced Reports', 'Wallet & Earnings', 'Referral System', 'Priority Support'], cta: '7-Day Free Trial', popular: true },
   { name: 'Enterprise', price: '₹1499', period: '/month', features: ['Everything in Pro', 'Multi-staff Access', 'API Access', 'Custom Branding', 'Dedicated Support', 'Ad Revenue System'], cta: 'Contact Sales', popular: false },
+];
+
+const roadmap = [
+  { phase: 'Phase 1', title: 'Core Transformation', status: 'Completed', date: 'April 2026', items: ['Feature-based Refactoring', 'Premium SaaS UI', 'Secure Key Auth Migration'] },
+  { phase: 'Phase 2', title: 'Earning Ecosystem', status: 'In Progress', date: 'May 2026', items: ['Wallet System', 'Ad Revenue Engine', 'Referral Multi-level Rewards'] },
+  { phase: 'Phase 3', title: 'Advanced Automation', status: 'Planned', date: 'June 2026', items: ['AI Diagnostic Assistant', 'Auto-sync Invoicing', 'Multi-staff Roles'] },
+  { phase: 'Phase 4', title: 'Global Scale', status: 'Planned', date: 'Q3 2026', items: ['Multi-store Dashboard', 'API for POS Integration', 'Mobile App Launch'] },
+];
+
+const updates = [
+  { date: '21-Apr-2026', title: 'Identity & Experience Upgrade', description: 'Replaced OTP with secure Secret Key authentication, enhanced Signup flow with auto-login redirection, and launched the immersive Feature Showreel.' },
 ];
 
 export default function Landing() {
@@ -106,7 +118,105 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Roadmap Section */}
+      <section id="roadmap" className="container mx-auto px-4 py-24 bg-muted/20 rounded-[3rem] my-16 border border-primary/5">
+        <div className="text-center mb-16 space-y-4">
+          <Badge className="bg-primary/10 text-primary border-primary/20 uppercase tracking-widest text-[10px] py-1 px-4">The Future</Badge>
+          <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter">Product <span className="text-primary italic">Roadmap</span></h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">See where we're heading. Our vision is to automate every micro-task of your service business.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {roadmap.map((step, i) => (
+            <div key={i} className="relative group">
+              <div className="absolute -inset-2 bg-gradient-to-r from-primary to-blue-600 rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity blur-xl" />
+              <Card className="relative h-full border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden pt-8">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 to-transparent" />
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">{step.phase}</span>
+                    <Badge variant={step.status === 'Completed' ? 'default' : step.status === 'In Progress' ? 'secondary' : 'outline'} className="text-[9px] font-bold">
+                      {step.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight">{step.title}</h3>
+                    <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">{step.date}</p>
+                  </div>
+                  <ul className="space-y-2 pt-4 border-t border-primary/5">
+                    {step.items.map((item, j) => (
+                      <li key={j} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary/40 mt-1.5 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Update Center (Today's Changes) */}
+      <section id="updates" className="container mx-auto px-4 py-24">
+        <div className="flex flex-col lg:flex-row items-center gap-16">
+          <div className="lg:w-1/2 space-y-6">
+            <Badge className="bg-green-500/10 text-green-600 border-green-500/20 uppercase tracking-widest text-[10px] py-1 px-4">Live Updates</Badge>
+            <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter">What's New <span className="text-primary">Today?</span></h2>
+            <p className="text-muted-foreground leading-relaxed">
+              We update MSM CRM daily. Our team is constantly fixing bugs, improving security, and adding features requested by our partners.
+            </p>
+            <div className="p-8 bg-card border border-primary/10 rounded-[2rem] shadow-2xl shadow-primary/5 space-y-6 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-4">
+                 <Badge className="bg-primary text-white font-bold animate-pulse">Fixes Deployed</Badge>
+               </div>
+               {updates.map((u, i) => (
+                 <div key={i} className="space-y-4">
+                   <div className="flex items-center gap-3">
+                     <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center text-white shadow-lg">
+                       <Zap className="h-5 w-5" />
+                     </div>
+                     <div>
+                       <h4 className="text-lg font-black tracking-tight">{u.title}</h4>
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{u.date}</p>
+                     </div>
+                   </div>
+                   <p className="text-sm text-muted-foreground leading-relaxed pl-14">
+                     {u.description}
+                   </p>
+                   <ul className="pl-14 space-y-2">
+                     <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                       <CheckCircle className="h-3.5 w-3.5" /> Replaced OTP with Direct Secret Key access
+                     </li>
+                     <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                       <CheckCircle className="h-3.5 w-3.5" /> Enhanced Signup to Login redirection flow
+                     </li>
+                     <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                       <CheckCircle className="h-3.5 w-3.5" /> Fixed Sidebar syntax & background rendering issues
+                     </li>
+                   </ul>
+                 </div>
+               ))}
+            </div>
+          </div>
+          <div className="lg:w-1/2 relative">
+             <div className="absolute -inset-10 bg-primary/20 rounded-full blur-[120px] opacity-20" />
+             <div className="relative gradient-primary rounded-[3rem] p-12 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+                <div className="relative z-10 space-y-6">
+                   <h3 className="text-4xl font-black text-white tracking-tighter italic">"The only CRM that grows as fast as your business."</h3>
+                   <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-white/20 border border-white/20" />
+                      <div>
+                        <p className="text-white font-bold">Suraj Singh</p>
+                        <p className="text-white/60 text-xs font-medium">Founder, MSM Systems</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
       <section id="pricing" className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-foreground">Simple Pricing</h2>

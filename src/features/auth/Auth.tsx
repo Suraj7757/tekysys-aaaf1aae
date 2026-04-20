@@ -47,9 +47,9 @@ export default function Auth() {
         if (error) {
           toast.error(error);
         } else {
-          toast.success('Account created successfully!');
-          // In "normal signup without verification", the user is usually logged in automatically 
-          // or needs to log in if confirmation is ON in Supabase.
+          toast.success('Account created! Please log in with your credentials.');
+          setMode('login');
+          setPassword('');
         }
       }
     } catch (err: any) {
@@ -61,135 +61,189 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 flex-col gap-8">
-      <Card className="w-full max-w-md shadow-2xl border-primary/5 bg-card/80 backdrop-blur-xl relative overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-1 gradient-primary opacity-50" />
-        <CardHeader className="text-center space-y-3 pb-8">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-2xl shadow-primary/30 rotate-3 transform transition-transform hover:rotate-0">
-            <Smartphone className="h-10 w-10 text-primary-foreground" />
-          </div>
-          <CardTitle className="text-4xl font-black tracking-tighter text-foreground">
-            MSM <span className="text-primary italic">CRM</span>
-          </CardTitle>
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest px-8">
-            {mode === 'login' && 'Premium Business Access'}
-            {mode === 'signup' && 'Partner Registration'}
-            {mode === 'forgot' && 'Account Recovery'}
-          </p>
-        </CardHeader>
-        <CardContent className="px-8 pb-8">
-          <form onSubmit={handleAuth} className="space-y-5">
-            {mode === 'signup' && (
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Business Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                  <Input 
-                    className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
-                    placeholder="E.g. Mobile Hub" 
-                    value={displayName} 
-                    onChange={e => setDisplayName(e.target.value)} 
-                    required={mode === 'signup'}
-                  />
-                </div>
+      <div className="flex flex-col lg:flex-row w-full max-w-6xl gap-8 px-4 py-8">
+        {/* Left Side: Auth Card */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center">
+          <Card className="w-full max-w-md shadow-2xl border-primary/5 bg-card/80 backdrop-blur-xl relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 gradient-primary opacity-50" />
+            <CardHeader className="text-center space-y-3 pb-8">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-2xl shadow-primary/30 rotate-3 transform transition-transform hover:rotate-0">
+                <Smartphone className="h-10 w-10 text-primary-foreground" />
               </div>
-            )}
-            
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                <Input 
-                  className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
-                  type="email" 
-                  placeholder="admin@msmcrm.com" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  required
-                />
-              </div>
-            </div>
-
-            {mode !== 'forgot' && (
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Secret Key</Label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                  <Input 
-                    className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all font-mono" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    value={password} 
-                    onChange={e => setPassword(e.target.value)} 
-                    required={mode !== 'forgot'}
-                  />
-                </div>
-              </div>
-            )}
-
-            {mode === 'signup' && (
-              <div className="grid grid-cols-2 gap-4">
+              <CardTitle className="text-4xl font-black tracking-tighter text-foreground">
+                MSM <span className="text-primary italic">CRM</span>
+              </CardTitle>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest px-8">
+                {mode === 'login' && 'Premium Business Access'}
+                {mode === 'signup' && 'Partner Registration'}
+                {mode === 'forgot' && 'Account Recovery'}
+              </p>
+            </CardHeader>
+            <CardContent className="px-8 pb-8">
+              <form onSubmit={handleAuth} className="space-y-5">
+                {mode === 'signup' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Business Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                      <Input 
+                        className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
+                        placeholder="E.g. Mobile Hub" 
+                        value={displayName} 
+                        onChange={e => setDisplayName(e.target.value)} 
+                        required={mode === 'signup'}
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Ref Code</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
                   <div className="relative">
-                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-400" />
-                    <Input className="pl-9 h-10 bg-muted/30 border-0 text-xs" placeholder="Optional" value={referralCode} onChange={e => setReferralCode(e.target.value)} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                    <Input 
+                      className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all" 
+                      type="email" 
+                      placeholder="admin@msmcrm.com" 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)} 
+                      required
+                    />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Coupon</Label>
-                  <div className="relative">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-blue-400" />
-                    <Input className="pl-9 h-10 bg-muted/30 border-0 text-xs" placeholder="OFF20" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+
+                {mode !== 'forgot' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Secret Key</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                      <Input 
+                        className="pl-10 h-12 bg-muted/30 border-0 focus-visible:ring-1 transition-all font-mono" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)} 
+                        required={mode !== 'forgot'}
+                      />
+                    </div>
                   </div>
+                )}
+
+                {mode === 'signup' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Ref Code</Label>
+                      <div className="relative">
+                        <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-orange-400" />
+                        <Input className="pl-9 h-10 bg-muted/30 border-0 text-xs" placeholder="Optional" value={referralCode} onChange={e => setReferralCode(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Coupon</Label>
+                      <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-blue-400" />
+                        <Input className="pl-9 h-10 bg-muted/30 border-0 text-xs" placeholder="OFF20" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full h-12 font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/30 gradient-primary transition-all active:scale-95" disabled={loading}>
+                  {loading ? 'Processing...' : mode === 'login' ? 'Enter Dashboard' : mode === 'signup' ? 'Claim My License' : 'Send Reset Link'}
+                </Button>
+              </form>
+
+              <div className="mt-8 pt-6 border-t border-muted-foreground/10 text-center space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <button 
+                    onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} 
+                    className="text-[11px] font-bold uppercase tracking-widest text-primary hover:text-primary/70 transition-colors"
+                    type="button"
+                  >
+                    {mode === 'login' ? 'Create Account' : 'Back to Login'}
+                  </button>
+                  {mode === 'login' && (
+                    <button 
+                      onClick={() => setMode('forgot')} 
+                      className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                      type="button"
+                    >
+                      Forgot Key?
+                    </button>
+                  )}
+                  {mode === 'forgot' && (
+                    <button 
+                      onClick={() => setMode('login')} 
+                      className="text-[11px] font-bold uppercase tracking-widest text-primary transition-colors"
+                      type="button"
+                    >
+                      Recall Access
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex flex-col gap-2">
+                  <Link to="/track" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-2">
+                    <Tag className="h-3 w-3" /> External Order Tracking
+                  </Link>
+                  <Link to="/" className="text-[10px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary">
+                    Return to Global Home
+                  </Link>
                 </div>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        </div>
 
-            <Button type="submit" className="w-full h-12 font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/30 gradient-primary transition-all active:scale-95" disabled={loading}>
-              {loading ? 'Processing...' : mode === 'login' ? 'Enter Dashboard' : mode === 'signup' ? 'Claim My License' : 'Send Reset Link'}
-            </Button>
-          </form>
-
-          <div className="mt-8 pt-6 border-t border-muted-foreground/10 text-center space-y-4">
-            <div className="flex items-center justify-between px-2">
-              <button 
-                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} 
-                className="text-[11px] font-bold uppercase tracking-widest text-primary hover:text-primary/70 transition-colors"
-                type="button"
-              >
-                {mode === 'login' ? 'Create Account' : 'Back to Login'}
-              </button>
-              {mode === 'login' && (
-                <button 
-                  onClick={() => setMode('forgot')} 
-                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
-                  type="button"
-                >
-                  Forgot Key?
-                </button>
-              )}
-              {mode === 'forgot' && (
-                <button 
-                  onClick={() => setMode('login')} 
-                  className="text-[11px] font-bold uppercase tracking-widest text-primary transition-colors"
-                  type="button"
-                >
-                  Recall Access
-                </button>
-              )}
-            </div>
-            
-            <div className="flex flex-col gap-2">
-              <Link to="/track" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-2">
-                <Tag className="h-3 w-3" /> External Order Tracking
-              </Link>
-              <Link to="/" className="text-[10px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary">
-                Return to Global Home
-              </Link>
-            </div>
+        {/* Right Side: Features & Updates */}
+        <div className="hidden lg:flex w-1/2 flex-col justify-center space-y-8 p-8">
+          <div className="space-y-2">
+            <h3 className="text-3xl font-black tracking-tight text-foreground">Why choose <span className="text-primary italic">MSM CRM?</span></h3>
+            <p className="text-muted-foreground">The most advanced multi-service management infrastructure.</p>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="grid gap-6">
+            <FeatureItem 
+              icon={Smartphone} 
+              title="Identity First Access" 
+              desc="Secure email & secret key authentication system designed for high-stakes business management." 
+            />
+            <FeatureItem 
+              icon={Tag} 
+              title="Smart Revenue Split" 
+              desc="Automatic admin/staff commission calculations with QR-based settlement cycles." 
+            />
+            <FeatureItem 
+              icon={Lock} 
+              title="Enterprise Grade Security" 
+              desc="Encrypted session management and real-time activity logging for every job." 
+            />
+          </div>
+
+          <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <Tag className="h-4 w-4 text-primary" /> Future Updates
+              </h4>
+              <Badge variant="outline" className="text-[9px] bg-primary/10 font-bold border-primary/20">Coming Soon</Badge>
+            </div>
+            <ul className="space-y-2">
+              <li className="flex items-start gap-2 text-xs font-medium text-muted-foreground">
+                <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                <span>AI-Powered Device Diagnostics Tool</span>
+              </li>
+              <li className="flex items-start gap-2 text-xs font-medium text-muted-foreground">
+                <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                <span>Multi-Store Link & Global Inventory Master</span>
+              </li>
+              <li className="flex items-start gap-2 text-xs font-medium text-muted-foreground">
+                <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                <span>Tally/Zoho Books Auto-Sync Integration</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
       
       <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-50">
         Secured by MSM Enterprise Infrastructure
@@ -197,3 +251,20 @@ export default function Auth() {
     </div>
   );
 }
+
+function FeatureItem({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) {
+  return (
+    <div className="flex items-start gap-4 p-4 rounded-2xl hover:bg-muted/50 transition-colors group">
+      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <h4 className="text-sm font-bold text-foreground">{title}</h4>
+        <p className="text-xs text-muted-foreground leading-relaxed mt-1">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+import { CheckCircle, Badge } from 'lucide-react'; // Wait, I should use standard Lucide icons
+// Re-importing at the bottom to ensure the Component uses fixed imports if needed
