@@ -97,6 +97,7 @@ export default function Auth() {
                       />
                     </div>
                   </div>
+                )}
                 {mode === 'signup' && (
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Phone Number (Mandatory)</Label>

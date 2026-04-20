@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,9 @@ import { supabase } from '@/services/supabase';
 import { Search, Smartphone, Clock, CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
+import { IndianRupee, QrCode as QrIcon, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 
 const statusIcons: Record<string, any> = {
   'Received': Clock, 'In Progress': AlertTriangle, 'Ready': CheckCircle,
@@ -33,6 +37,10 @@ export default function TrackOrder() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [merchantSettings, setMerchantSettings] = useState<any>(null);
+  const [utr, setUtr] = useState('');
+  const [submittingPay, setSubmittingPay] = useState(false);
 
   useEffect(() => {
     const id = searchParams.get('id');
@@ -42,7 +50,14 @@ export default function TrackOrder() {
   const handleTrackDirect = async (id: string) => {
     setLoading(true); setSearched(true);
     const { data, error } = await supabase.rpc('track_order', { _tracking_id: id });
-    if (error) { console.error(error); setResult(null); } else setResult(data);
+    if (error) { console.error(error); setResult(null); } 
+    else {
+      setResult(data);
+      if (data && data.user_id) {
+        const { data: mSettings } = await supabase.from('shop_settings').select('*').eq('user_id', data.user_id).maybeSingle();
+        setMerchantSettings(mSettings);
+      }
+    }
     setLoading(false);
   };
 
@@ -149,6 +164,62 @@ export default function TrackOrder() {
               <Button className="w-full mt-3" variant="outline" size="sm" onClick={downloadInvoicePDF}>
                 <FileText className="h-4 w-4 mr-2" /> Download Invoice PDF
               </Button>
+
+              {result.status !== 'Delivered' && result.status !== 'Returned' && merchantSettings?.upi_id && (
+                <div className="mt-4 pt-4 border-t">
+                  <Button className="w-full gradient-primary shadow-lg shadow-primary/20" onClick={() => setPayOpen(!payOpen)}>
+                    <IndianRupee className="h-4 w-4 mr-2" /> {payOpen ? 'Close Payment' : 'Pay Online Now'}
+                    {payOpen ? <ChevronUp className="ml-auto h-4 w-4" /> : <ChevronDown className="ml-auto h-4 w-4" />}
+                  </Button>
+
+                  {payOpen && (
+                    <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div className="bg-muted rounded-2xl p-6 text-center space-y-4">
+                        <div className="bg-white p-3 rounded-xl inline-block shadow-sm">
+                          <QRCodeSVG 
+                            value={`upi://pay?pa=${merchantSettings.upi_id}&pn=${encodeURIComponent(merchantSettings.shop_name || 'Merchant')}&am=${result.type === 'job' ? result.estimated_cost : result.total}&cu=INR`} 
+                            size={160}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Payable Amount</p>
+                          <p className="text-2xl font-black text-primary">₹{result.type === 'job' ? result.estimated_cost : result.total}</p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 bg-background/50 py-2 rounded-lg border border-dashed">
+                          <span className="font-mono text-xs font-bold">{merchantSettings.upi_id}</span>
+                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(merchantSettings.upi_id); toast.success('UPI ID copied'); }}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Submit Transaction ID (UTR)</Label>
+                        <div className="flex gap-2">
+                          <Input value={utr} onChange={e => setUtr(e.target.value)} placeholder="12-digit UTR number" className="h-10" />
+                          <Button onClick={async () => {
+                            if (!utr.trim()) { toast.error('Enter UTR number'); return; }
+                            setSubmittingPay(true);
+                            // Store payment proof in wallet_transactions or a new table
+                            const { error } = await supabase.from('customer_payments').insert({
+                               user_id: result.user_id,
+                               tracking_id: result.tracking_id,
+                               amount: result.type === 'job' ? result.estimated_cost : result.total,
+                               utr_number: utr,
+                               customer_name: result.customer_name || 'Guest',
+                               status: 'pending'
+                            } as any);
+                            if (error) toast.error('Failed to submit. Try again.');
+                            else { toast.success('Payment details submitted to shop!'); setPayOpen(false); setUtr(''); }
+                            setSubmittingPay(false);
+                          }} disabled={submittingPay}>Submit</Button>
+                        </div>
+                        <p className="text-[9px] text-center text-muted-foreground">The shop owner will verify and update your status.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

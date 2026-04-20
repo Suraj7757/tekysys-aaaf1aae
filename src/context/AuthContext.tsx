@@ -61,11 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    if (!error) {
-       // Also update profile table if needed (assuming profile table has mobile column)
-       // Standard profiles usually auto-sync from auth.users via triggers
-    }
-
     let errorMessage = error?.message || null;
     if (errorMessage && errorMessage.toLowerCase().includes('rate limit')) {
       errorMessage = "Security: Too many signup attempts (Supabase Rate Limit). To test freely, please go to your Supabase Dashboard -> Authentication -> Providers -> Email and disable 'Confirm Email', or increase your Rate Limits in Auth -> Rate Limits.";

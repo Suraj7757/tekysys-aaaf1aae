@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useShopSettings } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { Search, Pencil } from "lucide-react";
+import { Search, Pencil, Check, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
 
@@ -78,6 +79,42 @@ export default function Payments() {
   const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
   const splitEnabled = settings?.revenue_split_enabled !== false;
 
+  const { data: customerPayments, refetch: refetchCP } = useSupabaseQuery<any>('customer_payments');
+
+  const approvePayment = async (p: any) => {
+    // 1. Mark payment as approved
+    const { error: pErr } = await supabase.from('customer_payments').update({ status: 'approved' }).eq('id', p.id);
+    if (pErr) { toast.error('Failed to approve'); return; }
+
+    // 2. Add to merchant wallet
+    const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', user!.id).maybeSingle();
+    const newBalance = Number(wallet?.balance || 0) + Number(p.amount);
+    
+    await supabase.from('wallets').upsert({
+       user_id: user!.id,
+       balance: newBalance,
+       total_earned: Number(wallet?.total_earned || 0) + Number(p.amount)
+    } as any);
+
+    // 3. Record transaction
+    await supabase.from('wallet_transactions').insert({
+       user_id: user!.id,
+       type: 'earning',
+       source: 'business',
+       amount: p.amount,
+       description: `Customer payment approved: ${p.tracking_id}`
+    } as any);
+
+    toast.success('Payment approved and added to wallet!');
+    refetchCP();
+  };
+
+  const rejectPayment = async (p: any) => {
+     await supabase.from('customer_payments').update({ status: 'rejected' }).eq('id', p.id);
+     toast.error('Payment rejected');
+     refetchCP();
+  };
+
   return (
     <MainLayout title="Payments">
       <div className="space-y-4 animate-fade-in">
@@ -104,50 +141,91 @@ export default function Payments() {
           </Card>
         )}
 
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search payments..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-        </div>
+        <Tabs defaultValue="all">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="all">Direct Payments ({filtered.length})</TabsTrigger>
+            <TabsTrigger value="online">Online Approval ({customerPayments.filter((cp: any) => cp.status === 'pending').length})</TabsTrigger>
+          </TabsList>
 
-        <Card className="shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left p-3 font-semibold">Job ID</th>
-                  <th className="text-left p-3 font-semibold">Amount</th>
-                  <th className="text-left p-3 font-semibold">Method</th>
-                  <th className="text-left p-3 font-semibold hidden md:table-cell">QR Receiver</th>
-                  {splitEnabled && <th className="text-left p-3 font-semibold">Admin</th>}
-                  {splitEnabled && <th className="text-left p-3 font-semibold">Staff</th>}
-                  <th className="text-left p-3 font-semibold hidden md:table-cell">Settled</th>
-                  <th className="text-left p-3 font-semibold hidden md:table-cell">Date</th>
-                  <th className="text-left p-3 font-semibold">Edit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p: any) => (
-                  <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-mono font-semibold text-primary">{p.job_id}</td>
-                    <td className="p-3 font-semibold">₹{Number(p.amount).toLocaleString()}</td>
-                    <td className="p-3"><Badge className={`${methodColors[p.method] || ''} border-0 text-xs`}>{p.method}</Badge></td>
-                    <td className="p-3 hidden md:table-cell">{p.qr_receiver || '—'}</td>
-                    {splitEnabled && <td className="p-3">₹{Number(p.admin_share).toLocaleString()}</td>}
-                    {splitEnabled && <td className="p-3">₹{Number(p.staff_share).toLocaleString()}</td>}
-                    <td className="p-3 hidden md:table-cell"><Badge variant={p.settled ? "default" : "outline"} className="text-xs">{p.settled ? 'Yes' : 'No'}</Badge></td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
-                    <td className="p-3">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditPayment(p)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (<tr><td colSpan={splitEnabled ? 10 : 8} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No payments found'}</td></tr>)}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+          <TabsContent value="all" className="space-y-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search payments..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            </div>
+
+            <Card className="shadow-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-semibold">Job ID</th>
+                      <th className="text-left p-3 font-semibold">Amount</th>
+                      <th className="text-left p-3 font-semibold">Method</th>
+                      <th className="text-left p-3 font-semibold hidden md:table-cell">QR Receiver</th>
+                      {splitEnabled && <th className="text-left p-3 font-semibold">Admin</th>}
+                      {splitEnabled && <th className="text-left p-3 font-semibold">Staff</th>}
+                      <th className="text-left p-3 font-semibold hidden md:table-cell">Settled</th>
+                      <th className="text-left p-3 font-semibold hidden md:table-cell">Date</th>
+                      <th className="text-left p-3 font-semibold">Edit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((p: any) => (
+                      <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-mono font-semibold text-primary">{p.job_id}</td>
+                        <td className="p-3 font-semibold">₹{Number(p.amount).toLocaleString()}</td>
+                        <td className="p-3"><Badge className={`${methodColors[p.method] || ''} border-0 text-xs`}>{p.method}</Badge></td>
+                        <td className="p-3 hidden md:table-cell">{p.qr_receiver || '—'}</td>
+                        {splitEnabled && <td className="p-3">₹{Number(p.admin_share).toLocaleString()}</td>}
+                        {splitEnabled && <td className="p-3">₹{Number(p.staff_share).toLocaleString()}</td>}
+                        <td className="p-3 hidden md:table-cell"><Badge variant={p.settled ? "default" : "outline"} className="text-xs">{p.settled ? 'Yes' : 'No'}</Badge></td>
+                        <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
+                        <td className="p-3">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditPayment(p)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (<tr><td colSpan={splitEnabled ? 10 : 8} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No payments found'}</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="online" className="space-y-4">
+            {customerPayments.length === 0 && <p className="text-center py-10 text-muted-foreground">No online payment requests</p>}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {customerPayments.map((cp: any) => (
+                <Card key={cp.id} className={`shadow-md border-l-4 ${cp.status === 'pending' ? 'border-primary' : cp.status === 'approved' ? 'border-success' : 'border-destructive'}`}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-mono font-bold text-primary">{cp.tracking_id}</p>
+                        <Badge variant={cp.status === 'pending' ? 'secondary' : 'default'} className="text-[10px] uppercase">{cp.status}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Customer: {cp.customer_name}</p>
+                      <p className="text-lg font-black tracking-tight">₹{Number(cp.amount).toLocaleString()}</p>
+                      <p className="text-[10px] font-bold text-muted-foreground">UTR: <span className="text-foreground">{cp.utr_number}</span></p>
+                    </div>
+                    {cp.status === 'pending' && (
+                      <div className="flex flex-col gap-2">
+                        <Button size="sm" className="bg-success hover:bg-success/80 text-white" onClick={() => approvePayment(cp)}>
+                          <Check className="h-4 w-4 mr-1" /> Approve
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => rejectPayment(cp)}>
+                          <X className="h-4 w-4 mr-1" /> Reject
+                        </Button>
+                      </div>
+                    )}
+                    {cp.status === 'approved' && <ShieldCheck className="h-8 w-8 text-success opacity-50" />}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Edit Payment Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>

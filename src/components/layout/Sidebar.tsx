@@ -35,7 +35,7 @@ export function Sidebar() {
   const location = useLocation();
   const { user, role } = useAuth();
   const collapsed = state === 'collapsed';
-  const isAdmin = user?.email === ADMIN_EMAIL || role === 'admin';
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const openWhatsApp = () => {
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello Admin, I need help with MSM CRM')}`, '_blank');

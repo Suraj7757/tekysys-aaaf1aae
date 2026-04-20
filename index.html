@@ -34,6 +34,12 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      (function() {
+        const skin = localStorage.getItem('msm-skin');
+        if (skin) document.documentElement.setAttribute('data-skin', skin);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

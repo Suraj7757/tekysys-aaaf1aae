@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { MainLayout } from "./layout/MainLayout";
-import { Button } from "../ui/button";
+import { Button } from "./ui/button";
 import { AlertTriangle } from "lucide-react";
 
 interface Props {
@@ -52,6 +52,6 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.children;
+    return this.props.children;
   }
 }

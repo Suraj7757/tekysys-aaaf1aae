@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layout } from '@/components/Layout';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ export default function Settings() {
   const [adminShare, setAdminShare] = useState('50');
   const [staffShare, setStaffShare] = useState('50');
   const [splitEnabled, setSplitEnabled] = useState(true);
+  const [upiId, setUpiId] = useState('');
   const [qrReceivers, setQrReceivers] = useState<string[]>(['Admin QR', 'Staff QR', 'Shop QR']);
 
   // Profile
@@ -44,6 +45,7 @@ export default function Settings() {
       setAdminShare(String(settings.admin_share_percent ?? 50));
       setStaffShare(String(settings.staff_share_percent ?? 50));
       setSplitEnabled(settings.revenue_split_enabled !== false);
+      setUpiId(settings.upi_id || '');
       setQrReceivers(settings.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR']);
     }
   }, [settings]);
@@ -61,6 +63,7 @@ export default function Settings() {
       admin_share_percent: parseInt(adminShare) || 50,
       staff_share_percent: parseInt(staffShare) || 50,
       revenue_split_enabled: splitEnabled,
+      upi_id: upiId,
       qr_receivers: qrReceivers.filter(q => q.trim()),
     });
     if (ok) toast.success('Shop settings saved');
@@ -143,22 +146,55 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Theme */}
+        {/* Theme & Skins */}
         <Card className="shadow-card">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> Theme</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2"><Palette className="h-4 w-4" /> Appearance</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Button variant={theme === 'light' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('light')}>
-                <Sun className="h-4 w-4 mr-1" /> Light
-              </Button>
-              <Button variant={theme === 'dark' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('dark')}>
-                <Moon className="h-4 w-4 mr-1" /> Dark
-              </Button>
-              <Button variant={theme === 'system' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('system')}>
-                System
-              </Button>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Base Theme</Label>
+              <div className="flex gap-2">
+                <Button variant={theme === 'light' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('light')}>
+                  <Sun className="h-4 w-4 mr-1" /> Light
+                </Button>
+                <Button variant={theme === 'dark' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('dark')}>
+                  <Moon className="h-4 w-4 mr-1" /> Dark
+                </Button>
+                <Button variant={theme === 'system' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('system')}>
+                  System
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Dashboard Skin</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {[
+                  { id: 'default', name: 'Midnight', color: 'bg-[#4338ca]' },
+                  { id: 'emerald', name: 'Emerald', color: 'bg-[#059669]' },
+                  { id: 'rose', name: 'Rose', color: 'bg-[#e11d48]' },
+                  { id: 'amber', name: 'Amber', color: 'bg-[#d97706]' },
+                  { id: 'violet', name: 'Violet', color: 'bg-[#7c3aed]' },
+                ].map((skin) => (
+                  <Button
+                    key={skin.id}
+                    variant="outline"
+                    className={`h-12 justify-start gap-2 ${localStorage.getItem('msm-skin') === skin.id ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                    onClick={() => {
+                      document.documentElement.setAttribute('data-skin', skin.id);
+                      localStorage.setItem('msm-skin', skin.id);
+                      toast.success(`${skin.name} skin applied`);
+                      refetch(); // Trigger re-render to update selection UI
+                    }}
+                  >
+                    <div className={`h-4 w-4 rounded-full ${skin.color}`} />
+                    <span className="text-xs">{skin.name}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -175,6 +211,7 @@ export default function Settings() {
               <div><Label>GSTIN</Label><Input value={gstin} onChange={e => setGstin(e.target.value)} /></div>
             </div>
             <div><Label>Address</Label><Input value={address} onChange={e => setAddress(e.target.value)} /></div>
+            <div><Label>Business UPI ID (for Customer Payments)</Label><Input value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="e.g. name@upi" /></div>
           </CardContent>
         </Card>
 

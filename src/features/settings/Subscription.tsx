@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Layout } from '@/components/Layout';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,9 +16,9 @@ import { toast } from 'sonner';
 const UPI_ID = 'patna14@ptyes';
 
 const PLANS = [
-  { id: 'free', name: 'Free', price: 0, features: ['5 Repair Jobs', '10 Inventory Items', 'Basic Reports'] },
-  { id: 'pro', name: 'Pro', price: 499, features: ['Unlimited Jobs', 'Unlimited Inventory', 'Advanced Reports', 'Wallet & Earnings', 'Referral System', 'Priority Support'] },
-  { id: 'enterprise', name: 'Enterprise', price: 1499, features: ['Everything in Pro', 'Multi-staff', 'API Access', 'Custom Branding', 'Ad Revenue System'] },
+  { id: 'free', name: 'Free Trial', price: 0, period: '30 days', features: ['Full Pro Access', 'Addicted UI', '10 Jobs', '20 Items'] },
+  { id: 'monthly', name: 'Monthly Pro', price: 249, period: 'mo', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments'] },
+  { id: 'annual', name: 'Annual Pro', price: 199, period: 'yr', features: ['All Pro Features', '20% Discount', 'No Ads', 'Priority Support'] },
 ];
 
 export default function Subscription() {
@@ -27,7 +28,7 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
 
   const [payOpen, setPayOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [utrNumber, setUtrNumber] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -201,7 +202,7 @@ export default function Subscription() {
               onClick={() => setSelectedPlan(plan.id)}>
               <CardContent className="p-4">
                 <h4 className="font-semibold text-foreground">{plan.name}</h4>
-                <p className="text-2xl font-bold text-foreground mt-1">₹{plan.price}<span className="text-sm text-muted-foreground">/mo</span></p>
+                <p className="text-2xl font-bold text-foreground mt-1">₹{plan.price}<span className="text-sm text-muted-foreground">/{plan.period}</span></p>
                 <ul className="mt-3 space-y-1">
                   {plan.features.map((f, i) => (
                     <li key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -240,16 +241,28 @@ export default function Subscription() {
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Pay via UPI</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div className="bg-muted rounded-lg p-4 text-center space-y-3">
-                <QrCode className="h-12 w-12 text-primary mx-auto" />
+              <div className="bg-muted rounded-lg p-6 text-center space-y-4">
+                <div className="bg-white p-4 rounded-2xl inline-block shadow-lg mx-auto">
+                  <QRCodeSVG 
+                    value={`upi://pay?pa=${UPI_ID}&pn=MSM%20CRM&am=${PLANS.find(p => p.id === selectedPlan)?.price}&cu=INR`} 
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
                 <div className="flex items-center justify-center gap-2">
                   <span className="font-mono font-bold text-lg text-foreground">{UPI_ID}</span>
                   <Button size="sm" variant="ghost" onClick={copyUPI}><Copy className="h-4 w-4" /></Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Amount: <span className="font-bold text-foreground">₹{PLANS.find(p => p.id === selectedPlan)?.price || 499}</span>
+                  Amount: <span className="font-bold text-foreground">₹{PLANS.find(p => p.id === selectedPlan)?.price}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">Pay using any UPI app (GPay, PhonePe, Paytm, etc.)</p>
+                <div className="flex justify-center gap-4 grayscale opacity-50">
+                   <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/Google_Pay_Logo.svg" className="h-4" alt="GPay" />
+                   <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" className="h-4" alt="UPI" />
+                   <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg" className="h-4" alt="PhonePe" />
+                </div>
+                <p className="text-xs text-muted-foreground">Scan with any UPI app to pay securely.</p>
               </div>
 
               <div>

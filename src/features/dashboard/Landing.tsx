@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const ADMIN_WHATSAPP = '7319884599';
-const ADMIN_EMAIL = 'krs715665@gmail.com';
+const SUPER_ADMIN = 'krs715665@gmail.com';
 
 const features = [
   { icon: Wrench, title: 'Repair Job Management', desc: 'Track repair jobs with unique IDs, status updates, and customer notifications.' },
@@ -27,9 +27,30 @@ const features = [
 ];
 
 const plans = [
-  { name: 'Free', price: '₹0', period: '/month', features: ['5 Repair Jobs', '10 Inventory Items', 'Basic Reports', 'Order Tracking'], cta: 'Start Free', popular: false },
-  { name: 'Pro', price: '₹499', period: '/month', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Advanced Reports', 'Wallet & Earnings', 'Referral System', 'Priority Support'], cta: '7-Day Free Trial', popular: true },
-  { name: 'Enterprise', price: '₹1499', period: '/month', features: ['Everything in Pro', 'Multi-staff Access', 'API Access', 'Custom Branding', 'Dedicated Support', 'Ad Revenue System'], cta: 'Contact Sales', popular: false },
+  { 
+    name: 'Free Trial', 
+    price: '₹0', 
+    period: '/30 days', 
+    features: ['Full Pro Access', 'Addicted UI', '10 Repair Jobs', '20 Inventory Items', 'Basic Reports'], 
+    cta: 'Start 30-Day Free Trial', 
+    popular: false 
+  },
+  { 
+    name: 'Monthly Pro', 
+    price: '₹249', 
+    period: '/month', 
+    features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments', 'Priority Support'], 
+    cta: 'Get Started', 
+    popular: true 
+  },
+  { 
+    name: 'Annual Pro', 
+    price: '₹199', 
+    period: '/year', 
+    features: ['Everything in Pro', '20% Discount Applied', 'Dedicated Account Manager', 'No Ads'], 
+    cta: 'Go Annual', 
+    popular: false 
+  },
 ];
 
 const roadmap = [
