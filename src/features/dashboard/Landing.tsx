@@ -6,7 +6,7 @@ import {
   Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail,
 } from 'lucide-react';
 
-const ADMIN_WHATSAPP = '917319884599';
+const ADMIN_WHATSAPP = '7319884599';
 const ADMIN_EMAIL = 'krs715665@gmail.com';
 
 const features = [
