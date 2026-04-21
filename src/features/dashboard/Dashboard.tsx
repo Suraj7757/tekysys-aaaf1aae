@@ -4,8 +4,9 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSupabaseQuery, useShopSettings } from "@/hooks/useSupabaseData";
-import { Wrench, AlertTriangle, IndianRupee, Smartphone, Trash2, ConciergeBell } from "lucide-react";
+import { Wrench, AlertTriangle, IndianRupee, Smartphone, Trash2, ConciergeBell, Building2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ['hsl(234,85%,55%)', 'hsl(152,69%,40%)', 'hsl(38,92%,50%)', 'hsl(0,72%,51%)'];
 
@@ -23,6 +24,10 @@ export default function Dashboard() {
   const deletedCount = useMemo(() => {
     return deletedCustomers.filter((c: any) => c.deleted).length + deletedJobs.filter((j: any) => j.deleted).length;
   }, [deletedCustomers, deletedJobs]);
+
+  const erpTasks = useMemo(() => JSON.parse(localStorage.getItem('erp_tasks') || '[]'), []);
+  const erpExpenses = useMemo(() => JSON.parse(localStorage.getItem('erp_expenses') || '[]'), []);
+  const erpLeads = useMemo(() => JSON.parse(localStorage.getItem('erp_leads') || '[]'), []);
 
   const stats = useMemo(() => {
     const unsettledPayments = payments.filter((p: any) => !p.settled);
@@ -183,6 +188,60 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Enterprise Modules Overview */}
+        <div className="mt-8 mb-4 flex justify-between items-end">
+          <div>
+            <h3 className="text-xl font-bold flex items-center gap-2 text-foreground"><Building2 className="h-6 w-6 text-primary"/> Enterprise ERP Highlights</h3>
+            <p className="text-sm text-muted-foreground mt-1">Live data from your advanced modules</p>
+          </div>
+          <Link to="/enterprise">
+            <Button variant="default" size="sm" className="font-bold shadow-md">Manage All ERP Modules</Button>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="shadow-card border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex justify-between items-center">
+                Pending Tasks <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">{erpTasks.filter((t:any)=>!t.done).length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+               <div className="space-y-3 mt-2">
+                 {erpTasks.slice(0, 3).map((t:any) => <div key={t.id} className="text-sm truncate flex items-center gap-2">{t.done ? '✅' : '⏳'} <span className={t.done ? 'line-through text-muted-foreground' : 'font-medium'}>{t.title}</span></div>)}
+                 {erpTasks.length === 0 && <p className="text-xs text-muted-foreground italic">No tasks created yet.</p>}
+               </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card border-l-4 border-l-green-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex justify-between items-center">
+                Recent Leads <Badge variant="secondary" className="bg-green-500/10 text-green-600">{erpLeads.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+               <div className="space-y-3 mt-2">
+                 {erpLeads.slice(0, 3).map((l:any) => <div key={l.id} className="text-sm truncate flex justify-between items-center"><span className="font-medium">👤 {l.name}</span> <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{l.phone}</span></div>)}
+                 {erpLeads.length === 0 && <p className="text-xs text-muted-foreground italic">No leads captured yet.</p>}
+               </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card border-l-4 border-l-red-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex justify-between items-center">
+                Total ERP Expenses <Badge variant="secondary" className="bg-red-500/10 text-red-600">₹{erpExpenses.reduce((a:any,b:any)=>a+b.amount,0).toLocaleString()}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+               <div className="space-y-3 mt-2">
+                 {erpExpenses.slice(0, 3).map((e:any) => <div key={e.id} className="text-sm truncate flex justify-between items-center"><span className="font-medium">{e.desc}</span> <span className="text-destructive font-bold">₹{e.amount}</span></div>)}
+                 {erpExpenses.length === 0 && <p className="text-xs text-muted-foreground italic">No expenses recorded yet.</p>}
+               </div>
+            </CardContent>
+          </Card>
+        </div>
+
       </div>
     </MainLayout>
   );

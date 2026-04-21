@@ -27,32 +27,31 @@ const features = [
   { icon: Users, title: 'Customer Management', desc: 'Complete customer database with contact history and job records.' },
 ];
 
-const getPlans = (cycle: 'monthly' | 'quarterly' | 'annually') => [
-  { 
-    name: 'Free Trial', 
-    price: '₹0', 
-    period: '/30 days', 
-    features: ['Full Pro Access', 'Addicted UI', '10 Repair Jobs/day', '20 Inventory Items', 'Basic Reports'], 
-    cta: 'Start 30-Day Free Trial', 
-    popular: false 
-  },
-  { 
-    name: 'Pro CRM Plan', 
-    price: cycle === 'monthly' ? '₹249' : cycle === 'quarterly' ? '₹699' : '₹1799', 
-    period: cycle === 'monthly' ? '/month' : cycle === 'quarterly' ? '/quarter' : '/year', 
-    features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'Smart AI Chatbot', 'Deep Analytics', 'Priority Support'], 
-    cta: 'Get Started Pro', 
-    popular: true 
-  },
-  { 
-    name: 'Enterprise / Franchise', 
-    price: 'Custom', 
-    period: '/lifetime', 
-    features: ['Multi-store Dashboard', 'API Access', 'Dedicated Manager', 'Custom Domain', 'White-label App'], 
-    cta: 'Contact Sales', 
-    popular: false 
-  },
-];
+const getPlans = (cycle: 'monthly' | 'quarterly' | 'annually') => {
+  const calcPrice = (base: number, discount: number) => {
+    if (cycle === 'monthly') return `₹${base}`;
+    if (cycle === 'quarterly') return `₹${base * 3}`;
+    return `₹${Math.round(base * 12 * (1 - discount))}`;
+  };
+  
+  const basicFeatures = ['1000 Jobs & Sales Records', 'Up to 2 Employees', 'Import Data With Ease', 'Upload Device Images', 'Client Login', 'Advance Reports', 'Individual Dashboards', 'Attachments', 'Inventory Module', 'WhatsApp Integration', 'Quotations & Invoices', '48 Hours Support Time', 'Activity Log', 'Mobile App'];
+  
+  const standardFeatures = ['Unlimited Jobs & Sales Records', 'Up to 6 Employees', 'Import Data With Ease', 'Upload Device Images', 'Client Login', 'Advance Reports', 'Role-Based Access Rights', 'Individual Dashboards', 'Private & Public Chat', 'Attachments', 'Inventory Module', 'Purchase Management', 'Own Email Setup', 'Pickup Drop', 'UPI Payments', 'Bulk Payments', 'WhatsApp Integration', 'Quotations & Invoices', 'Live Support', 'Activity Log', 'Mobile App', 'AMC (Annual Maintenance Contract)', 'Outsource Management', 'Lead Management', 'Task Management', 'Expense Management', 'Configurable Permissions', 'Assigned Only Jobs to Employees', 'Digital Signature', 'OTP Verification For Delivery', 'Payment Gateway Integration (PhonePe)', 'Self Check-In', 'Data Recovery Module', 'Own Branding', 'Branches'];
+
+  const enterpriseFeatures = [...standardFeatures];
+  enterpriseFeatures[1] = 'Up to 12 Employees';
+
+  const premiumFeatures = [...standardFeatures];
+  premiumFeatures[1] = 'Unlimited Employees';
+  premiumFeatures[premiumFeatures.length - 1] = '3 Branches';
+
+  return [
+    { name: 'Basic', price: calcPrice(249, 0), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: basicFeatures, cta: 'Get Started', popular: false, badge: '' },
+    { name: 'Standard', price: calcPrice(499, 0.1), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: standardFeatures, cta: 'Upgrade to Standard', popular: true, badge: 'FLAT 10% OFF 1ST YR' },
+    { name: 'Enterprise', price: calcPrice(999, 0.2), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: enterpriseFeatures, cta: 'Get Enterprise', popular: false, badge: 'FLAT 20% OFF 1ST YR' },
+    { name: 'Premium', price: calcPrice(1749, 0.2), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: premiumFeatures, cta: 'Go Premium', popular: false, badge: 'FLAT 20% OFF 1ST YR' },
+  ];
+};
 
 const roadmap = [
   { phase: 'Phase 1', title: 'Core Transformation', status: 'Completed', date: 'April 2026', items: ['Feature-based Refactoring', 'Premium SaaS UI', 'Secure Key Auth Migration'] },
@@ -299,29 +298,39 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {getPlans(billingCycle).map((plan, i) => (
-            <Card key={i} className={`relative overflow-hidden ${plan.popular ? 'border-primary shadow-lg ring-2 ring-primary/20' : ''}`}>
-              {plan.popular && (
-                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-                  <Star className="h-3 w-3" /> Popular
+            <Card key={i} className={`relative overflow-hidden flex flex-col ${plan.popular ? 'border-primary shadow-xl ring-2 ring-primary/20 scale-105 z-10' : ''}`}>
+              {plan.badge && (
+                <div className="bg-primary text-primary-foreground text-[10px] font-black tracking-widest text-center py-1.5 uppercase">
+                  {plan.badge}
                 </div>
               )}
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
+              {plan.popular && !plan.badge && (
+                <div className="bg-primary text-primary-foreground text-[10px] font-black tracking-widest text-center py-1.5 uppercase">
+                  POPULAR CHOICE
                 </div>
-                <ul className="mt-6 space-y-3">
-                  {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 text-green-500 shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link to="/auth?mode=signup">
-                  <Button className="w-full mt-6" variant={plan.popular ? 'default' : 'outline'}>{plan.cta}</Button>
+              )}
+              <CardContent className="p-6 flex-1 flex flex-col">
+                <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+                <div className="mt-4 mb-6">
+                  <span className="text-4xl font-black text-foreground tracking-tighter">{plan.price}</span>
+                  <span className="text-muted-foreground font-medium">{plan.period}</span>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-64 mb-6 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+                  <ul className="space-y-3">
+                    {plan.features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" /> 
+                        <span className="leading-tight">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <Link to="/auth?mode=signup" className="mt-auto">
+                  <Button className="w-full font-bold" variant={plan.popular ? 'default' : 'outline'} size="lg">{plan.cta}</Button>
                 </Link>
               </CardContent>
             </Card>

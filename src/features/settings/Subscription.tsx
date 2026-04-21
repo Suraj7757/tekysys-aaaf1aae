@@ -15,10 +15,31 @@ import { toast } from 'sonner';
 
 const UPI_ID = 'patna14@ptyes';
 
-const getPlans = (cycle: 'monthly' | 'quarterly' | 'annually') => [
-  { id: 'free', name: 'Free Trial', price: 0, period: '30 days', features: ['Full Pro Access', 'Addicted UI', '10 Jobs/day', '20 Items'] },
-  { id: `pro-${cycle}`, name: 'Pro CRM Plan', price: cycle === 'monthly' ? 249 : cycle === 'quarterly' ? 699 : 1799, period: cycle === 'monthly' ? 'mo' : cycle === 'quarterly' ? 'quarter' : 'yr', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments', 'Smart AI Chatbot'] },
-];
+const getPlans = (cycle: 'monthly' | 'quarterly' | 'annually') => {
+  const calcPrice = (base: number, discount: number) => {
+    if (cycle === 'monthly') return base;
+    if (cycle === 'quarterly') return base * 3;
+    return Math.round(base * 12 * (1 - discount));
+  };
+  
+  const basicFeatures = ['1000 Jobs & Sales Records', 'Up to 2 Employees', 'Import Data With Ease', 'Upload Device Images', 'Client Login', 'Advance Reports', 'Individual Dashboards', 'Attachments', 'Inventory Module', 'WhatsApp Integration', 'Quotations & Invoices', '48 Hours Support Time', 'Activity Log', 'Mobile App'];
+  
+  const standardFeatures = ['Unlimited Jobs & Sales Records', 'Up to 6 Employees', 'Import Data With Ease', 'Upload Device Images', 'Client Login', 'Advance Reports', 'Role-Based Access Rights', 'Individual Dashboards', 'Private & Public Chat', 'Attachments', 'Inventory Module', 'Purchase Management', 'Own Email Setup', 'Pickup Drop', 'UPI Payments', 'Bulk Payments', 'WhatsApp Integration', 'Quotations & Invoices', 'Live Support', 'Activity Log', 'Mobile App', 'AMC (Annual Maintenance Contract)', 'Outsource Management', 'Lead Management', 'Task Management', 'Expense Management', 'Configurable Permissions', 'Assigned Only Jobs to Employees', 'Digital Signature', 'OTP Verification For Delivery', 'Payment Gateway Integration (PhonePe)', 'Self Check-In', 'Data Recovery Module', 'Own Branding', 'Branches'];
+
+  const enterpriseFeatures = [...standardFeatures];
+  enterpriseFeatures[1] = 'Up to 12 Employees';
+
+  const premiumFeatures = [...standardFeatures];
+  premiumFeatures[1] = 'Unlimited Employees';
+  premiumFeatures[premiumFeatures.length - 1] = '3 Branches';
+
+  return [
+    { id: `basic-${cycle}`, name: 'Basic', price: calcPrice(249, 0), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: basicFeatures },
+    { id: `standard-${cycle}`, name: 'Standard', price: calcPrice(499, 0.1), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: standardFeatures },
+    { id: `enterprise-${cycle}`, name: 'Enterprise', price: calcPrice(999, 0.2), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: enterpriseFeatures },
+    { id: `premium-${cycle}`, name: 'Premium', price: calcPrice(1749, 0.2), period: cycle === 'monthly' ? '/mo' : cycle === 'quarterly' ? '/qtr' : '/yr', features: premiumFeatures },
+  ];
+};
 
 export default function Subscription() {
   const { user } = useAuth();
@@ -28,7 +49,7 @@ export default function Subscription() {
 
   const [payOpen, setPayOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'annually'>('monthly');
-  const [selectedPlan, setSelectedPlan] = useState('pro-monthly');
+  const [selectedPlan, setSelectedPlan] = useState('standard-monthly');
   const [utrNumber, setUtrNumber] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -200,19 +221,19 @@ export default function Subscription() {
         <div className="flex justify-center mb-8">
           <div className="bg-muted p-1 rounded-full inline-flex relative shadow-inner">
             <button 
-              onClick={() => { setBillingCycle('monthly'); setSelectedPlan('pro-monthly'); }}
+              onClick={() => { setBillingCycle('monthly'); setSelectedPlan('standard-monthly'); }}
               className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Monthly
             </button>
             <button 
-              onClick={() => { setBillingCycle('quarterly'); setSelectedPlan('pro-quarterly'); }}
+              onClick={() => { setBillingCycle('quarterly'); setSelectedPlan('standard-quarterly'); }}
               className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'quarterly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Quarterly
             </button>
             <button 
-              onClick={() => { setBillingCycle('annually'); setSelectedPlan('pro-annually'); }}
+              onClick={() => { setBillingCycle('annually'); setSelectedPlan('standard-annually'); }}
               className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'annually' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
             >
               Annually <Badge className="absolute -top-3 -right-3 bg-green-500 hover:bg-green-600 border-0 shadow-lg text-[9px] animate-pulse py-0">SAVE BIG</Badge>
@@ -228,21 +249,23 @@ export default function Subscription() {
           </div>
         </div>
 
-        {/* Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           {getPlans(billingCycle).map(plan => (
-            <Card key={plan.id} className={`cursor-pointer transition-all ${selectedPlan === plan.id ? 'border-primary ring-2 ring-primary/20' : ''}`}
+            <Card key={plan.id} className={`cursor-pointer transition-all flex flex-col ${selectedPlan === plan.id ? 'border-primary shadow-xl ring-2 ring-primary/20 scale-[1.02] z-10' : ''}`}
               onClick={() => setSelectedPlan(plan.id)}>
-              <CardContent className="p-4">
+              <CardContent className="p-4 flex-1 flex flex-col">
                 <h4 className="font-semibold text-foreground">{plan.name}</h4>
-                <p className="text-2xl font-bold text-foreground mt-1">₹{plan.price}<span className="text-sm text-muted-foreground">/{plan.period}</span></p>
-                <ul className="mt-3 space-y-1">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <CheckCircle className="h-3 w-3 text-green-500 shrink-0" /> {f}
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-2xl font-bold text-foreground mt-1 mb-4">₹{plan.price}<span className="text-sm text-muted-foreground">{plan.period}</span></p>
+                <div className="flex-1 overflow-y-auto pr-1 max-h-60 scrollbar-thin scrollbar-thumb-primary/20">
+                  <ul className="space-y-2">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <CheckCircle className="h-3 w-3 text-green-500 shrink-0 mt-0.5" /> 
+                        <span className="leading-tight">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </CardContent>
             </Card>
           ))}
