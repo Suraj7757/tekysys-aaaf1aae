@@ -125,18 +125,28 @@
 [data-layout="compact"] .p-3, [data-layout="compact"] .p-4, [data-layout="compact"] .p-6 {
   padding: 0.5rem !important;
 }
-[data-layout="spacious"] .p-3 {
+[data-layout="compact"] body {
+  background-color: hsl(var(--background));
+}
+[data-layout="spacious"] .p-3, [data-layout="spacious"] .p-6 {
   padding: 1.5rem !important;
 }
 [data-layout="spacious"] .shadow-card {
-  box-shadow: none;
+  box-shadow: none !important;
   border: 1px solid hsl(var(--border));
-  margin-bottom: 2rem;
+  margin-bottom: 2rem !important;
+}
+[data-layout="spacious"] body {
+  background-color: hsl(var(--muted) / 0.5);
 }
 [data-layout="modern"] .shadow-card {
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  border: 1px solid hsl(var(--primary) / 0.2);
-  background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.9));
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  border: 1px solid hsl(var(--primary) / 0.2) !important;
+  background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.9)) !important;
+}
+[data-layout="modern"] body {
+  background: linear-gradient(to bottom, hsl(var(--primary) / 0.05), hsl(var(--background))) !important;
+  min-height: 100vh;
 }
 
 @layer base {

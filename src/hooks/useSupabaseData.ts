@@ -96,15 +96,11 @@ export function useShopSettings() {
 
   const saveSettings = useCallback(async (updates: Record<string, unknown>) => {
     if (!user) return false;
-    let err;
-    if (settings?.id) {
-      const { error } = await supabase.from('shop_settings').update(updates as any).eq('id', settings.id);
-      err = error;
-    } else {
-      const { error } = await supabase.from('shop_settings').insert({ user_id: user.id, ...updates } as any);
-      err = error;
-    }
-    if (err) { toast.error('Failed to save: ' + err.message); return false; }
+    let payload = { user_id: user.id, ...updates } as any;
+    if (settings?.id) { payload.id = settings.id; }
+    
+    const { error } = await supabase.from('shop_settings').upsert(payload, { onConflict: 'user_id' });
+    if (error) { toast.error('Failed to save: ' + error.message); return false; }
     await fetchSettings();
     return true;
   }, [user, settings, fetchSettings]);
