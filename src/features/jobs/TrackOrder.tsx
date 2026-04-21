@@ -147,7 +147,7 @@ export default function TrackOrder() {
               {result.type === 'job' ? (
                 <>
                   <InfoRow label="Customer" value={result.customer_name} />
-                  <InfoRow label="Device" value={`${result.device_type || 'Device'}: ${result.device_brand} ${result.device_model || ''}`} />
+                  <InfoRow label="Device" value={`${result.device_brand} ${result.device_model || ''}`} />
                   <InfoRow label="Problem" value={result.problem} />
                   <InfoRow label="Estimated Cost" value={`Rs.${Number(result.estimated_cost).toLocaleString()}`} />
                   <InfoRow label="Created" value={new Date(result.created_at).toLocaleDateString('en-IN')} />

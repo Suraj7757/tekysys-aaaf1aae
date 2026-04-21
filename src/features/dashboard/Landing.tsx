@@ -14,7 +14,7 @@ const ADMIN_WHATSAPP = '7319884599';
 const SUPER_ADMIN = 'krs715665@gmail.com';
 
 const features = [
-  { icon: ConciergeBell, title: 'Multi Services Catalog', desc: 'NEW: Full service catalog for AC, Fridge, Cooler, Mobile & more. Manage pricing ranges, TAT, and grouping with a premium UI.' },
+  { icon: ConciergeBell, title: 'Multi Services Management', desc: 'Full service catalog with pricing ranges, turnaround times, categories, and status management. Mark popular services and track job counts per service.' },
   { icon: Wrench, title: 'Repair Job Management', desc: 'Track repair jobs with unique IDs, status updates, and customer notifications.' },
   { icon: Package, title: 'Inventory Management', desc: 'Full stock tracking with low-stock alerts and GST-compliant invoicing.' },
   { icon: ShoppingCart, title: 'Sales & Invoicing', desc: 'Sell inventory items with PDF invoices and WhatsApp sharing.' },
@@ -27,29 +27,29 @@ const features = [
   { icon: Users, title: 'Customer Management', desc: 'Complete customer database with contact history and job records.' },
 ];
 
-const plans = [
+const getPlans = (cycle: 'monthly' | 'quarterly' | 'annually') => [
   { 
     name: 'Free Trial', 
     price: '₹0', 
     period: '/30 days', 
-    features: ['Full Pro Access', 'Addicted UI', '10 Repair Jobs', '20 Inventory Items', 'Basic Reports'], 
+    features: ['Full Pro Access', 'Addicted UI', '10 Repair Jobs/day', '20 Inventory Items', 'Basic Reports'], 
     cta: 'Start 30-Day Free Trial', 
     popular: false 
   },
   { 
-    name: 'Monthly Pro', 
-    price: '₹249', 
-    period: '/month', 
-    features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments', 'Priority Support'], 
-    cta: 'Get Started', 
+    name: 'Pro CRM Plan', 
+    price: cycle === 'monthly' ? '₹249' : cycle === 'quarterly' ? '₹699' : '₹1799', 
+    period: cycle === 'monthly' ? '/month' : cycle === 'quarterly' ? '/quarter' : '/year', 
+    features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'Smart AI Chatbot', 'Deep Analytics', 'Priority Support'], 
+    cta: 'Get Started Pro', 
     popular: true 
   },
   { 
-    name: 'Annual Pro', 
-    price: '₹199', 
-    period: '/year', 
-    features: ['Everything in Pro', '20% Discount Applied', 'Dedicated Account Manager', 'No Ads'], 
-    cta: 'Go Annual', 
+    name: 'Enterprise / Franchise', 
+    price: 'Custom', 
+    period: '/lifetime', 
+    features: ['Multi-store Dashboard', 'API Access', 'Dedicated Manager', 'Custom Domain', 'White-label App'], 
+    cta: 'Contact Sales', 
     popular: false 
   },
 ];
@@ -62,13 +62,16 @@ const roadmap = [
 ];
 
 const updates = [
-  { date: '21-Apr-2026', title: '🔥 Multi Services Catalog Live Now!', description: 'Launch of the comprehensive Service Management system. Manage Mobile, Laptop, TV, AC, Fridge & Cooler services with pricing, TAT, and category grouping in a premium new UI.' },
+  { date: '21-Apr-2026', title: 'Smart AI Chatbot Launched', description: 'Added a context-aware AI Assistant that supports Hinglish. Customers can now check job status directly via Tracking ID, create new repair jobs step-by-step, and get answers to FAQs seamlessly.' },
+  { date: '21-Apr-2026', title: 'Critical Bug Fixes & Optimization', description: 'Resolved build errors, optimized chunk sizes, and stabilized the production bundle. Fixed edge-cases in the tracking logic and improved overall rendering speed.' },
+  { date: '21-Apr-2026', title: 'Multi Services Management Launched', description: 'Brand-new Service Catalog module: manage all your repair services with pricing ranges, turnaround times, category grouping, popular markers, grid & table views, and full CRUD — all in one premium UI.' },
   { date: '21-Apr-2026', title: 'Identity & Experience Upgrade', description: 'Replaced OTP with secure Secret Key authentication, enhanced Signup flow with auto-login redirection, and launched the immersive Feature Showreel.' },
 ];
 
 export default function Landing() {
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [selectedRoadmap, setSelectedRoadmap] = useState<any>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'annually'>('monthly');
 
   return (
     <div className="min-h-screen bg-background">
@@ -258,12 +261,46 @@ export default function Landing() {
         </div>
       </section>
       <section id="pricing" className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-foreground">Simple Pricing</h2>
           <p className="mt-3 text-muted-foreground">Start free, upgrade when you need more.</p>
         </div>
+        
+        {/* Billing Toggle */}
+        <div className="flex justify-center mb-12">
+          <div className="bg-muted p-1 rounded-full inline-flex relative shadow-inner">
+            <button 
+              onClick={() => setBillingCycle('monthly')}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Monthly
+            </button>
+            <button 
+              onClick={() => setBillingCycle('quarterly')}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'quarterly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Quarterly
+            </button>
+            <button 
+              onClick={() => setBillingCycle('annually')}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'annually' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Annually <Badge className="absolute -top-3 -right-3 bg-green-500 hover:bg-green-600 border-0 shadow-lg text-[9px] animate-pulse py-0">SAVE BIG</Badge>
+            </button>
+            
+            {/* Sliding highlight */}
+            <div 
+              className="absolute top-1 bottom-1 bg-primary rounded-full transition-all duration-300 shadow-md"
+              style={{
+                left: billingCycle === 'monthly' ? '4px' : billingCycle === 'quarterly' ? '33.33%' : '66.66%',
+                width: 'calc(33.33% - 4px)',
+              }}
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {plans.map((plan, i) => (
+          {getPlans(billingCycle).map((plan, i) => (
             <Card key={i} className={`relative overflow-hidden ${plan.popular ? 'border-primary shadow-lg ring-2 ring-primary/20' : ''}`}>
               {plan.popular && (
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
@@ -304,7 +341,7 @@ export default function Landing() {
               <MessageCircle className="h-8 w-8 text-green-500 mx-auto mb-3" />
               <h3 className="font-semibold text-foreground mb-2">WhatsApp</h3>
               <p className="text-sm text-muted-foreground mb-4">Chat with us directly</p>
-              <Button size="sm" variant="outline" onClick={() => window.open(`https://wa.me/91${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with MSM CRM')}`, '_blank')}>
+              <Button size="sm" variant="outline" onClick={() => window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with RepairDesk CRM')}`, '_blank')}>
                 Open WhatsApp
               </Button>
             </CardContent>

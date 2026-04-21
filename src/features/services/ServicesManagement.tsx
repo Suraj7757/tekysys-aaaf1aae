@@ -16,7 +16,7 @@ import {
   Wrench, Smartphone, Laptop, Tv2, Printer, Watch, Headphones,
   Plus, Search, Edit2, Trash2, CheckCircle2, XCircle, Clock,
   IndianRupee, Tag, Layers, BarChart3, TrendingUp, Star,
-  ChevronDown, Filter, RefreshCw, Wind, Snowflake, Thermometer,
+  ChevronDown, Filter, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,9 +29,6 @@ type ServiceCategory =
   | 'Printer Repair'
   | 'Smartwatch Repair'
   | 'Audio Devices'
-  | 'AC Service'
-  | 'Fridge Repair'
-  | 'Cooler Repair'
   | 'Other';
 
 interface Service {
@@ -61,16 +58,12 @@ const SEED_SERVICES: Service[] = [
   { id: '9', name: 'TV Panel Repair', category: 'TV / LED Repair', basePrice: 1200, maxPrice: 8000, tat: '3-5 hrs', status: 'Active', description: 'LED/OLED panel fault diagnosis and repair.', popular: false, createdAt: '2026-04-08', jobsCompleted: 19 },
   { id: '10', name: 'TV Remote Programming', category: 'TV / LED Repair', basePrice: 100, maxPrice: 300, tat: '15 min', status: 'Active', description: 'Universal remote setup + original remote repair.', popular: false, createdAt: '2026-04-08', jobsCompleted: 28 },
   { id: '11', name: 'Printer Head Cleaning', category: 'Printer Repair', basePrice: 150, maxPrice: 400, tat: '30 min', status: 'Active', description: 'Deep nozzle cleaning + alignment correction.', popular: false, createdAt: '2026-04-10', jobsCompleted: 17 },
-  { id: '12', name: 'AC Wet Service', category: 'AC Service', basePrice: 499, maxPrice: 800, tat: '1 hr', status: 'Active', description: 'Deep cleaning of AC coils and filters.', popular: true, createdAt: '2026-04-10', jobsCompleted: 85 },
-  { id: '13', name: 'Fridge Gas Refill', category: 'Fridge Repair', basePrice: 1200, maxPrice: 2000, tat: '2 hrs', status: 'Active', description: 'R134a/R600a gas charging + leak testing.', popular: false, createdAt: '2026-04-12', jobsCompleted: 24 },
-  { id: '14', name: 'Cooler Motor Repair', category: 'Cooler Repair', basePrice: 300, maxPrice: 700, tat: '1 hr', status: 'Active', description: 'Rewinding or motor replacement for air coolers.', popular: false, createdAt: '2026-04-12', jobsCompleted: 15 },
-  { id: '15', name: 'Smartwatch Glass Repair', category: 'Smartwatch Repair', basePrice: 250, maxPrice: 800, tat: '2 hrs', status: 'Coming Soon', description: 'Scratch-free screen protector & glass replacement.', popular: false, createdAt: '2026-04-15', jobsCompleted: 0 },
+  { id: '12', name: 'Smartwatch Glass Repair', category: 'Smartwatch Repair', basePrice: 250, maxPrice: 800, tat: '2 hrs', status: 'Coming Soon', description: 'Scratch-free screen protector & glass replacement.', popular: false, createdAt: '2026-04-15', jobsCompleted: 0 },
 ];
 
 const CATEGORIES: ServiceCategory[] = [
   'Mobile Repair', 'Laptop Repair', 'TV / LED Repair',
-  'Printer Repair', 'Smartwatch Repair', 'Audio Devices',
-  'AC Service', 'Fridge Repair', 'Cooler Repair', 'Other',
+  'Printer Repair', 'Smartwatch Repair', 'Audio Devices', 'Other',
 ];
 
 const STATUS_OPTIONS: ServiceStatus[] = ['Active', 'Inactive', 'Coming Soon'];
@@ -82,9 +75,6 @@ const CATEGORY_ICONS: Record<ServiceCategory, any> = {
   'Printer Repair': Printer,
   'Smartwatch Repair': Watch,
   'Audio Devices': Headphones,
-  'AC Service': Wind,
-  'Fridge Repair': Snowflake,
-  'Cooler Repair': Thermometer,
   'Other': Wrench,
 };
 

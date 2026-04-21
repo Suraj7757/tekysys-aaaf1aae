@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/services/supabase';
-import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image } from 'lucide-react';
+import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ADMIN_EMAIL = 'krs715665@gmail.com';
@@ -26,6 +26,8 @@ export default function AdminPanel() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [paymentSubs, setPaymentSubs] = useState<any[]>([]);
   const [promoCodes, setPromoCodes] = useState<any[]>([]);
+  const [allJobs, setAllJobs] = useState<any[]>([]);
+  const [allPayments, setAllPayments] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +60,7 @@ export default function AdminPanel() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes] = await Promise.all([
+    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes, jobsRes, paymentsRes] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('wallets').select('*'),
       supabase.from('withdraw_requests').select('*').order('created_at', { ascending: false }),
@@ -67,6 +69,8 @@ export default function AdminPanel() {
       supabase.from('subscriptions').select('*'),
       supabase.from('payment_submissions').select('*').order('created_at', { ascending: false }),
       supabase.from('promo_codes').select('*').order('created_at', { ascending: false }),
+      supabase.from('repair_jobs').select('*'),
+      supabase.from('payments').select('*'),
     ]);
     setUsers(profilesRes.data || []);
     setWallets(walletsRes.data || []);
@@ -76,6 +80,8 @@ export default function AdminPanel() {
     setSubscriptions(subsRes.data || []);
     setPaymentSubs(paySubsRes.data || []);
     setPromoCodes(promoRes.data || []);
+    setAllJobs(jobsRes.data || []);
+    setAllPayments(paymentsRes.data || []);
     setLoading(false);
   };
 
@@ -193,13 +199,94 @@ export default function AdminPanel() {
           </CardContent></Card>
         </div>
 
-        <Tabs defaultValue="payments">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="payments">Payments</TabsTrigger>
+        <Tabs defaultValue="analytics">
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="payments">Sub Payments</TabsTrigger>
             <TabsTrigger value="promos">Promos</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-            <TabsTrigger value="trash">Trash (Soft Deleted)</TabsTrigger>
+            <TabsTrigger value="trash">Trash</TabsTrigger>
           </TabsList>
+
+          {/* Deep Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-foreground">Deep CRM Analytics</h3>
+              <Badge variant="outline" className="text-primary border-primary bg-primary/5">System-Wide Data</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <Card className="border-primary/10 shadow-sm bg-primary/5">
+                 <CardContent className="p-6">
+                   <div className="flex items-center gap-4">
+                     <div className="h-12 w-12 rounded-xl bg-primary text-white flex items-center justify-center">
+                       <BarChart3 className="h-6 w-6" />
+                     </div>
+                     <div>
+                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Total Repair Jobs</p>
+                       <p className="text-4xl font-black text-foreground">{allJobs.length}</p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+               <Card className="border-green-500/10 shadow-sm bg-green-500/5">
+                 <CardContent className="p-6">
+                   <div className="flex items-center gap-4">
+                     <div className="h-12 w-12 rounded-xl bg-green-500 text-white flex items-center justify-center">
+                       <TrendingUp className="h-6 w-6" />
+                     </div>
+                     <div>
+                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Total Shop Revenue</p>
+                       <p className="text-4xl font-black text-foreground">₹{allPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0).toLocaleString()}</p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+               <Card className="border-blue-500/10 shadow-sm bg-blue-500/5">
+                 <CardContent className="p-6">
+                   <div className="flex items-center gap-4">
+                     <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center">
+                       <Smartphone className="h-6 w-6" />
+                     </div>
+                     <div>
+                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Completed Jobs</p>
+                       <p className="text-4xl font-black text-foreground">{allJobs.filter(j => j.status === 'Delivered').length}</p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+            </div>
+            
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent System Activity (Last 5 Jobs)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job ID</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Est. Cost</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allJobs.slice(0, 5).map(job => (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-bold">{job.job_id}</TableCell>
+                        <TableCell>{job.device_brand} {job.device_model}</TableCell>
+                        <TableCell>{job.customer_name}</TableCell>
+                        <TableCell><Badge variant="outline">{job.status}</Badge></TableCell>
+                        <TableCell>₹{job.estimated_cost}</TableCell>
+                      </TableRow>
+                    ))}
+                    {allJobs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-4">No jobs yet.</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Payment Verification Tab */}
           <TabsContent value="payments" className="space-y-4">

@@ -15,10 +15,9 @@ import { toast } from 'sonner';
 
 const UPI_ID = 'patna14@ptyes';
 
-const PLANS = [
-  { id: 'free', name: 'Free Trial', price: 0, period: '7 days', features: ['Full Pro Access', 'Addicted UI', '10 Jobs', '20 Items'] },
-  { id: 'monthly', name: 'Monthly Pro', price: 249, period: 'mo', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments'] },
-  { id: 'annual', name: 'Annual Pro', price: 199, period: 'yr', features: ['All Pro Features', '20% Discount', 'No Ads', 'Priority Support'] },
+const getPlans = (cycle: 'monthly' | 'quarterly' | 'annually') => [
+  { id: 'free', name: 'Free Trial', price: 0, period: '30 days', features: ['Full Pro Access', 'Addicted UI', '10 Jobs/day', '20 Items'] },
+  { id: `pro-${cycle}`, name: 'Pro CRM Plan', price: cycle === 'monthly' ? 249 : cycle === 'quarterly' ? 699 : 1799, period: cycle === 'monthly' ? 'mo' : cycle === 'quarterly' ? 'quarter' : 'yr', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments', 'Smart AI Chatbot'] },
 ];
 
 export default function Subscription() {
@@ -28,7 +27,8 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
 
   const [payOpen, setPayOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'annually'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState('pro-monthly');
   const [utrNumber, setUtrNumber] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -76,7 +76,8 @@ export default function Subscription() {
       screenshotUrl = urlData.publicUrl;
     }
 
-    const plan = PLANS.find(p => p.id === selectedPlan);
+    const plansList = getPlans(billingCycle);
+    const plan = plansList.find(p => p.id === selectedPlan) || plansList[1];
     const { error } = await supabase.from('payment_submissions').insert({
       user_id: user.id,
       utr_number: utrNumber.trim(),
@@ -195,9 +196,41 @@ export default function Subscription() {
           </CardContent>
         </Card>
 
+        {/* Billing Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-muted p-1 rounded-full inline-flex relative shadow-inner">
+            <button 
+              onClick={() => { setBillingCycle('monthly'); setSelectedPlan('pro-monthly'); }}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Monthly
+            </button>
+            <button 
+              onClick={() => { setBillingCycle('quarterly'); setSelectedPlan('pro-quarterly'); }}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'quarterly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Quarterly
+            </button>
+            <button 
+              onClick={() => { setBillingCycle('annually'); setSelectedPlan('pro-annually'); }}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'annually' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Annually <Badge className="absolute -top-3 -right-3 bg-green-500 hover:bg-green-600 border-0 shadow-lg text-[9px] animate-pulse py-0">SAVE BIG</Badge>
+            </button>
+            
+            <div 
+              className="absolute top-1 bottom-1 bg-primary rounded-full transition-all duration-300 shadow-md"
+              style={{
+                left: billingCycle === 'monthly' ? '4px' : billingCycle === 'quarterly' ? '33.33%' : '66.66%',
+                width: 'calc(33.33% - 4px)',
+              }}
+            />
+          </div>
+        </div>
+
         {/* Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {PLANS.map(plan => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+          {getPlans(billingCycle).map(plan => (
             <Card key={plan.id} className={`cursor-pointer transition-all ${selectedPlan === plan.id ? 'border-primary ring-2 ring-primary/20' : ''}`}
               onClick={() => setSelectedPlan(plan.id)}>
               <CardContent className="p-4">
@@ -244,7 +277,7 @@ export default function Subscription() {
               <div className="bg-muted rounded-lg p-6 text-center space-y-4">
                 <div className="bg-white p-4 rounded-2xl inline-block shadow-lg mx-auto">
                   <QRCodeSVG 
-                    value={`upi://pay?pa=${UPI_ID}&pn=MSM%20CRM&am=${PLANS.find(p => p.id === selectedPlan)?.price}&cu=INR`} 
+                    value={`upi://pay?pa=${UPI_ID}&pn=MSM%20CRM&am=${getPlans(billingCycle).find(p => p.id === selectedPlan)?.price}&cu=INR`} 
                     size={200}
                     level="H"
                     includeMargin={true}
@@ -255,7 +288,7 @@ export default function Subscription() {
                   <Button size="sm" variant="ghost" onClick={copyUPI}><Copy className="h-4 w-4" /></Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Amount: <span className="font-bold text-foreground">₹{PLANS.find(p => p.id === selectedPlan)?.price}</span>
+                  Amount: <span className="font-bold text-foreground">₹{getPlans(billingCycle).find(p => p.id === selectedPlan)?.price}</span>
                 </p>
                 <div className="flex justify-center gap-4 grayscale opacity-50">
                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/Google_Pay_Logo.svg" className="h-4" alt="GPay" />

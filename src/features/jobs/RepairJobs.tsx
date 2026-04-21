@@ -82,8 +82,6 @@ export default function RepairJobs() {
   const [estimatedCost, setEstimatedCost] = useState("");
 
   const [serviceType, setServiceType] = useState("");
-  const [deviceCategory, setDeviceCategory] = useState("Phone");
-  const [partCost, setPartCost] = useState("");
 
   const [editName, setEditName] = useState("");
   const [editMobile, setEditMobile] = useState("");
@@ -92,7 +90,6 @@ export default function RepairJobs() {
   const [editProblem, setEditProblem] = useState("");
   const [editTech, setEditTech] = useState("");
   const [editCost, setEditCost] = useState("");
-  const [editPartCost, setEditPartCost] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [qrReceiver, setQrReceiver] = useState(settings?.qr_receivers?.[0] || "Admin QR");
@@ -147,14 +144,10 @@ export default function RepairJobs() {
       device_brand: deviceBrand, device_model: deviceModel || null,
       problem_description: problem, technician_name: technician || null,
       status: 'Received' as any, estimated_cost: parseFloat(estimatedCost) || 0,
-      part_cost: parseFloat(partCost) || 0,
-      device_type: deviceCategory as any,
     });
     refetch();
     setCreateOpen(false);
     setServiceType("");
-    setDeviceCategory("Phone");
-    setPartCost("");
     setCustomerMobile(""); setCustomerName(""); setDeviceBrand(""); setDeviceModel(""); setProblem(""); setTechnician(""); setEstimatedCost("");
     toast.success(`Job ${jobId} created`);
   };
@@ -168,7 +161,6 @@ export default function RepairJobs() {
     setEditProblem(job.problem_description);
     setEditTech(job.technician_name || '');
     setEditCost(String(job.estimated_cost));
-    setEditPartCost(String(job.part_cost || 0));
     setEditOpen(true);
   };
 
@@ -181,7 +173,6 @@ export default function RepairJobs() {
       device_brand: editBrand, device_model: editModel || null,
       problem_description: editProblem, technician_name: editTech || null,
       estimated_cost: parseFloat(editCost) || 0,
-      part_cost: parseFloat(editPartCost) || 0,
     }).eq('id', selectedJob.id);
     refetch();
     setEditOpen(false);
@@ -219,24 +210,16 @@ export default function RepairJobs() {
     if (!selectedJob || !user) return;
     const amount = parseFloat(paymentAmount) || 0;
     const receiver = qrReceiver === 'Custom' ? customQr : qrReceiver;
-    const pCost = parseFloat(partCost) || selectedJob.part_cost || 0;
-    const profit = amount - pCost;
     const splitEnabled = settings?.revenue_split_enabled !== false;
     const adminPct = splitEnabled ? (settings?.admin_share_percent ?? 50) / 100 : 1;
     const staffPct = splitEnabled ? (settings?.staff_share_percent ?? 50) / 100 : 0;
 
-    await supabase.from('repair_jobs').update({
-      status: 'Delivered' as any,
-      delivered_at: new Date().toISOString(),
-      part_cost: pCost
-    }).eq('id', selectedJob.id);
-
+    await supabase.from('repair_jobs').update({ status: 'Delivered' as any, delivered_at: new Date().toISOString() }).eq('id', selectedJob.id);
     await supabase.from('payments').insert({
       user_id: user.id, job_id: selectedJob.job_id, repair_job_id: selectedJob.id,
       amount, method: paymentMethod as any,
       qr_receiver: paymentMethod === 'UPI/QR' ? receiver : null,
       admin_share: amount * adminPct, staff_share: amount * staffPct,
-      profit: profit,
     });
     refetch(); refetchPayments();
     setPaymentOpen(false); setSelectedJob(null);
@@ -443,26 +426,14 @@ export default function RepairJobs() {
                 <div><Label>Customer Name *</Label><Input value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Device Type *</Label>
-                  <Select value={deviceCategory} onValueChange={setDeviceCategory}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {['Phone', 'Laptop', 'Tablet', 'PC', 'TV', 'AC', 'Fridge', 'Cooler', 'Other'].map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div><Label>Device Brand *</Label><Input placeholder="Samsung, iPhone..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} /></div>
+                <div><Label>Device Model</Label><Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
               </div>
-              <div><Label>Device Model</Label><Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
               <div><Label>Problem Description *</Label><Textarea placeholder="Describe the issue..." value={problem} onChange={e => setProblem(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Technician</Label><Input placeholder="Technician name" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
                 <div><Label>Estimated Cost (₹)</Label><Input type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} /></div>
               </div>
-              <div><Label>Part Cost (₹)</Label><Input type="number" placeholder="0" value={partCost} onChange={e => setPartCost(e.target.value)} /></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -489,7 +460,6 @@ export default function RepairJobs() {
                 <div><Label>Technician</Label><Input value={editTech} onChange={e => setEditTech(e.target.value)} /></div>
                 <div><Label>Estimated Cost (₹)</Label><Input type="number" value={editCost} onChange={e => setEditCost(e.target.value)} /></div>
               </div>
-              <div><Label>Part Cost (₹)</Label><Input type="number" value={editPartCost} onChange={e => setEditPartCost(e.target.value)} /></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
@@ -503,16 +473,7 @@ export default function RepairJobs() {
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Record Payment — {selectedJob?.job_id}</DialogTitle></DialogHeader>
             <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Final Amount (₹)</Label><Input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} /></div>
-                <div><Label>Part Cost (₹)</Label><Input type="number" value={partCost} onChange={e => setPartCost(e.target.value)} /></div>
-              </div>
-              <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-muted-foreground">Estimated Profit</span>
-                  <span className="text-sm font-bold text-primary">₹{(parseFloat(paymentAmount) - parseFloat(partCost || "0") || 0).toLocaleString()}</span>
-                </div>
-              </div>
+              <div><Label>Amount (₹)</Label><Input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} /></div>
               <div>
                 <Label>Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
