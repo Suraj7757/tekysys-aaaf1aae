@@ -61,8 +61,8 @@ const roadmap = [
 ];
 
 const updates = [
+  { date: '22-Apr-2026', title: 'Enterprise ERP Modules Launched', description: 'Major update! Added 35+ advanced modules including Expense Tracking, Lead Management, Task Assignment, and a Digital Signature Canvas. Fully accessible from the main dashboard.' },
   { date: '21-Apr-2026', title: 'Smart AI Chatbot Launched', description: 'Added a context-aware AI Assistant that supports Hinglish. Customers can now check job status directly via Tracking ID, create new repair jobs step-by-step, and get answers to FAQs seamlessly.' },
-  { date: '21-Apr-2026', title: 'Critical Bug Fixes & Optimization', description: 'Resolved build errors, optimized chunk sizes, and stabilized the production bundle. Fixed edge-cases in the tracking logic and improved overall rendering speed.' },
   { date: '21-Apr-2026', title: 'Multi Services Management Launched', description: 'Brand-new Service Catalog module: manage all your repair services with pricing ranges, turnaround times, category grouping, popular markers, grid & table views, and full CRUD — all in one premium UI.' },
   { date: '21-Apr-2026', title: 'Identity & Experience Upgrade', description: 'Replaced OTP with secure Secret Key authentication, enhanced Signup flow with auto-login redirection, and launched the immersive Feature Showreel.' },
 ];
@@ -379,19 +379,40 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-muted/30 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-md">
-              <Smartphone className="h-4 w-4 text-primary-foreground" />
+      <footer className="border-t bg-muted/30 py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left mb-8">
+            <div className="flex flex-col items-center md:items-start">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-md">
+                  <Smartphone className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="font-black text-lg text-foreground tracking-tight">MSM CRM</span>
+              </div>
+              <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Multi Service Manager CRM.<br/>Premium SaaS Solution for Repair & Sales.</p>
             </div>
-            <span className="font-black text-lg text-foreground tracking-tight">MSM CRM</span>
+            
+            <div className="flex flex-col items-center md:items-start">
+              <h4 className="font-bold text-foreground mb-3">Quick Links</h4>
+              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                <Link to="/track" className="hover:text-primary transition-colors">Track Order</Link>
+                <Link to="/auth" className="hover:text-primary transition-colors">Sign In / Register</Link>
+                <a href={`https://wa.me/${ADMIN_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Support & Help</a>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center md:items-start">
+              <h4 className="font-bold text-foreground mb-3">About Us</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p><span className="font-semibold text-foreground">Founder:</span> Suraj Kumar</p>
+                <p><span className="font-semibold text-foreground">Phone:</span> +91 7319884599</p>
+                <p><span className="font-semibold text-foreground">Address:</span> Sheikhpura BH-PAT-14</p>
+              </div>
+            </div>
           </div>
-          <p>© {new Date().getFullYear()} Multi Service Manager CRM. Premium SaaS Solution.</p>
-          <div className="mt-3 flex justify-center gap-4">
-            <Link to="/track" className="hover:text-foreground">Track Order</Link>
-            <Link to="/auth" className="hover:text-foreground">Sign In</Link>
-            <a href={`https://wa.me/${ADMIN_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Support</a>
+          
+          <div className="border-t pt-6 text-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
+            Built with modern technology for advanced business management
           </div>
         </div>
       </footer>

@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Smartphone, Mail, Lock, User, Gift, Tag, KeyRound } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Smartphone, Mail, Lock, User, Gift, Tag, KeyRound, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -62,7 +63,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 flex-col gap-8">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 flex-col gap-8 relative">
+      <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
       <div className="flex flex-col lg:flex-row w-full max-w-6xl gap-8 px-4 py-8">
         {/* Left Side: Auth Card */}
         <div className="w-full lg:w-1/2 flex items-center justify-center">
@@ -140,7 +144,7 @@ export default function Auth() {
                         placeholder="••••••••" 
                         value={password} 
                         onChange={e => setPassword(e.target.value)} 
-                        required={mode !== 'forgot'}
+                        required
                       />
                     </div>
                   </div>
@@ -240,22 +244,22 @@ export default function Auth() {
           <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                <Tag className="h-4 w-4 text-primary" /> Future Updates
+                <Tag className="h-4 w-4 text-primary" /> Latest Updates
               </h4>
-              <Badge variant="outline" className="text-[9px] bg-primary/10 font-bold border-primary/20">Coming Soon</Badge>
+              <Badge variant="outline" className="text-[9px] bg-primary/10 font-bold border-primary/20">v2.0 Live</Badge>
             </div>
             <ul className="space-y-2">
               <li className="flex items-start gap-2 text-xs font-medium text-muted-foreground">
                 <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                <span>AI-Powered Device Diagnostics Tool</span>
+                <span>New: Advanced Enterprise ERP Modules</span>
               </li>
               <li className="flex items-start gap-2 text-xs font-medium text-muted-foreground">
                 <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                <span>Multi-Store Link & Global Inventory Master</span>
+                <span>New: Digital Signature & PhonePe Gateway integration</span>
               </li>
               <li className="flex items-start gap-2 text-xs font-medium text-muted-foreground">
                 <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                <span>Tally/Zoho Books Auto-Sync Integration</span>
+                <span>New: Lead Management & Daily Expense Tracking</span>
               </li>
             </ul>
           </div>
@@ -283,5 +287,3 @@ function FeatureItem({ icon: Icon, title, desc }: { icon: any, title: string, de
   );
 }
 
-import { CheckCircle, Badge } from 'lucide-react'; // Wait, I should use standard Lucide icons
-// Re-importing at the bottom to ensure the Component uses fixed imports if needed

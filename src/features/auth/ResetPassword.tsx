@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/services/supabase';
-import { Smartphone, Lock, ShieldCheck, KeyRound } from 'lucide-react';
+import { Smartphone, Lock, ShieldCheck, KeyRound, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -53,8 +53,11 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 flex-col gap-6">
-      <Card className="w-full max-w-md shadow-2xl border-primary/5 bg-card/80 backdrop-blur-xl relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 flex-col gap-6 relative">
+      <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
+      <Card className="w-full max-w-md shadow-2xl border-primary/5 bg-card/80 backdrop-blur-xl relative overflow-hidden mt-12 md:mt-0">
         <div className="absolute top-0 inset-x-0 h-1 gradient-primary opacity-50" />
         <CardHeader className="text-center space-y-3 pb-8">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-2xl shadow-primary/30 rotate-3">

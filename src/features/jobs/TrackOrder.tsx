@@ -11,7 +11,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
-import { IndianRupee, QrCode as QrIcon, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { IndianRupee, QrCode as QrIcon, Copy, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 
 const statusIcons: Record<string, any> = {
   'Received': Clock, 'In Progress': AlertTriangle, 'Ready': CheckCircle,
@@ -103,8 +103,11 @@ export default function TrackOrder() {
   const StatusIcon = result ? (statusIcons[result.status] || Clock) : Clock;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
+      <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
+      <div className="w-full max-w-md space-y-6 mt-12 md:mt-0">
         <div className="text-center space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl gradient-primary">
             <Smartphone className="h-7 w-7 text-primary-foreground" />
