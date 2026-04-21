@@ -24,7 +24,7 @@ export default function Settings() {
   const [gstin, setGstin] = useState('');
   const [adminShare, setAdminShare] = useState('100');
   const [staffShare, setStaffShare] = useState('0');
-  const [splitEnabled, setSplitEnabled] = useState(true);
+  const [splitEnabled, setSplitEnabled] = useState(false);
   const [upiId, setUpiId] = useState('');
   const [qrReceivers, setQrReceivers] = useState<string[]>(['Admin QR']);
 
@@ -44,7 +44,7 @@ export default function Settings() {
       setGstin(settings.gstin || '');
       setAdminShare(String(settings.admin_share_percent ?? 100));
       setStaffShare(String(settings.staff_share_percent ?? 0));
-      setSplitEnabled(settings.revenue_split_enabled !== false);
+      setSplitEnabled(settings.revenue_split_enabled === true);
       setUpiId(settings.upi_id || '');
       setQrReceivers(settings.qr_receivers && settings.qr_receivers.length > 0 ? settings.qr_receivers : ['Admin QR']);
     }

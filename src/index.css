@@ -126,11 +126,17 @@
   padding: 0.5rem !important;
 }
 [data-layout="spacious"] .p-3 {
-  padding: 1.25rem !important;
+  padding: 1.5rem !important;
+}
+[data-layout="spacious"] .shadow-card {
+  box-shadow: none;
+  border: 1px solid hsl(var(--border));
+  margin-bottom: 2rem;
 }
 [data-layout="modern"] .shadow-card {
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  border: 1px solid hsl(var(--primary) / 0.2);
+  background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.9));
 }
 
 @layer base {

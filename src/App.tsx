@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { useEffect } from 'react';
 
 import Landing from '@/features/dashboard/Landing';
 import Auth from '@/features/auth/Auth';
@@ -68,6 +69,13 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const skin = localStorage.getItem('msm-skin') || 'default';
+    const layout = localStorage.getItem('msm-layout') || 'default';
+    document.documentElement.setAttribute('data-skin', skin);
+    document.documentElement.setAttribute('data-layout', layout);
+  }, []);
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <QueryClientProvider client={queryClient}>

@@ -95,9 +95,16 @@ export function useShopSettings() {
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   const saveSettings = useCallback(async (updates: Record<string, unknown>) => {
-    if (!user || !settings) return;
-    const { error } = await supabase.from('shop_settings').update(updates as any).eq('id', settings.id);
-    if (error) { toast.error('Failed to save'); return false; }
+    if (!user) return false;
+    let err;
+    if (settings?.id) {
+      const { error } = await supabase.from('shop_settings').update(updates as any).eq('id', settings.id);
+      err = error;
+    } else {
+      const { error } = await supabase.from('shop_settings').insert({ user_id: user.id, ...updates } as any);
+      err = error;
+    }
+    if (err) { toast.error('Failed to save: ' + err.message); return false; }
     await fetchSettings();
     return true;
   }, [user, settings, fetchSettings]);
