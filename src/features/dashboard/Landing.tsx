@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Smartphone, Wrench, Package, ShoppingCart, BarChart3, Shield, Users, Wallet,
-  Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail,
+  Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail, ConciergeBell,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NewsTicker } from '@/components/layout/NewsTicker';
@@ -14,6 +14,7 @@ const ADMIN_WHATSAPP = '7319884599';
 const SUPER_ADMIN = 'krs715665@gmail.com';
 
 const features = [
+  { icon: ConciergeBell, title: 'Multi Services Management', desc: 'Full service catalog with pricing ranges, turnaround times, categories, and status management. Mark popular services and track job counts per service.' },
   { icon: Wrench, title: 'Repair Job Management', desc: 'Track repair jobs with unique IDs, status updates, and customer notifications.' },
   { icon: Package, title: 'Inventory Management', desc: 'Full stock tracking with low-stock alerts and GST-compliant invoicing.' },
   { icon: ShoppingCart, title: 'Sales & Invoicing', desc: 'Sell inventory items with PDF invoices and WhatsApp sharing.' },
@@ -61,6 +62,7 @@ const roadmap = [
 ];
 
 const updates = [
+  { date: '21-Apr-2026', title: 'Multi Services Management Launched', description: 'Brand-new Service Catalog module: manage all your repair services with pricing ranges, turnaround times, category grouping, popular markers, grid & table views, and full CRUD — all in one premium UI.' },
   { date: '21-Apr-2026', title: 'Identity & Experience Upgrade', description: 'Replaced OTP with secure Secret Key authentication, enhanced Signup flow with auto-login redirection, and launched the immersive Feature Showreel.' },
 ];
 
@@ -105,7 +107,7 @@ export default function Landing() {
           The Ultimate <span className="text-primary italic">SaaS CRM</span> for Service Experts
         </h1>
         <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Manage repair jobs, inventory, sales, earnings & referrals — all in one powerful CRM platform built for mobile repair shops.
+          Manage your service catalog, repair jobs, inventory, sales & earnings — all in one powerful Multi-Service CRM platform.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/auth?mode=signup">
@@ -200,10 +202,10 @@ export default function Landing() {
             </p>
             <div className="p-8 bg-card border border-primary/10 rounded-[2rem] shadow-2xl shadow-primary/5 space-y-6 relative overflow-hidden">
                <div className="absolute top-0 right-0 p-4">
-                 <Badge className="bg-primary text-white font-bold animate-pulse">Fixes Deployed</Badge>
+                 <Badge className="bg-primary text-white font-bold animate-pulse">Live Now</Badge>
                </div>
                {updates.map((u, i) => (
-                 <div key={i} className="space-y-4">
+                 <div key={i} className={`space-y-4 ${i > 0 ? 'pt-4 border-t border-border/40' : ''}`}>
                    <div className="flex items-center gap-3">
                      <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center text-white shadow-lg">
                        <Zap className="h-5 w-5" />
@@ -216,19 +218,25 @@ export default function Landing() {
                    <p className="text-sm text-muted-foreground leading-relaxed pl-14">
                      {u.description}
                    </p>
-                   <ul className="pl-14 space-y-2">
-                     <li className="flex items-center gap-2 text-xs font-bold text-primary">
-                       <CheckCircle className="h-3.5 w-3.5" /> Replaced OTP with Direct Secret Key access
-                     </li>
-                     <li className="flex items-center gap-2 text-xs font-bold text-primary">
-                       <CheckCircle className="h-3.5 w-3.5" /> Enhanced Signup to Login redirection flow
-                     </li>
-                     <li className="flex items-center gap-2 text-xs font-bold text-primary">
-                       <CheckCircle className="h-3.5 w-3.5" /> Fixed Sidebar syntax & background rendering issues
-                     </li>
-                   </ul>
                  </div>
                ))}
+               <ul className="pl-4 space-y-2 pt-4 border-t border-border/40">
+                 <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                   <CheckCircle className="h-3.5 w-3.5" /> Multi Services Management module launched
+                 </li>
+                 <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                   <CheckCircle className="h-3.5 w-3.5" /> Grid & Table dual-view for service catalog
+                 </li>
+                 <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                   <CheckCircle className="h-3.5 w-3.5" /> Pricing ranges, TAT & category grouping added
+                 </li>
+                 <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                   <CheckCircle className="h-3.5 w-3.5" /> Replaced OTP with Direct Secret Key access
+                 </li>
+                 <li className="flex items-center gap-2 text-xs font-bold text-primary">
+                   <CheckCircle className="h-3.5 w-3.5" /> Dashboard stat card links to Services Catalog
+                 </li>
+               </ul>
             </div>
           </div>
           <div className="lg:w-1/2 relative">

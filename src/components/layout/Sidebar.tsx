@@ -5,7 +5,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Wrench, IndianRupee, ArrowLeftRight, Package, ShoppingCart,
-  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown,
+  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown, ConciergeBell,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -21,6 +21,7 @@ const mainItems = [
 ];
 
 const secondaryItems = [
+  { title: 'Services', url: '/services', icon: ConciergeBell },
   { title: 'Inventory', url: '/inventory', icon: Package },
   { title: 'Sells', url: '/sells', icon: ShoppingCart },
   { title: 'Wallet', url: '/wallet', icon: Wallet },
@@ -63,6 +64,7 @@ export function Sidebar() {
               <SidebarMenu className="px-3">
                 <SidebarNavLink to="/jobs#new" icon={Wrench} label="Create Job" active={false} collapsed={collapsed} />
                 <SidebarNavLink to="/sells#new" icon={ShoppingCart} label="Create Sell" active={false} collapsed={collapsed} />
+                <SidebarNavLink to="/services" icon={ConciergeBell} label="Services Catalog" active={location.pathname === '/services'} collapsed={collapsed} />
               </SidebarMenu>
             </SidebarGroup>
 
