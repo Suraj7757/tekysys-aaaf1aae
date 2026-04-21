@@ -11,10 +11,10 @@ interface LayoutProps {
 export function MainLayout({ children, title }: LayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background/95 backdrop-blur-sm">
+      <div className="h-screen flex w-full bg-background/95 overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-16 flex items-center justify-between border-b bg-card/50 backdrop-blur-md px-6 sticky top-0 z-10 transition-all duration-300">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          <header className="h-16 shrink-0 flex items-center justify-between border-b bg-card/50 backdrop-blur-md px-6 z-10 transition-all duration-300">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="hover:bg-accent transition-colors" />
               {title && (
@@ -28,7 +28,7 @@ export function MainLayout({ children, title }: LayoutProps) {
             </div>
             <Header />
           </header>
-          <main className="flex-1 p-6 lg:p-8 animate-fade-in overflow-auto">
+          <main className="flex-1 p-6 lg:p-8 animate-fade-in overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
             {children}
           </main>
           <Chatbot />
