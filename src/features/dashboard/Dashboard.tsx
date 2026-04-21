@@ -30,10 +30,11 @@ export default function Dashboard() {
     const upiTotal = payments.filter((p: any) => p.method === 'UPI/QR').reduce((s: number, p: any) => s + Number(p.amount), 0);
     const dueTotal = payments.filter((p: any) => p.method === 'Due').reduce((s: number, p: any) => s + Number(p.amount), 0);
     const totalRevenue = payments.reduce((s: number, p: any) => s + Number(p.amount), 0);
+    const totalProfit = payments.reduce((s: number, p: any) => s + (Number(p.profit) || 0), 0);
     const unsettledEarnings = unsettledPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
     const adminShare = unsettledPayments.reduce((s: number, p: any) => s + Number(p.admin_share), 0);
     const staffShare = unsettledPayments.reduce((s: number, p: any) => s + Number(p.staff_share), 0);
-    return { totalJobs: jobs.length, activeJobs: jobs.filter((j: any) => j.status !== 'Delivered').length, completedJobs: jobs.filter((j: any) => j.status === 'Delivered').length, totalRevenue, unsettledEarnings, cashTotal, upiTotal, dueTotal, adminShare, staffShare };
+    return { totalJobs: jobs.length, activeJobs: jobs.filter((j: any) => j.status !== 'Delivered').length, completedJobs: jobs.filter((j: any) => j.status === 'Delivered').length, totalRevenue, totalProfit, unsettledEarnings, cashTotal, upiTotal, dueTotal, adminShare, staffShare };
   }, [jobs, payments]);
 
   const lowStockItems = inventory.filter((i: any) => i.quantity <= i.min_stock);
@@ -82,10 +83,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-5">
           <StatCard icon={Wrench} label="Total Jobs" value={stats.totalJobs} sub={`${stats.activeJobs} active`} variant="primary" link="/jobs" />
-          <StatCard icon={IndianRupee} label="Cash" value={`₹${stats.cashTotal.toLocaleString()}`} sub="In-hand cash" variant="success" link="/payments" />
-          <StatCard icon={Smartphone} label="Digital" value={`₹${stats.upiTotal.toLocaleString()}`} sub="UPI & QR" variant="info" link="/payments" />
+          <StatCard icon={IndianRupee} label="Revenue" value={`₹${stats.totalRevenue.toLocaleString()}`} sub="Total sales" variant="success" link="/payments" />
+          <StatCard icon={Zap} label="Profit" value={`₹${stats.totalProfit.toLocaleString()}`} sub="Gain after costs" variant="info" link="/payments" />
           <StatCard icon={ConciergeBell} label="Services" value="Catalog" sub="Manage all services" variant="info" link="/services" />
           <StatCard icon={AlertTriangle} label="Low Stock" value={lowStockItems.length} sub="Items needing restock" variant="warning" link="/inventory" />
           <StatCard icon={Trash2} label="Trash" value={deletedCount} sub="Recoverable items" variant="primary" link="/admin" />

@@ -12,13 +12,28 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete, useShopSettings, getNextJobId } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil, Share2 } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil, Share2, ConciergeBell } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
+
+// Quick service catalog for job creation (mirrors ServicesManagement seed)
+const SERVICE_CATALOG = [
+  { label: 'Screen Replacement', price: 800, problem: 'Screen replacement needed' },
+  { label: 'Battery Replacement', price: 350, problem: 'Battery replacement needed' },
+  { label: 'Charging Port Repair', price: 200, problem: 'Charging port not working' },
+  { label: 'Motherboard Repair', price: 500, problem: 'Motherboard/chip-level repair required' },
+  { label: 'Water Damage Treatment', price: 400, problem: 'Water damage — ultrasonic cleaning required' },
+  { label: 'Laptop Screen Repair', price: 1500, problem: 'Laptop screen replacement needed' },
+  { label: 'Laptop Keyboard Replacement', price: 700, problem: 'Keyboard replacement needed' },
+  { label: 'RAM / SSD Upgrade', price: 300, problem: 'RAM/SSD upgrade requested' },
+  { label: 'TV Panel Repair', price: 1200, problem: 'TV LED panel fault — repair needed' },
+  { label: 'Printer Head Cleaning', price: 150, problem: 'Printer head cleaning & alignment' },
+  { label: 'Other / Custom', price: 0, problem: '' },
+];
 
 type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
 type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
@@ -66,6 +81,10 @@ export default function RepairJobs() {
   const [technician, setTechnician] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
 
+  const [serviceType, setServiceType] = useState("");
+  const [deviceCategory, setDeviceCategory] = useState("Phone");
+  const [partCost, setPartCost] = useState("");
+
   const [editName, setEditName] = useState("");
   const [editMobile, setEditMobile] = useState("");
   const [editBrand, setEditBrand] = useState("");
@@ -73,6 +92,7 @@ export default function RepairJobs() {
   const [editProblem, setEditProblem] = useState("");
   const [editTech, setEditTech] = useState("");
   const [editCost, setEditCost] = useState("");
+  const [editPartCost, setEditPartCost] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [qrReceiver, setQrReceiver] = useState(settings?.qr_receivers?.[0] || "Admin QR");
@@ -127,9 +147,14 @@ export default function RepairJobs() {
       device_brand: deviceBrand, device_model: deviceModel || null,
       problem_description: problem, technician_name: technician || null,
       status: 'Received' as any, estimated_cost: parseFloat(estimatedCost) || 0,
+      part_cost: parseFloat(partCost) || 0,
+      device_type: deviceCategory as any,
     });
     refetch();
     setCreateOpen(false);
+    setServiceType("");
+    setDeviceCategory("Phone");
+    setPartCost("");
     setCustomerMobile(""); setCustomerName(""); setDeviceBrand(""); setDeviceModel(""); setProblem(""); setTechnician(""); setEstimatedCost("");
     toast.success(`Job ${jobId} created`);
   };
@@ -143,6 +168,7 @@ export default function RepairJobs() {
     setEditProblem(job.problem_description);
     setEditTech(job.technician_name || '');
     setEditCost(String(job.estimated_cost));
+    setEditPartCost(String(job.part_cost || 0));
     setEditOpen(true);
   };
 
@@ -155,6 +181,7 @@ export default function RepairJobs() {
       device_brand: editBrand, device_model: editModel || null,
       problem_description: editProblem, technician_name: editTech || null,
       estimated_cost: parseFloat(editCost) || 0,
+      part_cost: parseFloat(editPartCost) || 0,
     }).eq('id', selectedJob.id);
     refetch();
     setEditOpen(false);
@@ -192,16 +219,24 @@ export default function RepairJobs() {
     if (!selectedJob || !user) return;
     const amount = parseFloat(paymentAmount) || 0;
     const receiver = qrReceiver === 'Custom' ? customQr : qrReceiver;
+    const pCost = parseFloat(partCost) || selectedJob.part_cost || 0;
+    const profit = amount - pCost;
     const splitEnabled = settings?.revenue_split_enabled !== false;
     const adminPct = splitEnabled ? (settings?.admin_share_percent ?? 50) / 100 : 1;
     const staffPct = splitEnabled ? (settings?.staff_share_percent ?? 50) / 100 : 0;
 
-    await supabase.from('repair_jobs').update({ status: 'Delivered' as any, delivered_at: new Date().toISOString() }).eq('id', selectedJob.id);
+    await supabase.from('repair_jobs').update({
+      status: 'Delivered' as any,
+      delivered_at: new Date().toISOString(),
+      part_cost: pCost
+    }).eq('id', selectedJob.id);
+
     await supabase.from('payments').insert({
       user_id: user.id, job_id: selectedJob.job_id, repair_job_id: selectedJob.id,
       amount, method: paymentMethod as any,
       qr_receiver: paymentMethod === 'UPI/QR' ? receiver : null,
       admin_share: amount * adminPct, staff_share: amount * staffPct,
+      profit: profit,
     });
     refetch(); refetchPayments();
     setPaymentOpen(false); setSelectedJob(null);
@@ -388,19 +423,46 @@ export default function RepairJobs() {
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Create Repair Job</DialogTitle></DialogHeader>
             <div className="grid gap-4">
+              {/* Service picker */}
+              <div>
+                <Label className="flex items-center gap-1"><ConciergeBell className="h-3.5 w-3.5 text-primary" /> Service Type (from catalog)</Label>
+                <Select value={serviceType} onValueChange={v => {
+                  setServiceType(v);
+                  const svc = SERVICE_CATALOG.find(s => s.label === v);
+                  if (svc && svc.problem) setProblem(svc.problem);
+                  if (svc && svc.price > 0) setEstimatedCost(String(svc.price));
+                }}>
+                  <SelectTrigger><SelectValue placeholder="Pick a service (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_CATALOG.map(s => <SelectItem key={s.label} value={s.label}>{s.label}{s.price > 0 ? ` — ₹${s.price}` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Customer Mobile *</Label><Input placeholder="9876543210" value={customerMobile} onChange={e => handleMobileSearch(e.target.value)} /></div>
                 <div><Label>Customer Name *</Label><Input value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Device Type *</Label>
+                  <Select value={deviceCategory} onValueChange={setDeviceCategory}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {['Phone', 'Laptop', 'Tablet', 'PC', 'TV', 'AC', 'Fridge', 'Cooler', 'Other'].map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Device Brand *</Label><Input placeholder="Samsung, iPhone..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} /></div>
-                <div><Label>Device Model</Label><Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
               </div>
+              <div><Label>Device Model</Label><Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
               <div><Label>Problem Description *</Label><Textarea placeholder="Describe the issue..." value={problem} onChange={e => setProblem(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Technician</Label><Input placeholder="Technician name" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
                 <div><Label>Estimated Cost (₹)</Label><Input type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} /></div>
               </div>
+              <div><Label>Part Cost (₹)</Label><Input type="number" placeholder="0" value={partCost} onChange={e => setPartCost(e.target.value)} /></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -427,6 +489,7 @@ export default function RepairJobs() {
                 <div><Label>Technician</Label><Input value={editTech} onChange={e => setEditTech(e.target.value)} /></div>
                 <div><Label>Estimated Cost (₹)</Label><Input type="number" value={editCost} onChange={e => setEditCost(e.target.value)} /></div>
               </div>
+              <div><Label>Part Cost (₹)</Label><Input type="number" value={editPartCost} onChange={e => setEditPartCost(e.target.value)} /></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
@@ -440,7 +503,16 @@ export default function RepairJobs() {
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Record Payment — {selectedJob?.job_id}</DialogTitle></DialogHeader>
             <div className="grid gap-4">
-              <div><Label>Amount (₹)</Label><Input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Final Amount (₹)</Label><Input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} /></div>
+                <div><Label>Part Cost (₹)</Label><Input type="number" value={partCost} onChange={e => setPartCost(e.target.value)} /></div>
+              </div>
+              <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-muted-foreground">Estimated Profit</span>
+                  <span className="text-sm font-bold text-primary">₹{(parseFloat(paymentAmount) - parseFloat(partCost || "0") || 0).toLocaleString()}</span>
+                </div>
+              </div>
               <div>
                 <Label>Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
