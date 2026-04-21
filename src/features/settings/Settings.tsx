@@ -22,11 +22,11 @@ export default function Settings() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [gstin, setGstin] = useState('');
-  const [adminShare, setAdminShare] = useState('50');
-  const [staffShare, setStaffShare] = useState('50');
+  const [adminShare, setAdminShare] = useState('100');
+  const [staffShare, setStaffShare] = useState('0');
   const [splitEnabled, setSplitEnabled] = useState(true);
   const [upiId, setUpiId] = useState('');
-  const [qrReceivers, setQrReceivers] = useState<string[]>(['Admin QR', 'Staff QR', 'Shop QR']);
+  const [qrReceivers, setQrReceivers] = useState<string[]>(['Admin QR']);
 
   // Profile
   const [displayName, setDisplayName] = useState('');
@@ -42,11 +42,11 @@ export default function Settings() {
       setPhone(settings.phone || '');
       setAddress(settings.address || '');
       setGstin(settings.gstin || '');
-      setAdminShare(String(settings.admin_share_percent ?? 50));
-      setStaffShare(String(settings.staff_share_percent ?? 50));
+      setAdminShare(String(settings.admin_share_percent ?? 100));
+      setStaffShare(String(settings.staff_share_percent ?? 0));
       setSplitEnabled(settings.revenue_split_enabled !== false);
       setUpiId(settings.upi_id || '');
-      setQrReceivers(settings.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR']);
+      setQrReceivers(settings.qr_receivers && settings.qr_receivers.length > 0 ? settings.qr_receivers : ['Admin QR']);
     }
   }, [settings]);
 
@@ -60,8 +60,8 @@ export default function Settings() {
   const handleSaveShop = async () => {
     const ok = await saveSettings({
       shop_name: shopName, phone, address, gstin,
-      admin_share_percent: parseInt(adminShare) || 50,
-      staff_share_percent: parseInt(staffShare) || 50,
+      admin_share_percent: parseInt(adminShare) || 100,
+      staff_share_percent: parseInt(staffShare) || 0,
       revenue_split_enabled: splitEnabled,
       upi_id: upiId,
       qr_receivers: qrReceivers.filter(q => q.trim()),
@@ -192,6 +192,34 @@ export default function Settings() {
                   >
                     <div className={`h-4 w-4 rounded-full ${skin.color}`} />
                     <span className="text-xs">{skin.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Dashboard Layout</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {[
+                  { id: 'default', name: 'Default' },
+                  { id: 'modern', name: 'Modern Glass' },
+                  { id: 'compact', name: 'Compact Data' },
+                  { id: 'spacious', name: 'Spacious Airy' },
+                ].map((layout) => (
+                  <Button
+                    key={layout.id}
+                    variant="outline"
+                    className={`h-10 justify-center gap-2 ${localStorage.getItem('msm-layout') === layout.id || (!localStorage.getItem('msm-layout') && layout.id === 'default') ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                    onClick={() => {
+                      document.documentElement.setAttribute('data-layout', layout.id);
+                      localStorage.setItem('msm-layout', layout.id);
+                      toast.success(`${layout.name} layout applied`);
+                      refetch(); // Trigger re-render to update selection UI
+                    }}
+                  >
+                    <span className="text-xs">{layout.name}</span>
                   </Button>
                 ))}
               </div>

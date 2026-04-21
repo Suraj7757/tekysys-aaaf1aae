@@ -18,25 +18,32 @@ export default function Settlements() {
   const { softDelete } = useSoftDelete();
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const unsettled = payments.filter((p: any) => !p.settled);
-  const unsettledTotal = unsettled.reduce((s: number, p: any) => s + Number(p.amount), 0);
-  const unsettledAdmin = unsettled.reduce((s: number, p: any) => s + Number(p.admin_share), 0);
-  const unsettledStaff = unsettled.reduce((s: number, p: any) => s + Number(p.staff_share), 0);
+  const filteredUnsettled = payments.filter((p: any) => {
+    if (p.settled) return false;
+    const date = p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : '';
+    if (startDate && date < startDate) return false;
+    if (endDate && date > endDate) return false;
+    return true;
+  });
+
+  const unsettledTotal = filteredUnsettled.reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const unsettledAdmin = filteredUnsettled.reduce((s: number, p: any) => s + Number(p.admin_share), 0);
+  const unsettledStaff = filteredUnsettled.reduce((s: number, p: any) => s + Number(p.staff_share), 0);
 
   const handleSettle = async () => {
-    if (!startDate || !endDate || !user) { toast.error("Select date range"); return; }
-    if (unsettled.length === 0) { toast.error("No unsettled payments"); return; }
+    if (!endDate || !user) { toast.error("Select end date"); return; }
+    if (filteredUnsettled.length === 0) { toast.error("No unsettled payments for selected date"); return; }
 
     const { data: cycle } = await supabase.from('settlement_cycles').insert({
-      user_id: user.id, start_date: startDate, end_date: endDate,
-      total_jobs: unsettled.length, total_revenue: unsettledTotal,
+      user_id: user.id, start_date: startDate || endDate, end_date: endDate,
+      total_jobs: filteredUnsettled.length, total_revenue: unsettledTotal,
       admin_share: unsettledAdmin, staff_share: unsettledStaff, settled_by: 'Admin',
     }).select('id').single();
 
     if (cycle) {
-      const ids = unsettled.map((p: any) => p.id);
+      const ids = filteredUnsettled.map((p: any) => p.id);
       await supabase.from('payments').update({ settled: true, settlement_cycle_id: cycle.id }).in('id', ids);
     }
     refetchSettlements(); refetchPayments();
@@ -61,12 +68,15 @@ export default function Settlements() {
                 <div className="flex gap-4 mt-2 text-sm">
                   <span>Admin: <strong>₹{unsettledAdmin.toLocaleString()}</strong></span>
                   <span>Staff: <strong>₹{unsettledStaff.toLocaleString()}</strong></span>
-                  <span>Jobs: <strong>{unsettled.length}</strong></span>
+                  <span>Jobs: <strong>{filteredUnsettled.length}</strong></span>
                 </div>
               </div>
-              <Button onClick={() => setOpen(true)} disabled={unsettled.length === 0}>
-                <CheckCircle2 className="h-4 w-4 mr-1" /> Settle Done
-              </Button>
+              <div className="flex gap-2">
+                <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} title="Settle Up To Date" className="w-auto" />
+                <Button onClick={() => setOpen(true)} disabled={filteredUnsettled.length === 0}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Settle Done
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -117,11 +127,11 @@ export default function Settlements() {
             <DialogHeader><DialogTitle>Complete Settlement</DialogTitle></DialogHeader>
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Start Date</Label><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
+                <div><Label>Start Date (Optional)</Label><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
                 <div><Label>End Date</Label><Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></div>
               </div>
               <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span>Total Jobs</span><strong>{unsettled.length}</strong></div>
+                <div className="flex justify-between"><span>Total Jobs</span><strong>{filteredUnsettled.length}</strong></div>
                 <div className="flex justify-between"><span>Total Revenue</span><strong>₹{unsettledTotal.toLocaleString()}</strong></div>
                 <div className="flex justify-between"><span>Admin Share</span><strong>₹{unsettledAdmin.toLocaleString()}</strong></div>
                 <div className="flex justify-between"><span>Staff Share</span><strong>₹{unsettledStaff.toLocaleString()}</strong></div>

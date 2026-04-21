@@ -22,6 +22,7 @@ export default function Customers() {
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
 
   const filtered = customers.filter((c: any) =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.mobile.includes(search)
@@ -29,14 +30,32 @@ export default function Customers() {
 
   const handleAdd = async () => {
     if (!name || !mobile || !user) { toast.error("Name and mobile required"); return; }
-    const { error } = await supabase.from('customers').insert({
-      user_id: user.id, name, mobile, email: email || null, address: address || null,
-    });
-    if (error) { toast.error(error.message); return; }
+    if (editingCustomer) {
+      const { error } = await supabase.from('customers').update({
+        name, mobile, email: email || null, address: address || null
+      }).eq('id', editingCustomer.id);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Customer updated");
+    } else {
+      const { error } = await supabase.from('customers').insert({
+        user_id: user.id, name, mobile, email: email || null, address: address || null,
+      });
+      if (error) { toast.error(error.message); return; }
+      toast.success("Customer added");
+    }
     refetch();
     setOpen(false);
+    setEditingCustomer(null);
     setName(""); setMobile(""); setEmail(""); setAddress("");
-    toast.success("Customer added");
+  };
+
+  const openEdit = (c: any) => {
+    setEditingCustomer(c);
+    setName(c.name);
+    setMobile(c.mobile);
+    setEmail(c.email || "");
+    setAddress(c.address || "");
+    setOpen(true);
   };
 
   const handleDelete = async (c: any) => {
@@ -61,7 +80,7 @@ export default function Customers() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search by name or mobile..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Customer</Button>
+          <Button onClick={() => { setEditingCustomer(null); setName(""); setMobile(""); setEmail(""); setAddress(""); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Add Customer</Button>
         </div>
 
         <Card className="shadow-card overflow-hidden">
@@ -86,6 +105,9 @@ export default function Customers() {
                     <td className="p-3">{jobs.filter((j: any) => j.customer_id === c.id).length}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
                     <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEdit(c)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                      </Button>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDelete(c)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -102,7 +124,7 @@ export default function Customers() {
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add Customer</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingCustomer ? 'Edit' : 'Add'} Customer</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
               <div><Label>Mobile *</Label><Input value={mobile} onChange={e => setMobile(e.target.value)} /></div>
@@ -111,7 +133,7 @@ export default function Customers() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleAdd}>Add</Button>
+              <Button onClick={handleAdd}>{editingCustomer ? 'Save Changes' : 'Add'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

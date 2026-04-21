@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { downloadSellInvoice, SellInvoiceData } from '@/lib/invoice';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { formatTrackingId } from '@/utils/idGenerator';
 
 async function getNextSellId(userId: string): Promise<string> {
@@ -46,6 +47,18 @@ export default function Sells() {
     i.name.toLowerCase().includes(search.toLowerCase()) ||
     i.sku.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#new') {
+        setTab('shop');
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   const openSell = (item: any) => {
     setSelectedItem(item);
@@ -145,7 +158,7 @@ export default function Sells() {
       'Rs.' + Number(s.total).toLocaleString(),
       s.payment_method
     ]);
-    doc.autoTable({
+    autoTable(doc, {
       head: [['ID', 'Item', 'Qty', 'Total', 'Payment']],
       body: tableData,
       startY: 20,
@@ -228,7 +241,7 @@ export default function Sells() {
                 <tbody>
                   {(sells as any[]).map((s: any) => (
                     <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-mono font-semibold text-primary">{s.sell_id}</td>
+                      <td className="p-3 font-mono font-semibold text-primary cursor-pointer hover:underline" onClick={() => { setSelectedSell(s); setDetailsOpen(true); }}>{s.sell_id}</td>
                       <td className="p-3">{s.item_name}</td>
                       <td className="p-3 hidden sm:table-cell">{s.customer_name || '—'}</td>
                       <td className="p-3">{s.quantity}</td>

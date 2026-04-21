@@ -109,6 +109,28 @@
     --ring: 262 83% 58%;
     --sidebar-primary: 262 83% 58%;
   }
+
+  /* Layout Modifications */
+  [data-layout="compact"] {
+    --radius: 0.3rem;
+  }
+  [data-layout="spacious"] {
+    --radius: 1.2rem;
+  }
+  [data-layout="modern"] {
+    --radius: 1rem;
+  }
+}
+
+[data-layout="compact"] .p-3, [data-layout="compact"] .p-4, [data-layout="compact"] .p-6 {
+  padding: 0.5rem !important;
+}
+[data-layout="spacious"] .p-3 {
+  padding: 1.25rem !important;
+}
+[data-layout="modern"] .shadow-card {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  border: 1px solid hsl(var(--border) / 0.4);
 }
 
 @layer base {

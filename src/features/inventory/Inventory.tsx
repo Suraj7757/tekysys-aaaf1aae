@@ -19,6 +19,7 @@ export default function Inventory() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   const filtered = items.filter((i: any) =>
     i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.toLowerCase().includes(search.toLowerCase())
@@ -26,16 +27,38 @@ export default function Inventory() {
 
   const handleAdd = async () => {
     if (!form.name || !form.sku || !user) { toast.error("Name and SKU required"); return; }
-    await supabase.from('inventory').insert({
-      user_id: user.id, name: form.name, sku: form.sku, category: form.category || null,
-      quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
-      cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
-      gst_percent: parseFloat(form.gstPercent) || 18,
-    });
+    if (editingItem) {
+      await supabase.from('inventory').update({
+        name: form.name, sku: form.sku, category: form.category || null,
+        quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
+        cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
+        gst_percent: parseFloat(form.gstPercent) || 18,
+      }).eq('id', editingItem.id);
+      toast.success("Item updated");
+    } else {
+      await supabase.from('inventory').insert({
+        user_id: user.id, name: form.name, sku: form.sku, category: form.category || null,
+        quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
+        cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
+        gst_percent: parseFloat(form.gstPercent) || 18,
+      });
+      toast.success("Item added");
+    }
     refetch();
     setOpen(false);
+    setEditingItem(null);
     setForm({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
-    toast.success("Item added");
+  };
+
+  const openEdit = (item: any) => {
+    setEditingItem(item);
+    setForm({
+      name: item.name, sku: item.sku, category: item.category || '',
+      quantity: String(item.quantity), minStock: String(item.min_stock),
+      costPrice: String(item.cost_price), sellPrice: String(item.sell_price),
+      gstPercent: String(item.gst_percent)
+    });
+    setOpen(true);
   };
 
   const handleDelete = async (item: any) => {
@@ -60,7 +83,7 @@ export default function Inventory() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search inventory..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Item</Button>
+          <Button onClick={() => { setEditingItem(null); setForm({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Add Item</Button>
         </div>
 
         <Card className="shadow-card overflow-hidden">
@@ -98,6 +121,9 @@ export default function Inventory() {
                     <td className="p-3 font-semibold">₹{Number(item.sell_price)}</td>
                     <td className="p-3 hidden md:table-cell">{Number(item.gst_percent)}%</td>
                     <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEdit(item)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                      </Button>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDelete(item)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -112,7 +138,7 @@ export default function Inventory() {
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Add Inventory Item</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingItem ? 'Edit' : 'Add'} Inventory Item</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
@@ -131,7 +157,7 @@ export default function Inventory() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleAdd}>Add Item</Button>
+              <Button onClick={handleAdd}>{editingItem ? 'Save Changes' : 'Add Item'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

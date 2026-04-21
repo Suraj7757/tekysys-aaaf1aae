@@ -56,29 +56,42 @@ export function Sidebar() {
           )}
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Main Menu</SidebarGroupLabel>
-          <SidebarMenu className="px-3">
-            {mainItems.map(item => (
-              <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        {!isAdmin && (
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Quick Actions</SidebarGroupLabel>
+              <SidebarMenu className="px-3">
+                <SidebarNavLink to="/jobs#new" icon={Wrench} label="Create Job" active={false} collapsed={collapsed} />
+                <SidebarNavLink to="/sells#new" icon={ShoppingCart} label="Create Sell" active={false} collapsed={collapsed} />
+              </SidebarMenu>
+            </SidebarGroup>
 
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Management</SidebarGroupLabel>
-          <SidebarMenu className="px-3">
-            {secondaryItems.map(item => (
-              <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+            <SidebarGroup className="mt-4">
+              <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Main Menu</SidebarGroupLabel>
+              <SidebarMenu className="px-3">
+                {mainItems.map(item => (
+                  <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
+                ))}
+              </SidebarMenu>
+            </SidebarGroup>
+
+            <SidebarGroup className="mt-4">
+              <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Management</SidebarGroupLabel>
+              <SidebarMenu className="px-3">
+                {secondaryItems.map(item => (
+                  <SidebarNavLink key={item.url} to={item.url} icon={item.icon} label={item.title} active={location.pathname === item.url} collapsed={collapsed} />
+                ))}
+              </SidebarMenu>
+            </SidebarGroup>
+          </>
+        )}
 
         {isAdmin && (
           <SidebarGroup className="mt-4">
-            <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Admin</SidebarGroupLabel>
+            <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Admin Dashboard</SidebarGroupLabel>
             <SidebarMenu className="px-3">
               <SidebarNavLink to="/admin" icon={Shield} label="Admin Panel" active={location.pathname === '/admin'} collapsed={collapsed} />
+              <SidebarNavLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} collapsed={collapsed} />
             </SidebarMenu>
           </SidebarGroup>
         )}

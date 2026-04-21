@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
 
 type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
@@ -88,6 +89,18 @@ export default function RepairJobs() {
     const matchStatus = statusFilter === "all" || j.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#new') {
+        setCreateOpen(true);
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   const handleMobileSearch = async (mobile: string) => {
     setCustomerMobile(mobile);
@@ -267,7 +280,7 @@ export default function RepairJobs() {
       j.status,
       'Rs.' + Number(j.estimated_cost).toLocaleString()
     ]);
-    doc.autoTable({
+    autoTable(doc, {
       head: [['ID', 'Customer', 'Device', 'Status', 'Cost']],
       body: tableData,
       startY: 20,
@@ -338,7 +351,7 @@ export default function RepairJobs() {
                   const allowedNext = nextStatuses[job.status as JobStatus] || [];
                   return (
                     <tr key={job.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-mono font-semibold text-primary">{job.job_id}</td>
+                      <td className="p-3 font-mono font-semibold text-primary cursor-pointer hover:underline" onClick={() => { setSelectedJob(job); setDetailsOpen(true); }}>{job.job_id}</td>
                       <td className="p-3"><div>{job.customer_name}</div><div className="text-xs text-muted-foreground">{job.customer_mobile}</div></td>
                       <td className="p-3 hidden md:table-cell">{job.device_brand} {job.device_model}</td>
                       <td className="p-3 hidden lg:table-cell max-w-48 truncate">{job.problem_description}</td>

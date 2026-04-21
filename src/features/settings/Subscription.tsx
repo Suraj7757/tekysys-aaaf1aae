@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 const UPI_ID = 'patna14@ptyes';
 
 const PLANS = [
-  { id: 'free', name: 'Free Trial', price: 0, period: '30 days', features: ['Full Pro Access', 'Addicted UI', '10 Jobs', '20 Items'] },
+  { id: 'free', name: 'Free Trial', price: 0, period: '7 days', features: ['Full Pro Access', 'Addicted UI', '10 Jobs', '20 Items'] },
   { id: 'monthly', name: 'Monthly Pro', price: 249, period: 'mo', features: ['Unlimited Jobs', 'Unlimited Inventory', 'Wallet System', 'QR Payments'] },
   { id: 'annual', name: 'Annual Pro', price: 199, period: 'yr', features: ['All Pro Features', '20% Discount', 'No Ads', 'Priority Support'] },
 ];

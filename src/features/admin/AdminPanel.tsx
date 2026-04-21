@@ -40,7 +40,7 @@ export default function AdminPanel() {
   // Promo dialog
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoCode, setPromoCode] = useState('');
-  const [promoValidity, setPromoValidity] = useState('30');
+  const [promoValidity, setPromoValidity] = useState('7');
   const [promoLimit, setPromoLimit] = useState('1');
   const [promoExpiry, setPromoExpiry] = useState('');
 
@@ -114,7 +114,7 @@ export default function AdminPanel() {
   const handleCreatePromo = async () => {
     if (!promoCode || !user) return;
     const { error } = await supabase.from('promo_codes').insert({
-      code: promoCode.toUpperCase(), validity_days: parseInt(promoValidity) || 30,
+      code: promoCode.toUpperCase(), validity_days: parseInt(promoValidity) || 7,
       usage_limit: parseInt(promoLimit) || 1, created_by: user.id,
       expiry_date: promoExpiry ? new Date(promoExpiry).toISOString() : null,
     } as any);
