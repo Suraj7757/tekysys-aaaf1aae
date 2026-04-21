@@ -14,7 +14,7 @@ const ADMIN_WHATSAPP = '7319884599';
 const SUPER_ADMIN = 'krs715665@gmail.com';
 
 const features = [
-  { icon: ConciergeBell, title: 'Multi Services Management', desc: 'Full service catalog with pricing ranges, turnaround times, categories, and status management. Mark popular services and track job counts per service.' },
+  { icon: ConciergeBell, title: 'Multi Services Catalog', desc: 'NEW: Full service catalog for AC, Fridge, Cooler, Mobile & more. Manage pricing ranges, TAT, and grouping with a premium UI.' },
   { icon: Wrench, title: 'Repair Job Management', desc: 'Track repair jobs with unique IDs, status updates, and customer notifications.' },
   { icon: Package, title: 'Inventory Management', desc: 'Full stock tracking with low-stock alerts and GST-compliant invoicing.' },
   { icon: ShoppingCart, title: 'Sales & Invoicing', desc: 'Sell inventory items with PDF invoices and WhatsApp sharing.' },
@@ -62,7 +62,7 @@ const roadmap = [
 ];
 
 const updates = [
-  { date: '21-Apr-2026', title: 'Multi Services Management Launched', description: 'Brand-new Service Catalog module: manage all your repair services with pricing ranges, turnaround times, category grouping, popular markers, grid & table views, and full CRUD — all in one premium UI.' },
+  { date: '21-Apr-2026', title: '🔥 Multi Services Catalog Live Now!', description: 'Launch of the comprehensive Service Management system. Manage Mobile, Laptop, TV, AC, Fridge & Cooler services with pricing, TAT, and category grouping in a premium new UI.' },
   { date: '21-Apr-2026', title: 'Identity & Experience Upgrade', description: 'Replaced OTP with secure Secret Key authentication, enhanced Signup flow with auto-login redirection, and launched the immersive Feature Showreel.' },
 ];
 
@@ -304,7 +304,7 @@ export default function Landing() {
               <MessageCircle className="h-8 w-8 text-green-500 mx-auto mb-3" />
               <h3 className="font-semibold text-foreground mb-2">WhatsApp</h3>
               <p className="text-sm text-muted-foreground mb-4">Chat with us directly</p>
-              <Button size="sm" variant="outline" onClick={() => window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with RepairDesk CRM')}`, '_blank')}>
+              <Button size="sm" variant="outline" onClick={() => window.open(`https://wa.me/91${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with MSM CRM')}`, '_blank')}>
                 Open WhatsApp
               </Button>
             </CardContent>
