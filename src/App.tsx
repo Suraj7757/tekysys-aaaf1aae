@@ -31,15 +31,20 @@ import { Suspense } from 'react';
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+function ProtectedRoute({ children, allowExpired = false }: { children: React.ReactNode, allowExpired?: boolean }) {
+  const { user, loading, isPlanExpired, isBanned, isMaintenance } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
+  if (isMaintenance && user.email !== 'krs715665@gmail.com') return <Navigate to="/auth" replace />;
+  if (isBanned) return <Navigate to="/auth" replace />;
+  if (isPlanExpired && !allowExpired && user.email !== 'krs715665@gmail.com') {
+    return <Navigate to="/subscription" replace />;
+  }
   return <>{children}</>;
 }
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, loading, isPlanExpired } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
 
   return (
@@ -61,7 +66,7 @@ function AppRoutes() {
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/trash" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Trash />}</ProtectedRoute>} />
           <Route path="/wallet" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <WalletPage />}</ProtectedRoute>} />
-          <Route path="/subscription" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Subscription />}</ProtectedRoute>} />
+          <Route path="/subscription" element={<ProtectedRoute allowExpired>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Subscription />}</ProtectedRoute>} />
           <Route path="/services" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <ServicesManagement />}</ProtectedRoute>} />
           <Route path="/enterprise" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <EnterpriseModules />}</ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
@@ -74,9 +79,9 @@ function AppRoutes() {
 
 export default function App() {
   useEffect(() => {
-    const skin = localStorage.getItem('msm-skin') || 'default';
+    localStorage.setItem('msm-skin', 'default');
     const layout = localStorage.getItem('msm-layout') || 'default';
-    document.documentElement.setAttribute('data-skin', skin);
+    document.documentElement.setAttribute('data-skin', 'default');
     document.documentElement.setAttribute('data-layout', layout);
   }, []);
 

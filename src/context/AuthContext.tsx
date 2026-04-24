@@ -8,6 +8,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  isBanned: boolean;
+  isMaintenance: boolean;
+  isPlanExpired: boolean;
   loading: boolean;
   signUp: (email: string, password: string, displayName: string, mobile: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -21,11 +24,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [isBanned, setIsBanned] = useState(false);
+  const [isMaintenance, setIsMaintenance] = useState(false);
+  const [isPlanExpired, setIsPlanExpired] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = useCallback(async (userId: string) => {
-    const { data } = await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle();
-    setRole((data?.role as AppRole) || 'staff');
+  const fetchRole = useCallback(async (userId: string, email?: string) => {
+    const [rolesRes, profileRes, configRes] = await Promise.all([
+      supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+      supabase.from('profiles').select('is_banned, plan_expires_at').eq('user_id', userId).maybeSingle() as any,
+      supabase.from('system_config').select('value').eq('id', 'maintenance').maybeSingle() as any
+    ]);
+    
+    const isMaint = configRes.data?.value?.enabled === true;
+    setIsMaintenance(isMaint);
+
+    if (isMaint && email !== 'krs715665@gmail.com') {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setRole(null);
+      return;
+    }
+
+    if (profileRes.data?.plan_expires_at && new Date(profileRes.data.plan_expires_at) < new Date() && email !== 'krs715665@gmail.com') {
+      setIsPlanExpired(true);
+    } else {
+      setIsPlanExpired(false);
+    }
+
+    if (profileRes.data?.is_banned) {
+      setIsBanned(true);
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setRole(null);
+    } else {
+      setIsBanned(false);
+      setRole((rolesRes.data?.role as AppRole) || 'staff');
+    }
   }, []);
 
   useEffect(() => {
@@ -33,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => fetchRole(session.user.id), 0);
+        setTimeout(() => fetchRole(session.user.id, session.user.email), 0);
       } else {
         setRole(null);
       }
@@ -43,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchRole(session.user.id);
+      if (session?.user) fetchRole(session.user.id, session.user.email);
       setLoading(false);
     });
 
@@ -70,8 +107,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message || null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    
+    if (data?.user) {
+      const [profileRes, configRes] = await Promise.all([
+        supabase.from('profiles').select('is_banned, plan_expires_at').eq('user_id', data.user.id).maybeSingle() as any,
+        supabase.from('system_config').select('value').eq('id', 'maintenance').maybeSingle() as any
+      ]);
+
+      if (configRes.data?.value?.enabled && data.user.email !== 'krs715665@gmail.com') {
+        await supabase.auth.signOut();
+        setIsMaintenance(true);
+        return { error: 'System is currently under maintenance. Try again later.' };
+      }
+
+      if (profileRes.data?.is_banned) {
+        await supabase.auth.signOut();
+        setIsBanned(true);
+        return { error: 'Your account has been suspended by the administrator.' };
+      }
+    }
+    
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -89,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signUp, signIn, signOut, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, session, role, isBanned, isMaintenance, isPlanExpired, loading, signUp, signIn, signOut, sendPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );

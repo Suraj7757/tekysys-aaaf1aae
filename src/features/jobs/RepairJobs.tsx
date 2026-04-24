@@ -19,6 +19,7 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
+import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
 
 // Quick service catalog for job creation (mirrors ServicesManagement seed)
 const SERVICE_CATALOG = [
@@ -127,9 +128,16 @@ export default function RepairJobs() {
     }
   };
 
+  const { limits, planType } = usePlanRestrictions();
+
   const handleCreateJob = async () => {
     if (!customerName || !customerMobile || !deviceBrand || !problem || !user) {
       toast.error("Please fill all required fields"); return;
+    }
+
+    if (limits.maxJobs !== Infinity && jobs.length >= limits.maxJobs) {
+      toast.error(`Plan Limit Reached: Your ${planType} plan only supports up to ${limits.maxJobs} jobs. Please upgrade to continue.`);
+      return;
     }
     let { data: customer } = await supabase.from('customers').select('id').eq('user_id', user.id).eq('mobile', customerMobile).eq('deleted', false).maybeSingle();
     if (!customer) {
@@ -289,7 +297,7 @@ export default function RepairJobs() {
   };
 
   const exportToPDF = () => {
-    const doc = jsPDF() as any;
+    const doc = new jsPDF() as any;
     doc.text("Repair Jobs Report", 14, 15);
     const tableData = filtered.map(j => [
       j.job_id,
@@ -403,41 +411,68 @@ export default function RepairJobs() {
 
         {/* Create Job Dialog */}
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Create Repair Job</DialogTitle></DialogHeader>
-            <div className="grid gap-4">
-              {/* Service picker */}
-              <div>
-                <Label className="flex items-center gap-1"><ConciergeBell className="h-3.5 w-3.5 text-primary" /> Service Type (from catalog)</Label>
-                <Select value={serviceType} onValueChange={v => {
-                  setServiceType(v);
-                  const svc = SERVICE_CATALOG.find(s => s.label === v);
-                  if (svc && svc.problem) setProblem(svc.problem);
-                  if (svc && svc.price > 0) setEstimatedCost(String(svc.price));
-                }}>
-                  <SelectTrigger><SelectValue placeholder="Pick a service (optional)" /></SelectTrigger>
-                  <SelectContent>
-                    {SERVICE_CATALOG.map(s => <SelectItem key={s.label} value={s.label}>{s.label}{s.price > 0 ? ` — ₹${s.price}` : ''}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight">Create New Repair Job</DialogTitle>
+              <p className="text-sm text-muted-foreground">Enter customer details and device information to log a new repair job.</p>
+            </DialogHeader>
+            <div className="grid gap-6 py-4">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Customer Details */}
+                <div className="space-y-4 bg-muted/30 p-4 rounded-xl border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">1</span>
+                    <h3 className="font-semibold text-sm">Customer Info</h3>
+                  </div>
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Mobile Number *</Label><Input className="mt-1 font-mono" placeholder="9876543210" value={customerMobile} onChange={e => handleMobileSearch(e.target.value)} /></div>
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Customer Name *</Label><Input className="mt-1" placeholder="John Doe" value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
+                </div>
+
+                {/* Service Selection */}
+                <div className="space-y-4 bg-muted/30 p-4 rounded-xl border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">2</span>
+                    <h3 className="font-semibold text-sm">Service Selection</h3>
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1 text-xs font-bold uppercase text-muted-foreground mb-1"><ConciergeBell className="h-3 w-3" /> Quick Pick (Catalog)</Label>
+                    <Select value={serviceType} onValueChange={v => {
+                      setServiceType(v);
+                      const svc = SERVICE_CATALOG.find(s => s.label === v);
+                      if (svc && svc.problem) setProblem(svc.problem);
+                      if (svc && svc.price > 0) setEstimatedCost(String(svc.price));
+                    }}>
+                      <SelectTrigger><SelectValue placeholder="Pick a service (optional)" /></SelectTrigger>
+                      <SelectContent>
+                        {SERVICE_CATALOG.map(s => <SelectItem key={s.label} value={s.label}>{s.label}{s.price > 0 ? ` — ₹${s.price}` : ''}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Customer Mobile *</Label><Input placeholder="9876543210" value={customerMobile} onChange={e => handleMobileSearch(e.target.value)} /></div>
-                <div><Label>Customer Name *</Label><Input value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
+
+              {/* Device Details */}
+              <div className="space-y-4 bg-muted/30 p-4 rounded-xl border">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">3</span>
+                  <h3 className="font-semibold text-sm">Device & Repair Info</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Device Brand *</Label><Input className="mt-1" placeholder="Samsung, Apple..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} /></div>
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Model</Label><Input className="mt-1" placeholder="Galaxy S23, iPhone 14" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
+                </div>
+                <div><Label className="text-xs font-bold uppercase text-muted-foreground">Problem Description *</Label><Textarea className="mt-1 resize-none h-20" placeholder="Describe the issue in detail..." value={problem} onChange={e => setProblem(e.target.value)} /></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Assigned Technician</Label><Input className="mt-1" placeholder="Optional" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Estimated Cost (₹) *</Label><Input className="mt-1 font-bold text-primary" type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} /></div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Device Brand *</Label><Input placeholder="Samsung, iPhone..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} /></div>
-                <div><Label>Device Model</Label><Input placeholder="Galaxy S23" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
-              </div>
-              <div><Label>Problem Description *</Label><Textarea placeholder="Describe the issue..." value={problem} onChange={e => setProblem(e.target.value)} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Technician</Label><Input placeholder="Technician name" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
-                <div><Label>Estimated Cost (₹)</Label><Input type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} /></div>
-              </div>
+
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreateJob}>Create Job</Button>
+            <DialogFooter className="border-t pt-4">
+              <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateJob} className="w-full sm:w-auto px-8"><Plus className="h-4 w-4 mr-2" /> Create Job</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

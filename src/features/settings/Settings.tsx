@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/AuthContext';
 import { useShopSettings } from '@/hooks/useSupabaseData';
 import { supabase } from '@/services/supabase';
-import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon, Mail } from 'lucide-react';
+import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon, Mail, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
@@ -35,6 +35,7 @@ export default function Settings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [mobile, setMobile] = useState('');
+  const [shopTrackingId, setShopTrackingId] = useState('');
 
   useEffect(() => {
     if (settings) {
@@ -54,6 +55,9 @@ export default function Settings() {
     if (user) {
       setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || '');
       setMobile(user.user_metadata?.mobile || '');
+      supabase.from('profiles').select('tracking_id').eq('user_id', user.id).single().then(({ data }) => {
+        if (data && data.tracking_id) setShopTrackingId(data.tracking_id);
+      });
     }
   }, [user]);
 
@@ -115,6 +119,13 @@ export default function Settings() {
             <CardTitle className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Profile</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div>
+              <Label>Shop Tracking ID (Unique ID)</Label>
+              <div className="flex items-center gap-2">
+                 <Input value={shopTrackingId || 'Loading...'} disabled className="bg-muted font-mono" />
+                 <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(shopTrackingId); toast.success('Tracking ID copied'); }}><Copy className="h-4 w-4" /></Button>
+              </div>
+            </div>
             <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
             <div><Label>Registered Mobile Number</Label><Input value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} /></div>
             <div><Label>Email</Label><Input value={user?.email || ''} disabled className="bg-muted" /></div>

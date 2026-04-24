@@ -3,7 +3,7 @@ import { supabase } from '@/services/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
-type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells' | 'customer_payments' | 'wallets' | 'wallet_transactions' | 'withdraw_requests';
+type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells' | 'payment_submissions' | 'wallets' | 'wallet_transactions' | 'withdraw_requests' | 'profiles';
 
 export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
   const { user } = useAuth();
@@ -14,7 +14,7 @@ export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
     if (!user) return;
     setLoading(true);
     let query = supabase.from(table).select('*').eq('user_id', user.id) as any;
-    if (!includeDeleted && !['activity_log', 'shop_settings', 'customer_payments', 'wallets', 'wallet_transactions', 'withdraw_requests'].includes(table)) {
+    if (!includeDeleted && !['activity_log', 'shop_settings', 'payment_submissions', 'wallets', 'wallet_transactions', 'withdraw_requests', 'profiles'].includes(table)) {
       query = query.eq('deleted', false);
     }
     query = query.order('created_at', { ascending: false });

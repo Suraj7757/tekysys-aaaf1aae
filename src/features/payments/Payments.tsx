@@ -33,9 +33,12 @@ export default function Payments() {
   const [editQr, setEditQr] = useState("");
   const [editAmount, setEditAmount] = useState("");
 
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [viewPayment, setViewPayment] = useState<any>(null);
+
   const filtered = payments.filter((p: any) =>
-    p.job_id.toLowerCase().includes(search.toLowerCase()) ||
-    p.method.toLowerCase().includes(search.toLowerCase()) ||
+    (p.job_id || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.method || '').toLowerCase().includes(search.toLowerCase()) ||
     (p.qr_receiver || '').toLowerCase().includes(search.toLowerCase())
   );
 
@@ -79,11 +82,11 @@ export default function Payments() {
   const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
   const splitEnabled = settings?.revenue_split_enabled !== false;
 
-  const { data: customerPayments, refetch: refetchCP } = useSupabaseQuery<any>('customer_payments');
+  const { data: customerPayments, refetch: refetchCP } = useSupabaseQuery<any>('payment_submissions');
 
   const approvePayment = async (p: any) => {
     // 1. Mark payment as approved
-    const { error: pErr } = await supabase.from('customer_payments').update({ status: 'approved' }).eq('id', p.id);
+    const { error: pErr } = await supabase.from('payment_submissions').update({ status: 'approved' }).eq('id', p.id);
     if (pErr) { toast.error('Failed to approve'); return; }
 
     // 2. Add to merchant wallet
@@ -110,9 +113,38 @@ export default function Payments() {
   };
 
   const rejectPayment = async (p: any) => {
-     await supabase.from('customer_payments').update({ status: 'rejected' }).eq('id', p.id);
+     await supabase.from('payment_submissions').update({ status: 'rejected' }).eq('id', p.id);
      toast.error('Payment rejected');
      refetchCP();
+  };
+
+  const handleRefund = async (payment: any) => {
+    if (!window.confirm("Are you sure you want to refund this payment? It will be deducted from your wallet.")) return;
+    
+    // Deduct from wallet
+    const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', user!.id).maybeSingle();
+    const newBalance = Number(wallet?.balance || 0) - Number(payment.amount);
+    
+    await supabase.from('wallets').upsert({
+       user_id: user!.id,
+       balance: newBalance,
+    } as any);
+
+    // Record refund
+    await supabase.from('wallet_transactions').insert({
+       user_id: user!.id,
+       type: 'withdrawal',
+       source: 'business',
+       amount: payment.amount,
+       description: `Refund for Job: ${payment.job_id}`
+    } as any);
+
+    // Mark payment as refunded
+    await supabase.from('payments').update({ method: 'Refunded' }).eq('id', payment.id);
+    
+    toast.success('Payment refunded successfully');
+    setDetailsOpen(false);
+    refetch();
   };
 
   return (
@@ -171,16 +203,16 @@ export default function Payments() {
                   </thead>
                   <tbody>
                     {filtered.map((p: any) => (
-                      <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => { setViewPayment(p); setDetailsOpen(true); }}>
                         <td className="p-3 font-mono font-semibold text-primary">{p.job_id}</td>
                         <td className="p-3 font-semibold">₹{Number(p.amount).toLocaleString()}</td>
-                        <td className="p-3"><Badge className={`${methodColors[p.method] || ''} border-0 text-xs`}>{p.method}</Badge></td>
+                        <td className="p-3"><Badge className={`${methodColors[p.method] || 'bg-destructive/10 text-destructive'} border-0 text-xs`}>{p.method}</Badge></td>
                         <td className="p-3 hidden md:table-cell">{p.qr_receiver || '—'}</td>
                         {splitEnabled && <td className="p-3">₹{Number(p.admin_share).toLocaleString()}</td>}
                         {splitEnabled && <td className="p-3">₹{Number(p.staff_share).toLocaleString()}</td>}
                         <td className="p-3 hidden md:table-cell"><Badge variant={p.settled ? "default" : "outline"} className="text-xs">{p.settled ? 'Yes' : 'No'}</Badge></td>
                         <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
-                        <td className="p-3">
+                        <td className="p-3" onClick={e => e.stopPropagation()}>
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditPayment(p)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -259,6 +291,49 @@ export default function Payments() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
               <Button onClick={handleEditPayment}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Details / Refund Dialog */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Payment Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Job ID</p>
+                  <p className="font-mono font-bold text-primary">{viewPayment?.job_id}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Amount</p>
+                  <p className="font-bold">₹{Number(viewPayment?.amount).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Method</p>
+                  <Badge className={`${methodColors[viewPayment?.method] || 'bg-destructive/10 text-destructive'} border-0 mt-1`}>{viewPayment?.method}</Badge>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Date</p>
+                  <p className="font-medium">{viewPayment ? new Date(viewPayment.created_at).toLocaleDateString() : '—'}</p>
+                </div>
+              </div>
+              {viewPayment?.method === 'UPI/QR' && (
+                <div>
+                  <p className="text-sm text-muted-foreground">QR Receiver</p>
+                  <p className="font-bold">{viewPayment?.qr_receiver || 'N/A'}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="flex-col gap-2 sm:flex-col mt-4">
+              {viewPayment?.method !== 'Refunded' && (
+                <Button variant="destructive" className="w-full" onClick={() => handleRefund(viewPayment)}>
+                  Refund Payment
+                </Button>
+              )}
+              <Button variant="outline" className="w-full" onClick={() => setDetailsOpen(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

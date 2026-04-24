@@ -13,6 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { IndianRupee, QrCode as QrIcon, Copy, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const statusIcons: Record<string, any> = {
   'Received': Clock, 'In Progress': AlertTriangle, 'Ready': CheckCircle,
   'Delivered': CheckCircle, 'Rejected': XCircle, 'Unrepairable': XCircle,
@@ -34,10 +35,12 @@ const statusColors: Record<string, string> = {
 export default function TrackOrder() {
   const [searchParams] = useSearchParams();
   const [trackingId, setTrackingId] = useState(searchParams.get('id') || '');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [merchantSettings, setMerchantSettings] = useState<any>(null);
   const [utr, setUtr] = useState('');
   const [submittingPay, setSubmittingPay] = useState(false);
@@ -45,6 +48,7 @@ export default function TrackOrder() {
   useEffect(() => {
     const id = searchParams.get('id');
     if (id) { setTrackingId(id); handleTrackDirect(id); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTrackDirect = async (id: string) => {
@@ -52,9 +56,11 @@ export default function TrackOrder() {
     const { data, error } = await supabase.rpc('track_order', { _tracking_id: id });
     if (error) { console.error(error); setResult(null); } 
     else {
-      setResult(data);
-      if (data && data.user_id) {
-        const { data: mSettings } = await supabase.from('shop_settings').select('*').eq('user_id', data.user_id).maybeSingle();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const responseData = data as any;
+      setResult(responseData);
+      if (responseData && responseData.user_id) {
+        const { data: mSettings } = await supabase.from('shop_settings').select('*').eq('user_id', responseData.user_id).maybeSingle();
         setMerchantSettings(mSettings);
       }
     }
@@ -204,14 +210,15 @@ export default function TrackOrder() {
                             if (!utr.trim()) { toast.error('Enter UTR number'); return; }
                             setSubmittingPay(true);
                             // Store payment proof in wallet_transactions or a new table
-                            const { error } = await supabase.from('customer_payments').insert({
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const { error } = await (supabase as any).from('customer_payments').insert({
                                user_id: result.user_id,
                                tracking_id: result.tracking_id,
                                amount: result.type === 'job' ? result.estimated_cost : result.total,
                                utr_number: utr,
                                customer_name: result.customer_name || 'Guest',
                                status: 'pending'
-                            } as any);
+                            });
                             if (error) toast.error('Failed to submit. Try again.');
                             else { toast.success('Payment details submitted to shop!'); setPayOpen(false); setUtr(''); }
                             setSubmittingPay(false);

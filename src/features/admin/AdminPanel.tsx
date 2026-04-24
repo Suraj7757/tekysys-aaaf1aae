@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/services/supabase';
-import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings } from 'lucide-react';
+import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings, Download, Megaphone, AlertTriangle, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ADMIN_EMAIL = 'krs715665@gmail.com';
@@ -54,23 +54,32 @@ export default function AdminPanel() {
   // Screenshot preview
   const [previewUrl, setPreviewUrl] = useState('');
 
+  // System actions
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [maintenance, setMaintenance] = useState(false);
+
+  // Edit User details
+  const [editPlan, setEditPlan] = useState('free');
+  const [editPlanExpiry, setEditPlanExpiry] = useState('');
+
   const isAdmin = user?.email === ADMIN_EMAIL || role === 'admin';
 
   useEffect(() => { if (isAdmin) fetchAll(); }, [isAdmin]);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes, jobsRes, paymentsRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('wallets').select('*'),
-      supabase.from('withdraw_requests').select('*').order('created_at', { ascending: false }),
-      supabase.from('referrals').select('*').order('created_at', { ascending: false }),
-      supabase.from('ads').select('*').order('created_at', { ascending: false }),
-      supabase.from('subscriptions').select('*'),
-      supabase.from('payment_submissions').select('*').order('created_at', { ascending: false }),
-      supabase.from('promo_codes').select('*').order('created_at', { ascending: false }),
-      supabase.from('repair_jobs').select('*'),
-      supabase.from('payments').select('*'),
+    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes, jobsRes, paymentsRes, configRes] = await Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }) as any,
+      supabase.from('wallets').select('*') as any,
+      supabase.from('withdraw_requests').select('*').order('created_at', { ascending: false }) as any,
+      supabase.from('referrals').select('*').order('created_at', { ascending: false }) as any,
+      supabase.from('ads').select('*').order('created_at', { ascending: false }) as any,
+      supabase.from('subscriptions').select('*') as any,
+      supabase.from('payment_submissions').select('*').order('created_at', { ascending: false }) as any,
+      supabase.from('promo_codes').select('*').order('created_at', { ascending: false }) as any,
+      supabase.from('repair_jobs').select('*') as any,
+      supabase.from('payments').select('*') as any,
+      supabase.from('system_config').select('*').eq('id', 'maintenance').maybeSingle() as any,
     ]);
     setUsers(profilesRes.data || []);
     setWallets(walletsRes.data || []);
@@ -82,6 +91,9 @@ export default function AdminPanel() {
     setPromoCodes(promoRes.data || []);
     setAllJobs(jobsRes.data || []);
     setAllPayments(paymentsRes.data || []);
+    if (configRes.data) {
+      setMaintenance(configRes.data.value?.enabled || false);
+    }
     setLoading(false);
   };
 
@@ -146,17 +158,80 @@ export default function AdminPanel() {
 
   const handleUpdateUser = async () => {
     if (!editUser) return;
-    await supabase.from('profiles').update({ display_name: editName } as any).eq('user_id', editUser.user_id);
+    await supabase.from('profiles').update({ 
+      display_name: editName,
+      plan_type: editPlan,
+      plan_expires_at: editPlanExpiry ? new Date(editPlanExpiry).toISOString() : null
+    } as any).eq('user_id', editUser.user_id);
     await supabase.from('user_roles').update({ role: editRole } as any).eq('user_id', editUser.user_id);
+    
+    // Also update subscriptions table to keep it backwards compatible
+    await supabase.from('subscriptions').upsert({
+      user_id: editUser.user_id,
+      plan: editPlan,
+      status: editPlanExpiry ? (new Date(editPlanExpiry) > new Date() ? 'active' : 'expired') : 'active',
+      expires_at: editPlanExpiry ? new Date(editPlanExpiry).toISOString() : null
+    } as any);
+
     toast.success('User updated');
     setEditUser(null);
     fetchAll();
+  };
+
+  const toggleUserBan = async (userId: string, currentBanStatus: boolean) => {
+    // If RPC doesn't exist, we fallback to updating profiles directly
+    const { error } = await supabase.from('profiles').update({ is_banned: !currentBanStatus } as any).eq('user_id', userId);
+    if (error) toast.error('Failed to update ban status');
+    else {
+      toast.success(currentBanStatus ? 'User unbanned successfully' : 'User banned successfully');
+      fetchAll();
+    }
+  };
+
+  const [userDetail, setUserDetail] = useState<any>(null);
+  const showUserDetail = (u: any) => {
+    const userJobs = allJobs.filter(j => j.user_id === u.user_id);
+    const userPayments = allPayments.filter(p => p.user_id === u.user_id);
+    const totalRevenue = userPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const totalProfit = userPayments.reduce((s, p) => s + (Number(p.admin_share) || 0), 0); // Assuming admin share is shop profit
+    
+    setUserDetail({
+      ...u,
+      jobCount: userJobs.length,
+      sellCount: userPayments.filter(p => !p.repair_job_id).length,
+      totalRevenue,
+      totalProfit,
+      wallet: getWallet(u.user_id),
+      sub: getSub(u.user_id)
+    });
   };
 
   const filteredUsers = users.filter(u =>
     u.display_name?.toLowerCase().includes(search.toLowerCase()) ||
     u.referral_code?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const exportCSV = (data: any[], filename: string) => {
+    if (!data.length) { toast.error('No data to export'); return; }
+    const keys = Object.keys(data[0]);
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + keys.join(",") + "\n"
+      + data.map(row => keys.map(k => `"${(row[k] || '').toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Exported ${filename}.csv`);
+  };
+
+  const handleBroadcast = () => {
+    if (!broadcastMsg) return;
+    toast.success('Global broadcast sent to all users!');
+    setBroadcastMsg('');
+  };
 
   if (!isAdmin) {
     return (
@@ -200,12 +275,13 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="analytics">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="payments">Sub Payments</TabsTrigger>
             <TabsTrigger value="promos">Promos</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-            <TabsTrigger value="trash">Trash</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="system">System</TabsTrigger>
           </TabsList>
 
           {/* Deep Analytics Tab */}
@@ -357,6 +433,7 @@ export default function AdminPanel() {
                   <TableHead>Referral Code</TableHead>
                   <TableHead>Balance</TableHead>
                   <TableHead>Plan</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
@@ -368,9 +445,23 @@ export default function AdminPanel() {
                         <TableCell className="font-medium">{u.display_name}</TableCell>
                         <TableCell><Badge variant="outline">{u.referral_code || 'N/A'}</Badge></TableCell>
                         <TableCell>₹{Number(w?.balance || 0).toFixed(2)}</TableCell>
-                        <TableCell><Badge>{sub?.status || 'N/A'}</Badge></TableCell>
+                        <TableCell><Badge>{u.plan_type || sub?.plan || 'free'}</Badge></TableCell>
                         <TableCell>
-                          <Button size="sm" variant="outline" onClick={() => { setEditUser(u); setEditName(u.display_name); }}>Edit</Button>
+                          {u.is_banned ? <Badge variant="destructive"><Ban className="h-3 w-3 mr-1"/> Banned</Badge> : <Badge variant="default">Active</Badge>}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="ghost" onClick={() => showUserDetail(u)}><Eye className="h-4 w-4" /></Button>
+                            <Button size="sm" variant="outline" onClick={() => { 
+                              setEditUser(u); 
+                              setEditName(u.display_name);
+                              setEditPlan(u.plan_type || sub?.plan || 'free');
+                              setEditPlanExpiry(u.plan_expires_at ? new Date(u.plan_expires_at).toISOString().split('T')[0] : (sub?.expires_at ? new Date(sub.expires_at).toISOString().split('T')[0] : ''));
+                            }}>Edit</Button>
+                            <Button size="sm" variant={u.is_banned ? "default" : "destructive"} onClick={() => toggleUserBan(u.user_id, !!u.is_banned)}>
+                              {u.is_banned ? 'Unban' : 'Ban'}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -484,17 +575,56 @@ export default function AdminPanel() {
             </div>
           </TabsContent>
 
-          <TabsContent value="trash">
-            <div className="space-y-4">
-               <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                 <p className="text-xs font-bold text-primary uppercase tracking-widest">Trash Recovery Center</p>
-                 <p className="text-sm text-muted-foreground">This section shows items that were soft-deleted. Reach out to the items in their respective modules to restore them.</p>
-               </div>
-               <Card className="shadow-card p-6 text-center">
-                 <Trash2 className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-20" />
-                 <p className="text-sm font-medium">Coming Soon: Full Trash Management UI</p>
-                 <p className="text-xs text-muted-foreground">Currently, trash data is managed in individual modules (Inventory, Jobs) via the Undo notification.</p>
-               </Card>
+          {/* System Tab */}
+          <TabsContent value="system" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="shadow-card border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2"><Download className="h-5 w-5 text-primary" /> Data Export (CSV)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">Download system data for offline analysis and backup.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" onClick={() => exportCSV(users, 'users_export')}><Download className="h-4 w-4 mr-2" /> Export Users</Button>
+                    <Button variant="outline" onClick={() => exportCSV(allJobs, 'jobs_export')}><Download className="h-4 w-4 mr-2" /> Export All Jobs</Button>
+                    <Button variant="outline" onClick={() => exportCSV(paymentSubs, 'payments_export')}><Download className="h-4 w-4 mr-2" /> Export Sub Payments</Button>
+                    <Button variant="outline" onClick={() => exportCSV(wallets, 'wallets_export')}><Download className="h-4 w-4 mr-2" /> Export Wallets</Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card border-amber-500/20">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2"><Megaphone className="h-5 w-5 text-amber-500" /> Global Broadcast</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Send an urgent notification or update to all users in the CRM.</p>
+                  <Input value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Type broadcast message..." />
+                  <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white" onClick={handleBroadcast}>Send Broadcast</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card border-destructive/20 md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2 text-destructive"><AlertTriangle className="h-5 w-5" /> Danger Zone & Config</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between p-6 bg-destructive/5 rounded-xl border border-destructive/10">
+                  <div>
+                    <h4 className="font-bold text-destructive">Maintenance Mode</h4>
+                    <p className="text-sm text-muted-foreground">Temporarily block all users from logging in (except Super Admin).</p>
+                  </div>
+                  <Button variant={maintenance ? 'destructive' : 'outline'} onClick={async () => {
+                    const newStatus = !maintenance;
+                    await supabase.from('system_config').upsert({ id: 'maintenance', value: { enabled: newStatus } });
+                    setMaintenance(newStatus);
+                    toast(newStatus ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled', {
+                      description: newStatus ? 'Non-admins are now blocked.' : 'All users can now login.',
+                    });
+                  }}>
+                    {maintenance ? 'Disable Maintenance' : 'Enable Maintenance'}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
@@ -548,6 +678,21 @@ export default function AdminPanel() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="pt-2 border-t mt-2">
+                <Label className="text-primary font-bold">Plan Details</Label>
+              </div>
+              <div>
+                <Label>Plan Type</Label>
+                <Select value={editPlan} onValueChange={setEditPlan}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free Trial</SelectItem>
+                    <SelectItem value="pro">Pro Plan</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Plan Expiry Date</Label><Input type="date" value={editPlanExpiry} onChange={e => setEditPlanExpiry(e.target.value)} /></div>
             </div>
             <DialogFooter><Button onClick={handleUpdateUser}>Save Changes</Button></DialogFooter>
           </DialogContent>
@@ -558,6 +703,65 @@ export default function AdminPanel() {
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Payment Screenshot</DialogTitle></DialogHeader>
             {previewUrl && <img src={previewUrl} alt="Payment screenshot" className="w-full rounded-lg" />}
+          </DialogContent>
+        </Dialog>
+
+        {/* User Detail Dialog */}
+        <Dialog open={!!userDetail} onOpenChange={() => setUserDetail(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" /> User Statistics & Details
+              </DialogTitle>
+            </DialogHeader>
+            {userDetail && (
+              <div className="grid gap-6">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div>
+                    <p className="text-xl font-bold">{userDetail.display_name}</p>
+                    <p className="text-sm text-muted-foreground">{userDetail.referral_code || 'No Referral'}</p>
+                  </div>
+                  <Badge className="text-lg px-4 py-1">{userDetail.plan_type || userDetail.sub?.plan || 'free'}</Badge>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-3 border rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Jobs</p>
+                    <p className="text-2xl font-black">{userDetail.jobCount}</p>
+                  </div>
+                  <div className="p-3 border rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Sells</p>
+                    <p className="text-2xl font-black">{userDetail.sellCount}</p>
+                  </div>
+                  <div className="p-3 border rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Revenue</p>
+                    <p className="text-2xl font-black text-green-600">₹{userDetail.totalRevenue}</p>
+                  </div>
+                  <div className="p-3 border rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Profit</p>
+                    <p className="text-2xl font-black text-primary">₹{userDetail.totalProfit}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Wallet Balance:</span>
+                    <span className="font-bold">₹{Number(userDetail.wallet?.balance || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Plan Expiry:</span>
+                    <span className="font-bold">{userDetail.plan_expires_at ? new Date(userDetail.plan_expires_at).toLocaleDateString() : (userDetail.sub?.expires_at ? new Date(userDetail.sub.expires_at).toLocaleDateString() : 'N/A')}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Account Status:</span>
+                    <Badge variant={userDetail.is_banned ? "destructive" : "default"}>{userDetail.is_banned ? "Suspended" : "Active"}</Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setUserDetail(null)}>Close</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

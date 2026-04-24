@@ -16,6 +16,7 @@ const mainItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Customers', url: '/customers', icon: Users },
   { title: 'Repair Jobs', url: '/jobs', icon: Wrench },
+  { title: 'Track Order', url: '/track', icon: Smartphone },
   { title: 'Payments', url: '/payments', icon: IndianRupee },
   { title: 'Settlements', url: '/settlements', icon: ArrowLeftRight },
 ];
@@ -61,11 +62,10 @@ export function Sidebar() {
         {!isAdmin && (
           <>
             <SidebarGroup>
-              <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Quick Actions</SidebarGroupLabel>
+              <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Create New</SidebarGroupLabel>
               <SidebarMenu className="px-3">
                 <SidebarNavLink to="/jobs#new" icon={Wrench} label="Create Job" active={false} collapsed={collapsed} />
                 <SidebarNavLink to="/sells#new" icon={ShoppingCart} label="Create Sell" active={false} collapsed={collapsed} />
-                <SidebarNavLink to="/services" icon={ConciergeBell} label="Services Catalog" active={location.pathname === '/services'} collapsed={collapsed} />
               </SidebarMenu>
             </SidebarGroup>
 
@@ -94,6 +94,7 @@ export function Sidebar() {
             <SidebarGroupLabel className="px-6 text-sidebar-muted/50 text-[10px] font-bold uppercase tracking-widest mb-2">Admin Dashboard</SidebarGroupLabel>
             <SidebarMenu className="px-3">
               <SidebarNavLink to="/admin" icon={Shield} label="Admin Panel" active={location.pathname === '/admin'} collapsed={collapsed} />
+              <SidebarNavLink to="/track" icon={Smartphone} label="Track Order" active={location.pathname === '/track'} collapsed={collapsed} />
               <SidebarNavLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} collapsed={collapsed} />
             </SidebarMenu>
           </SidebarGroup>

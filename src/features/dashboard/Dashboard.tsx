@@ -87,8 +87,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           <StatCard icon={Wrench} label="Total Jobs" value={stats.totalJobs} sub={`${stats.activeJobs} active`} variant="primary" link="/jobs" />
+          <StatCard icon={Smartphone} label="Track Order" value="Search ID" sub="Customer tracking" variant="info" link="/track" />
           <StatCard icon={IndianRupee} label="Cash" value={`₹${stats.cashTotal.toLocaleString()}`} sub="In-hand cash" variant="success" link="/payments" />
           <StatCard icon={Smartphone} label="Digital" value={`₹${stats.upiTotal.toLocaleString()}`} sub="UPI & QR" variant="info" link="/payments" />
           <StatCard icon={ConciergeBell} label="Services" value="Catalog" sub="Manage all services" variant="info" link="/services" />

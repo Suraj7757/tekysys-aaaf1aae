@@ -2,16 +2,14 @@ import { User } from "@supabase/supabase-js";
 
 /**
  * Generates a tracking ID based on user info.
- * Format: [username][last4mobile][type][serial]
- * Example: hari4599job000001
+ * Format: 10-12 digit alphanumeric mix for secure tracking
  */
-export function formatTrackingId(user: User, type: 'job' | 'sell', rawSerial: string): string {
-  // Use first 6 chars of user UUID for safe distinct segment
-  const userSegment = user.id.slice(0, 6).toUpperCase();
-  
-  // Extract number from serial (e.g. "JOB000001" -> "000001")
-  const serialNumber = rawSerial.replace(/\D/g, '');
-  
-  // Format: ABCDEF-JOB-000001
-  return `${userSegment}-${type.toUpperCase()}-${serialNumber}`;
+export function formatTrackingId(_user: User, _type: 'job' | 'sell', _rawSerial: string): string {
+  // Generate a random 12-character alphanumeric string
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let result = '';
+  for (let i = 0; i < 12; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }

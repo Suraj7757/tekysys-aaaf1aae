@@ -7,10 +7,54 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, FileSignature, WalletCards, ShieldCheck, Mail, Briefcase, PhoneCall, CheckCircle, Smartphone } from 'lucide-react';
+import { Building2, FileSignature, WalletCards, ShieldCheck, Mail, Briefcase, PhoneCall, CheckCircle, Smartphone, Crown, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePlanRestrictions } from '@/hooks/usePlanRestrictions';
+import { Link } from 'react-router-dom';
 
 export default function EnterpriseModules() {
+  const { isFeatureLocked, planType } = usePlanRestrictions();
+
+  if (isFeatureLocked('hasEnterprise')) {
+    return (
+      <MainLayout title="Enterprise ERP Modules">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 animate-fade-in">
+          <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 ring-4 ring-primary/5">
+            <Crown className="h-10 w-10 text-primary animate-pulse" />
+          </div>
+          <h2 className="text-3xl font-black text-foreground tracking-tight">Enterprise Modules Locked</h2>
+          <p className="text-muted-foreground mt-2 max-w-md">
+            Features like Expense Tracking, Lead Management, Task Assignment, and Digital Signatures are only available in the <strong>Standard, Enterprise, or Premium</strong> plans.
+          </p>
+          <div className="mt-8 flex gap-4">
+            <Link to="/subscription">
+              <Button size="lg" className="px-8 font-bold shadow-lg shadow-primary/20">Upgrade Now</Button>
+            </Link>
+            <Link to="/dashboard">
+              <Button variant="outline" size="lg">Go Back</Button>
+            </Link>
+          </div>
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+            <div className="p-4 border rounded-xl bg-muted/30">
+              <Lock className="h-5 w-5 text-muted-foreground mb-2" />
+              <h4 className="font-bold text-sm">Expenses</h4>
+              <p className="text-xs text-muted-foreground">Track daily shop spending and analyze losses.</p>
+            </div>
+            <div className="p-4 border rounded-xl bg-muted/30">
+              <Lock className="h-5 w-5 text-muted-foreground mb-2" />
+              <h4 className="font-bold text-sm">Leads</h4>
+              <p className="text-xs text-muted-foreground">Capture potential customers and follow up automatically.</p>
+            </div>
+            <div className="p-4 border rounded-xl bg-muted/30">
+              <Lock className="h-5 w-5 text-muted-foreground mb-2" />
+              <h4 className="font-bold text-sm">Automation</h4>
+              <p className="text-xs text-muted-foreground">Digital signatures and own-domain email branding.</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
   // State for Expenses
   const [expenses, setExpenses] = useState<{id: number, desc: string, amount: number, date: string}[]>([]);
   const [expDesc, setExpDesc] = useState('');

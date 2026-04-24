@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 224 30% 12%;
 
-    --primary: 234 85% 55%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 92%;
@@ -110,6 +110,25 @@
     --sidebar-primary: 262 83% 58%;
   }
 
+  [data-skin="premium-blue"] {
+    --primary: 221 83% 53%;
+    --background: 222 47% 11%;
+    --foreground: 213 31% 91%;
+    --card: 222 47% 13%;
+    --card-foreground: 213 31% 91%;
+    --popover: 222 47% 13%;
+    --popover-foreground: 213 31% 91%;
+    --secondary: 222 47% 16%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 16%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 222 47% 16%;
+    --accent-foreground: 210 40% 98%;
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 221 83% 53%;
+  }
+
   /* Layout Modifications */
   [data-layout="compact"] {
     --radius: 0.3rem;
@@ -187,4 +206,7 @@
 
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
