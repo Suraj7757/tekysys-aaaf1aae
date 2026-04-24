@@ -24,6 +24,8 @@ import WalletPage from '@/features/wallet/WalletPage';
 import Subscription from '@/features/settings/Subscription';
 import ServicesManagement from '@/features/services/ServicesManagement';
 import EnterpriseModules from '@/features/enterprise/EnterpriseModules';
+import PrivacyPolicy from '@/features/dashboard/PrivacyPolicy';
+import TermsConditions from '@/features/dashboard/TermsConditions';
 import NotFound from '@/components/common/NotFound';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -70,6 +72,8 @@ function AppRoutes() {
           <Route path="/services" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <ServicesManagement />}</ProtectedRoute>} />
           <Route path="/enterprise" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <EnterpriseModules />}</ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsConditions />} />
           <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
         </Routes>
       </Suspense>

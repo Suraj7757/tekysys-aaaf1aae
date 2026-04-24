@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { NewsTicker } from '@/components/layout/NewsTicker';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import TrackOrder from '@/features/jobs/TrackOrder';
 
 const ADMIN_WHATSAPP = '7319884599';
 const SUPER_ADMIN = 'krs715665@gmail.com';
@@ -56,10 +57,10 @@ const roadmap = [
 ];
 
 const updates = [
+  { date: '24-Apr-2026', title: 'Internal Admin Chat & UI Enhancements', description: 'Launched a new Internal Chat system for admins and refined the customer tracking experience with an immersive popup interface.' },
   { date: '22-Apr-2026', title: 'Enterprise ERP Modules Launched', description: 'Major update! Added 35+ advanced modules including Expense Tracking, Lead Management, Task Assignment, and a Digital Signature Canvas.' },
   { date: '21-Apr-2026', title: 'Smart AI Chatbot Launched', description: 'Added a context-aware AI Assistant that supports Hinglish. Customers can check job status, create new jobs, and get FAQs.' },
   { date: '21-Apr-2026', title: 'Multi Services Management', description: 'Brand-new Service Catalog module: manage all your repair services with pricing ranges, turnaround times, and category grouping.' },
-  { date: '21-Apr-2026', title: 'Identity & Experience Upgrade', description: 'Replaced OTP with secure Secret Key authentication and launched the immersive Feature Showreel.' },
 ];
 
 const landingServices = [
@@ -78,6 +79,7 @@ export default function Landing() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
   const [showUpdatesModal, setShowUpdatesModal] = useState(false);
+  const [showTrackModal, setShowTrackModal] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'annually'>('monthly');
 
   useEffect(() => {
@@ -102,11 +104,11 @@ export default function Landing() {
             <button onClick={() => setShowRoadmapModal(true)} className="text-muted-foreground hover:text-foreground transition-colors font-medium">Roadmap</button>
             <button onClick={() => setShowUpdatesModal(true)} className="text-muted-foreground hover:text-foreground transition-colors font-medium">Updates</button>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Pricing</a>
-            <Link to="/track"><Button variant="outline" size="sm">Track Order</Button></Link>
+            <Button variant="outline" size="sm" onClick={() => setShowTrackModal(true)}>Track Order</Button>
             <Link to="/auth"><Button size="sm">Sign In</Button></Link>
           </nav>
           <div className="md:hidden flex gap-2">
-            <Link to="/track"><Button variant="outline" size="sm">Track</Button></Link>
+            <Button variant="outline" size="sm" onClick={() => setShowTrackModal(true)}>Track</Button>
             <Link to="/auth"><Button size="sm">Sign In</Button></Link>
           </div>
         </div>
@@ -130,11 +132,9 @@ export default function Landing() {
               Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
-          <Link to="/track">
-            <Button variant="outline" size="lg" className="text-base px-8">
-              📦 Track Your Order
-            </Button>
-          </Link>
+          <Button variant="outline" size="lg" className="text-base px-8" onClick={() => setShowTrackModal(true)}>
+            📦 Track Your Order
+          </Button>
         </div>
         <div className="mt-10 flex items-center justify-center gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> Free Forever Plan</span>
@@ -344,8 +344,10 @@ export default function Landing() {
             <div className="flex flex-col items-center md:items-start">
               <h4 className="font-bold text-foreground mb-3">Quick Links</h4>
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <Link to="/track" className="hover:text-primary transition-colors">Track Order</Link>
+                <button onClick={() => setShowTrackModal(true)} className="text-left hover:text-primary transition-colors">Track Order</button>
                 <Link to="/auth" className="hover:text-primary transition-colors">Sign In / Register</Link>
+                <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link>
                 <a href={`https://wa.me/${ADMIN_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Support & Help</a>
               </div>
             </div>
@@ -474,6 +476,14 @@ export default function Landing() {
                 </p>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Track Order Modal */}
+      <Dialog open={showTrackModal} onOpenChange={setShowTrackModal}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 border-0 bg-transparent shadow-none">
+          <div className="bg-background rounded-3xl overflow-hidden">
+            <TrackOrder isModal />
           </div>
         </DialogContent>
       </Dialog>

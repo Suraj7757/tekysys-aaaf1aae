@@ -32,7 +32,7 @@ const statusColors: Record<string, string> = {
   'Returned': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
-export default function TrackOrder() {
+export default function TrackOrder({ isModal = false }: { isModal?: boolean }) {
   const [searchParams] = useSearchParams();
   const [trackingId, setTrackingId] = useState(searchParams.get('id') || '');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,11 +109,13 @@ export default function TrackOrder() {
   const StatusIcon = result ? (statusIcons[result.status] || Clock) : Clock;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
-      <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-        <ArrowLeft className="h-4 w-4" /> Back to Home
-      </Link>
-      <div className="w-full max-w-md space-y-6 mt-12 md:mt-0">
+    <div className={`${isModal ? 'p-6' : 'min-h-screen flex flex-col items-center justify-center p-4'} bg-background relative`}>
+      {!isModal && (
+        <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Back to Home
+        </Link>
+      )}
+      <div className={`w-full max-w-md space-y-6 ${!isModal ? 'mt-12 md:mt-0' : ''}`}>
         <div className="text-center space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl gradient-primary">
             <Smartphone className="h-7 w-7 text-primary-foreground" />
