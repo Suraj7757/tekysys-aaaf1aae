@@ -11,7 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/services/supabase';
-import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings, Download, Megaphone, AlertTriangle, Ban } from 'lucide-react';
+import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings, Download, Megaphone, AlertTriangle, Ban, RotateCcw } from 'lucide-react';
+import AdminRefunds from './AdminRefunds';
+import BroadcastMessage from './BroadcastMessage';
 import { toast } from 'sonner';
 
 const ADMIN_EMAIL = 'krs715665@gmail.com';
@@ -275,12 +277,14 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="analytics">
-          <TabsList className="grid grid-cols-6 w-full">
+          <TabsList className="grid grid-cols-4 md:grid-cols-8 w-full">
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="payments">Sub Payments</TabsTrigger>
             <TabsTrigger value="promos">Promos</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="refunds" className="flex items-center gap-1"><RotateCcw className="h-3 w-3" />Refunds</TabsTrigger>
+            <TabsTrigger value="broadcast" className="flex items-center gap-1"><Megaphone className="h-3 w-3" />Broadcast</TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
           </TabsList>
 
@@ -573,6 +577,16 @@ export default function AdminPanel() {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          {/* Refunds Tab */}
+          <TabsContent value="refunds">
+            <AdminRefunds />
+          </TabsContent>
+
+          {/* Broadcast Tab */}
+          <TabsContent value="broadcast">
+            <BroadcastMessage />
           </TabsContent>
 
           {/* System Tab */}

@@ -21,6 +21,7 @@ import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
 import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
 import RepairCaseForm from "./RepairCaseForm";
+import PaymentLinkModal from "../payments/PaymentLinkModal";
 
 // Quick service catalog for job creation (mirrors ServicesManagement seed)
 const SERVICE_CATALOG = [
@@ -73,6 +74,7 @@ export default function RepairJobs() {
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearType, setClearType] = useState<'all' | 'delivered'>('all');
+  const [payLinkOpen, setPayLinkOpen] = useState(false);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [customerMobile, setCustomerMobile] = useState("");
@@ -419,6 +421,7 @@ export default function RepairJobs() {
                             ))}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleInvoice(job)}><FileText className="h-4 w-4 mr-2" /> Invoice PDF</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setSelectedJob(job); setPayLinkOpen(true); }}><QrCode className="h-4 w-4 mr-2" /> Payment Link / QR</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => shareWhatsApp(job)}><Share2 className="h-4 w-4 mr-2" /> WhatsApp</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDeleteJob(job)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
                           </DropdownMenuContent>
@@ -642,6 +645,13 @@ export default function RepairJobs() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Payment Link Modal */}
+        <PaymentLinkModal 
+          open={payLinkOpen}
+          onOpenChange={setPayLinkOpen}
+          job={selectedJob}
+        />
       </div>
     </MainLayout>
   );
