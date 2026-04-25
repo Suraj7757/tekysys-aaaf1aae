@@ -62,7 +62,8 @@ export default function Payments() {
   const cashTotal = payments.filter((p: any) => p.method === 'Cash').reduce((s: number, p: any) => s + Number(p.amount), 0);
   const upiTotal = payments.filter((p: any) => p.method === 'UPI/QR').reduce((s: number, p: any) => s + Number(p.amount), 0);
   const dueTotal = payments.filter((p: any) => p.method === 'Due').reduce((s: number, p: any) => s + Number(p.amount), 0);
-  const totalRevenue = cashTotal + upiTotal + dueTotal;
+  const refundTotal = payments.filter((p: any) => p.method === 'Refunded').reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const totalRevenue = cashTotal + upiTotal + dueTotal - refundTotal;
 
   const qrTotals: Record<string, number> = {};
   payments.filter((p: any) => p.method === 'UPI/QR').forEach((p: any) => {
@@ -92,21 +93,56 @@ export default function Payments() {
 
   const qrReceivers = settings?.qr_receivers || ['Admin QR', 'Staff QR', 'Shop QR'];
   const splitEnabled = settings?.revenue_split_enabled !== false;
-  const { data: customerPayments, refetch: refetchCP } = useSupabaseQuery<any>('payment_submissions');
+  const { data: customerPayments, refetch: refetchCP } = useSupabaseQuery<any>('customer_payments');
 
   const approvePayment = async (p: any) => {
-    const { error: pErr } = await supabase.from('payment_submissions').update({ status: 'approved' }).eq('id', p.id);
-    if (pErr) { toast.error('Failed to approve'); return; }
-    const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', user!.id).maybeSingle();
-    const newBalance = Number(wallet?.balance || 0) + Number(p.amount);
-    await supabase.from('wallets').upsert({ user_id: user!.id, balance: newBalance, total_earned: Number(wallet?.total_earned || 0) + Number(p.amount) } as any);
-    await supabase.from('wallet_transactions').insert({ user_id: user!.id, type: 'earning', source: 'business', amount: p.amount, description: `Customer payment approved: ${p.tracking_id}` } as any);
-    toast.success('Payment approved and added to wallet!'); refetchCP();
+    try {
+      // 1. Update submission status
+      const { error: pErr } = await supabase.from('customer_payments').update({ 
+        status: 'approved',
+        processed_at: new Date().toISOString() 
+      } as any).eq('id', p.id);
+      
+      if (pErr) throw pErr;
+
+      // 2. Find the associated repair job
+      const { data: job } = await supabase.from('repair_jobs')
+        .select('*')
+        .eq('tracking_id', p.tracking_id)
+        .maybeSingle();
+
+      // 3. Create a real payment record for the shop
+      if (job) {
+        const splitEnabled = settings?.revenue_split_enabled !== false;
+        const adminPct = splitEnabled ? (settings?.admin_share_percent ?? 50) / 100 : 1;
+        const staffPct = splitEnabled ? (settings?.staff_share_percent ?? 50) / 100 : 0;
+        
+        await supabase.from('payments').insert({
+          user_id: user!.id,
+          job_id: job.job_id,
+          repair_job_id: job.id,
+          amount: p.amount,
+          method: 'UPI/QR',
+          qr_receiver: 'Online Payment',
+          admin_share: p.amount * adminPct,
+          staff_share: p.amount * staffPct,
+          created_at: new Date().toISOString()
+        } as any);
+      }
+
+      toast.success('Payment approved and added to records!');
+      refetchCP();
+      refetch();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to approve payment');
+    }
   };
 
   const rejectPayment = async (p: any) => {
-    await supabase.from('payment_submissions').update({ status: 'rejected' }).eq('id', p.id);
-    toast.error('Payment rejected'); refetchCP();
+    await supabase.from('customer_payments').update({ status: 'rejected', processed_at: new Date().toISOString() } as any).eq('id', p.id);
+    toast.error('Payment rejected');
+    refetchCP();
   };
 
   const openPayLink = (p: any, e: React.MouseEvent) => {
@@ -152,13 +188,14 @@ export default function Payments() {
     <MainLayout title="Payments">
       <div className="space-y-4 animate-fade-in">
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="shadow-card border-0 bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <Card className="shadow-card border-0 bg-gradient-to-br from-violet-600 to-indigo-700 text-white col-span-2 lg:col-span-1">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-violet-200 font-medium">Total Revenue</p>
+                  <p className="text-xs text-violet-200 font-medium">Net Revenue</p>
                   <p className="text-xl font-black mt-0.5">₹{totalRevenue.toLocaleString()}</p>
+                  <p className="text-[10px] text-violet-300 mt-1">Gross: ₹{(totalRevenue + refundTotal).toLocaleString()}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-violet-300 opacity-70" />
               </div>
@@ -194,6 +231,17 @@ export default function Payments() {
                   <p className="text-xl font-black mt-0.5">₹{dueTotal.toLocaleString()}</p>
                 </div>
                 <Clock className="h-8 w-8 text-amber-200 opacity-70" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card border-0 bg-gradient-to-br from-rose-500 to-red-600 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-rose-100 font-medium">↩️ Refunds</p>
+                  <p className="text-xl font-black mt-0.5">₹{refundTotal.toLocaleString()}</p>
+                </div>
+                <RotateCcw className="h-8 w-8 text-rose-200 opacity-70" />
               </div>
             </CardContent>
           </Card>

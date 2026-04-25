@@ -12,7 +12,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete, useShopSettings, getNextJobId } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { Plus, Search, MoreVertical, Trash2, FileText, AlertCircle, Pencil, Share2, ConciergeBell } from "lucide-react";
+import { 
+  Plus, Search, MoreVertical, Trash2, FileText, 
+  AlertCircle, Pencil, Share2, ConciergeBell, QrCode, RotateCcw 
+} from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
 import jsPDF from "jspdf";
@@ -38,26 +41,30 @@ const SERVICE_CATALOG = [
   { label: 'Other / Custom', price: 0, problem: '', category: 'mobile' },
 ];
 
-type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
+type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable' | 'Returned' | 'Re-work';
 type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
 
 const statusColors: Record<string, string> = {
-  'Received': 'bg-muted text-muted-foreground',
-  'In Progress': 'bg-info/10 text-info',
-  'Ready': 'bg-warning/10 text-warning',
-  'Delivered': 'bg-success/10 text-success',
-  'Rejected': 'bg-destructive/10 text-destructive',
-  'Unrepairable': 'bg-destructive/10 text-destructive',
+  'Received': 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400',
+  'In Progress': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  'Re-work': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  'Ready': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  'Delivered': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  'Rejected': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  'Unrepairable': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  'Returned': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
 };
 
 // Define allowed next statuses for each status
 const nextStatuses: Record<JobStatus, JobStatus[]> = {
-  'Received': ['In Progress'],
-  'In Progress': ['Ready', 'Delivered', 'Rejected', 'Unrepairable'],
+  'Received': ['In Progress', 'Rejected'],
+  'In Progress': ['Ready', 'Unrepairable', 'Re-work'],
+  'Re-work': ['In Progress', 'Ready'],
   'Ready': ['Delivered'],
+  'Rejected': ['Returned'],
+  'Unrepairable': ['Returned'],
   'Delivered': [],
-  'Rejected': ['In Progress'],
-  'Unrepairable': ['In Progress'],
+  'Returned': []
 };
 
 export default function RepairJobs() {
@@ -75,6 +82,9 @@ export default function RepairJobs() {
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearType, setClearType] = useState<'all' | 'delivered'>('all');
   const [payLinkOpen, setPayLinkOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnNominalCharge, setReturnNominalCharge] = useState("0");
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [customerMobile, setCustomerMobile] = useState("");
@@ -141,7 +151,7 @@ export default function RepairJobs() {
       toast.error(`Plan Limit Reached: Your ${planType} plan only supports up to ${limits.maxJobs} jobs. Please upgrade to continue.`);
       return;
     }
-    let { data: customer } = await supabase.from('customers').select('id').eq('user_id', user.id).eq('mobile', customerMobile).eq('deleted', false).maybeSingle();
+    let { data: customer } = await (supabase.from('customers').select('*') as any).eq('user_id', user.id).eq('mobile', customerMobile).eq('deleted', false).maybeSingle();
     if (!customer) {
       const { data: newC } = await supabase.from('customers').insert({ user_id: user.id, name: customerName, mobile: customerMobile }).select('id').single();
       customer = newC;
@@ -221,9 +231,52 @@ export default function RepairJobs() {
       setPaymentOpen(true);
       return;
     }
-    await supabase.from('repair_jobs').update({ status: newStatus as any }).eq('id', job.id);
+    if (newStatus === 'Returned') {
+      setSelectedJob(job);
+      setReturnOpen(true);
+      return;
+    }
+    if (newStatus === 'Re-work') {
+      const reworkCount = (job.rework_count || 0) + 1;
+      await supabase.from('repair_jobs').update({ 
+        status: newStatus as any,
+        rework_count: reworkCount
+      } as any).eq('id', job.id);
+      toast.success(`Job ${job.job_id} marked for Re-work (${reworkCount})`);
+    } else {
+      await supabase.from('repair_jobs').update({ status: newStatus as any }).eq('id', job.id);
+      toast.success(`Job ${job.job_id} → ${newStatus}`);
+    }
     refetch();
-    toast.success(`Job ${job.job_id} → ${newStatus}`);
+  };
+
+  const handleReturn = async () => {
+    if (!selectedJob || !user) return;
+    const amount = parseFloat(returnNominalCharge) || 0;
+    
+    // 1. Update job status
+    await supabase.from('repair_jobs').update({ 
+      status: 'Returned' as any, 
+      return_reason: returnReason,
+      delivered_at: new Date().toISOString() 
+    } as any).eq('id', selectedJob.id);
+
+    // 2. Record nominal charge if any
+    if (amount > 0) {
+      const splitEnabled = settings?.revenue_split_enabled !== false;
+      const adminPct = splitEnabled ? (settings?.admin_share_percent ?? 50) / 100 : 1;
+      const staffPct = splitEnabled ? (settings?.staff_share_percent ?? 50) / 100 : 0;
+      
+      await supabase.from('payments').insert({
+        user_id: user.id, job_id: selectedJob.job_id, repair_job_id: selectedJob.id,
+        amount, method: 'Cash',
+        admin_share: amount * adminPct, staff_share: amount * staffPct,
+      });
+    }
+
+    refetch(); refetchPayments();
+    setReturnOpen(false); setSelectedJob(null);
+    toast.success(`Job ${selectedJob.job_id} returned to customer`);
   };
 
   const handleDeleteJob = async (job: any) => {
@@ -585,6 +638,42 @@ export default function RepairJobs() {
           </DialogContent>
         </Dialog>
 
+        {/* Return Job Dialog */}
+        <Dialog open={returnOpen} onOpenChange={setReturnOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><RotateCcw className="h-5 w-5 text-indigo-500" /> Return Job — {selectedJob?.job_id}</DialogTitle></DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                <p className="text-xs text-indigo-700 dark:text-indigo-300">This job will be marked as <b>Returned</b>. You can record a nominal checking fee or diagnostic charge if applicable.</p>
+              </div>
+              <div>
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Reason for Return</Label>
+                <Select value={returnReason} onValueChange={setReturnReason}>
+                  <SelectTrigger><SelectValue placeholder="Select reason" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Unrepairable (Parts Unavailable)">Unrepairable (Parts Unavailable)</SelectItem>
+                    <SelectItem value="Unrepairable (Chip-level failure)">Unrepairable (Chip-level failure)</SelectItem>
+                    <SelectItem value="Customer Rejected Estimate">Customer Rejected Estimate</SelectItem>
+                    <SelectItem value="Device Not Picking Up">Device Not Picking Up</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {returnReason === 'Other' && (
+                <Textarea placeholder="Enter custom reason..." value={returnReason} onChange={e => setReturnReason(e.target.value)} />
+              )}
+              <div>
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Service Charge / Diagnostic Fee (₹)</Label>
+                <Input type="number" value={returnNominalCharge} onChange={e => setReturnNominalCharge(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReturnOpen(false)}>Cancel</Button>
+              <Button onClick={handleReturn} className="bg-indigo-600 hover:bg-indigo-700 text-white">Confirm Return</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Job Details Dialog */}
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
           <DialogContent className="max-w-md">
@@ -598,6 +687,12 @@ export default function RepairJobs() {
                   <div><p className="text-xs text-muted-foreground">Device</p><p className="font-semibold">{selectedJob.device_brand} {selectedJob.device_model}</p></div>
                   <div><p className="text-xs text-muted-foreground">Status</p><Badge className={statusColors[selectedJob.status]}>{selectedJob.status}</Badge></div>
                   <div><p className="text-xs text-muted-foreground">Cost</p><p className="font-semibold">₹{Number(selectedJob.estimated_cost).toLocaleString()}</p></div>
+                  {selectedJob.rework_count > 0 && (
+                    <div className="col-span-2 bg-purple-50 dark:bg-purple-900/20 p-2 rounded border border-purple-100 dark:border-purple-800 flex items-center justify-between">
+                      <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-tighter flex items-center gap-1"><RotateCcw className="h-3 w-3" /> Rework History</span>
+                      <Badge className="bg-purple-600">{selectedJob.rework_count} Times</Badge>
+                    </div>
+                  )}
                 </div>
                 
                 {selectedJob.device_details && Object.keys(selectedJob.device_details).length > 0 && (
@@ -614,6 +709,13 @@ export default function RepairJobs() {
                   </div>
                 )}
 
+                {selectedJob.status === 'Returned' && selectedJob.return_reason && (
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                    <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase mb-1">Return Reason</p>
+                    <p className="text-sm font-medium">{selectedJob.return_reason}</p>
+                  </div>
+                )}
+
                 <div className="border-t pt-2">
                   <p className="text-xs text-muted-foreground mb-1">Problem Description</p>
                   <p className="text-sm p-3 bg-muted rounded-lg">{selectedJob.problem_description}</p>
@@ -622,7 +724,7 @@ export default function RepairJobs() {
                   <div><p className="text-xs text-muted-foreground">Technician</p><p className="font-medium">{selectedJob.technician_name}</p></div>
                 )}
                 {selectedJob.delivered_at && (
-                  <div><p className="text-xs text-muted-foreground">Delivered At</p><p className="font-medium text-success">{new Date(selectedJob.delivered_at).toLocaleString()}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Delivered/Returned At</p><p className="font-medium text-success">{new Date(selectedJob.delivered_at).toLocaleString()}</p></div>
                 )}
               </div>
             )}

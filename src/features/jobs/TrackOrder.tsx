@@ -14,19 +14,22 @@ import {
   Search, Smartphone, Clock, CheckCircle2, XCircle, AlertTriangle,
   FileText, IndianRupee, QrCode, Copy, ChevronDown, ChevronUp,
   ArrowLeft, Star, MessageSquare, Package, Wrench, Truck, Home,
-  PhoneCall, Zap, Shield
+  PhoneCall, Zap, Shield, RotateCcw
 } from 'lucide-react';
 
 const JOB_STATUSES = [
   { key: 'Received', label: 'Device Received', icon: Package, color: 'text-blue-600', bg: 'bg-blue-100' },
   { key: 'In Progress', label: 'Repair In Progress', icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-100' },
+  { key: 'Re-work', label: 'Quality Check / Re-work', icon: RotateCcw, color: 'text-purple-600', bg: 'bg-purple-100' },
   { key: 'Ready', label: 'Ready for Pickup', icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-100' },
   { key: 'Delivered', label: 'Delivered', icon: Home, color: 'text-green-600', bg: 'bg-green-100' },
+  { key: 'Returned', label: 'Returned', icon: RotateCcw, color: 'text-indigo-600', bg: 'bg-indigo-100' },
 ];
 
 const statusOrder: Record<string, number> = {
   'Received': 0, 'Pending': 0,
   'In Progress': 1,
+  'Re-work': 1.5,
   'Ready': 2,
   'Delivered': 3, 'Completed': 3,
   'Rejected': -1, 'Unrepairable': -1, 'Returned': -1,
@@ -35,12 +38,13 @@ const statusOrder: Record<string, number> = {
 const statusColors: Record<string, string> = {
   'Received': 'bg-blue-100 text-blue-700',
   'In Progress': 'bg-amber-100 text-amber-700',
+  'Re-work': 'bg-purple-100 text-purple-700',
   'Ready': 'bg-emerald-100 text-emerald-700',
   'Delivered': 'bg-green-100 text-green-700',
   'Completed': 'bg-green-100 text-green-700',
   'Rejected': 'bg-red-100 text-red-700',
   'Unrepairable': 'bg-red-100 text-red-700',
-  'Returned': 'bg-orange-100 text-orange-700',
+  'Returned': 'bg-indigo-100 text-indigo-700',
 };
 
 export default function TrackOrder({ isModal = false }: { isModal?: boolean }) {
@@ -317,10 +321,16 @@ export default function TrackOrder({ isModal = false }: { isModal?: boolean }) {
                   <p className="text-sm font-bold flex items-center gap-2"><QrCode className="h-4 w-4 text-violet-600" /> Pay via UPI / QR</p>
             <div className="flex flex-col items-center gap-4 py-2">
               <div className="bg-white p-4 rounded-3xl shadow-xl border-4 border-violet-50 dark:border-violet-900/30">
-                <QRCodeSVG
-                  value={`upi://pay?pa=${merchantSettings.upi_id}&pn=${encodeURIComponent(merchantSettings.shop_name || 'Merchant')}&am=${amount}&cu=INR&tn=${encodeURIComponent('Job ' + result.tracking_id)}`}
-                  size={180} fgColor="#4f46e5" includeMargin
-                />
+                {merchantSettings?.upi_id ? (
+                  <QRCodeSVG
+                    value={`upi://pay?pa=${merchantSettings.upi_id}&pn=${encodeURIComponent(merchantSettings.shop_name || 'Merchant')}&am=${amount}&cu=INR&tn=${encodeURIComponent('Job ' + result.tracking_id)}`}
+                    size={180} fgColor="#4f46e5" includeMargin
+                  />
+                ) : (
+                  <div className="h-[180px] w-[180px] flex items-center justify-center text-xs text-muted-foreground text-center p-4">
+                    UPI ID not set by shop owner. Please contact support.
+                  </div>
+                )}
               </div>
               <div className="text-center">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Scan with any UPI App</p>

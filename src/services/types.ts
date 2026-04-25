@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -124,10 +124,80 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_feedback: {
+        Row: {
+          created_at: string | null
+          customer_name: string | null
+          id: string
+          job_id: string | null
+          rating: number | null
+          review_text: string | null
+          tracking_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string
+          job_id?: string | null
+          rating?: number | null
+          review_text?: string | null
+          tracking_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string
+          job_id?: string | null
+          rating?: number | null
+          review_text?: string | null
+          tracking_id?: string | null
+        }
+        Relationships: []
+      }
+      customer_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_name: string | null
+          id: string
+          notes: string | null
+          processed_at: string | null
+          status: string | null
+          tracking_id: string
+          user_id: string | null
+          utr_number: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          status?: string | null
+          tracking_id: string
+          user_id?: string | null
+          utr_number: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          status?: string | null
+          tracking_id?: string
+          user_id?: string | null
+          utr_number?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
           created_at: string
+          customer_code: string | null
           deleted: boolean
           deleted_at: string | null
           email: string | null
@@ -140,6 +210,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          customer_code?: string | null
           deleted?: boolean
           deleted_at?: string | null
           email?: string | null
@@ -152,6 +223,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          customer_code?: string | null
           deleted?: boolean
           deleted_at?: string | null
           email?: string | null
@@ -160,6 +232,33 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      features: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_enabled: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -232,6 +331,72 @@ export type Database = {
         }
         Relationships: []
       }
+      message_logs: {
+        Row: {
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          job_id: string | null
+          message_content: string | null
+          message_type: string | null
+          sent_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          job_id?: string | null
+          message_content?: string | null
+          message_type?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          job_id?: string | null
+          message_content?: string | null
+          message_type?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          read: boolean | null
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read?: boolean | null
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
@@ -259,6 +424,102 @@ export type Database = {
           id?: string
           type?: string
           verified?: boolean | null
+        }
+        Relationships: []
+      }
+      payment_links: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          expires_at: string | null
+          id: string
+          job_id: string | null
+          link_token: string | null
+          paid_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          expires_at?: string | null
+          id?: string
+          job_id?: string | null
+          link_token?: string | null
+          paid_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          expires_at?: string | null
+          id?: string
+          job_id?: string | null
+          link_token?: string | null
+          paid_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_refunds: {
+        Row: {
+          created_at: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          job_id: string | null
+          original_amount: number | null
+          payment_id: string | null
+          processed_at: string | null
+          refund_amount: number
+          refund_method: string | null
+          refund_notes: string | null
+          refund_reason: string | null
+          status: string | null
+          upi_or_account: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          job_id?: string | null
+          original_amount?: number | null
+          payment_id?: string | null
+          processed_at?: string | null
+          refund_amount: number
+          refund_method?: string | null
+          refund_notes?: string | null
+          refund_reason?: string | null
+          status?: string | null
+          upi_or_account?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          job_id?: string | null
+          original_amount?: number | null
+          payment_id?: string | null
+          processed_at?: string | null
+          refund_amount?: number
+          refund_method?: string | null
+          refund_notes?: string | null
+          refund_reason?: string | null
+          status?: string | null
+          upi_or_account?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -311,6 +572,7 @@ export type Database = {
           id: string
           job_id: string
           method: Database["public"]["Enums"]["payment_method"]
+          part_cost: number | null
           qr_receiver: string | null
           repair_job_id: string | null
           settled: boolean
@@ -327,6 +589,7 @@ export type Database = {
           id?: string
           job_id: string
           method?: Database["public"]["Enums"]["payment_method"]
+          part_cost?: number | null
           qr_receiver?: string | null
           repair_job_id?: string | null
           settled?: boolean
@@ -343,6 +606,7 @@ export type Database = {
           id?: string
           job_id?: string
           method?: Database["public"]["Enums"]["payment_method"]
+          part_cost?: number | null
           qr_receiver?: string | null
           repair_job_id?: string | null
           settled?: boolean
@@ -366,7 +630,12 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_banned: boolean | null
+          plan_expires_at: string | null
+          plan_type: string | null
           referral_code: string | null
+          role: string | null
+          tracking_id: string | null
           updated_at: string
           user_id: string
         }
@@ -375,7 +644,12 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_banned?: boolean | null
+          plan_expires_at?: string | null
+          plan_type?: string | null
           referral_code?: string | null
+          role?: string | null
+          tracking_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -384,7 +658,12 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_banned?: boolean | null
+          plan_expires_at?: string | null
+          plan_type?: string | null
           referral_code?: string | null
+          role?: string | null
+          tracking_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -466,13 +745,18 @@ export type Database = {
           deleted_at: string | null
           delivered_at: string | null
           device_brand: string
+          device_details: Json | null
           device_model: string | null
           estimated_cost: number
           id: string
           job_id: string
           problem_description: string
+          return_reason: string | null
+          rework_count: number | null
+          service_category: string | null
           status: Database["public"]["Enums"]["job_status"]
           technician_name: string | null
+          tracking_id: string | null
           updated_at: string
           user_id: string
         }
@@ -485,13 +769,18 @@ export type Database = {
           deleted_at?: string | null
           delivered_at?: string | null
           device_brand: string
+          device_details?: Json | null
           device_model?: string | null
           estimated_cost?: number
           id?: string
           job_id: string
           problem_description: string
+          return_reason?: string | null
+          rework_count?: number | null
+          service_category?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           technician_name?: string | null
+          tracking_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -504,13 +793,18 @@ export type Database = {
           deleted_at?: string | null
           delivered_at?: string | null
           device_brand?: string
+          device_details?: Json | null
           device_model?: string | null
           estimated_cost?: number
           id?: string
           job_id?: string
           problem_description?: string
+          return_reason?: string | null
+          rework_count?: number | null
+          service_category?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           technician_name?: string | null
+          tracking_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -559,6 +853,7 @@ export type Database = {
           sell_price: number
           status: string
           total: number
+          tracking_id: string | null
           user_id: string
         }
         Insert: {
@@ -577,6 +872,7 @@ export type Database = {
           sell_price?: number
           status?: string
           total?: number
+          tracking_id?: string | null
           user_id: string
         }
         Update: {
@@ -595,6 +891,7 @@ export type Database = {
           sell_price?: number
           status?: string
           total?: number
+          tracking_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -668,6 +965,7 @@ export type Database = {
           shop_name: string
           staff_share_percent: number
           updated_at: string
+          upi_id: string | null
           user_id: string
         }
         Insert: {
@@ -682,6 +980,7 @@ export type Database = {
           shop_name?: string
           staff_share_percent?: number
           updated_at?: string
+          upi_id?: string | null
           user_id: string
         }
         Update: {
@@ -696,6 +995,7 @@ export type Database = {
           shop_name?: string
           staff_share_percent?: number
           updated_at?: string
+          upi_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -730,6 +1030,24 @@ export type Database = {
           status?: string
           trial_ends_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_config: {
+        Row: {
+          id: string
+          updated_at: string | null
+          value: Json | null
+        }
+        Insert: {
+          id: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Update: {
+          id?: string
+          updated_at?: string | null
+          value?: Json | null
         }
         Relationships: []
       }
@@ -849,6 +1167,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_user_ban: {
+        Args: { ban_status: boolean; target_user_id: string }
+        Returns: undefined
+      }
+      generate_alphanumeric_id: { Args: { len: number }; Returns: string }
+      generate_random_string: { Args: { length: number }; Returns: string }
+      generate_tracking_id: { Args: { length: number }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -869,6 +1194,8 @@ export type Database = {
         | "Delivered"
         | "Rejected"
         | "Unrepairable"
+        | "Returned"
+        | "Re-work"
       payment_method: "Cash" | "UPI/QR" | "Due"
     }
     CompositeTypes: {
@@ -1005,6 +1332,8 @@ export const Constants = {
         "Delivered",
         "Rejected",
         "Unrepairable",
+        "Returned",
+        "Re-work",
       ],
       payment_method: ["Cash", "UPI/QR", "Due"],
     },

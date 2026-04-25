@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { supabase } from '@/services/supabase';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Share2, MessageCircle, Smartphone, Copy, Download, 
   CheckCircle2, QrCode, Globe, Clock, IndianRupee,
-  Zap, ShieldCheck
+  Zap, ShieldCheck, Link2, Check, ExternalLink, User,
+  AlertTriangle
 } from 'lucide-react';
 
 interface PaymentLinkModalProps {
@@ -19,89 +22,97 @@ interface PaymentLinkModalProps {
 }
 
 export default function PaymentLinkModal({ open, onOpenChange, job }: PaymentLinkModalProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
   const [expiryDays, setExpiryDays] = useState('7');
+  const [copied, setCopied] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
+  
+  const [upiId, setUpiId] = useState(job?.upi_id || '');
+  const [shopName, setShopName] = useState('TEKYSYS');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!user) return;
+      const { data } = await supabase.from('shop_settings').select('*').eq('user_id', user.id).maybeSingle();
+      if (data) {
+        setUpiId(data.upi_id || '');
+        setShopName(data.shop_name || 'TEKYSYS');
+      }
+    };
+    if (open) fetchSettings();
+  }, [user, open]);
 
   if (!job) return null;
 
   const amount = job.estimated_cost || 0;
-  const upiId = job.upi_id || 'merchant@upi'; // Fallback if not set
-  const shopName = 'TEKYSYS';
+  const jobId = job.job_id || 'N/A';
+  const customerName = job.customer_name || 'Customer';
+  const customerMobile = job.customer_mobile || '';
 
-  // Standard UPI URI
-  const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Job ' + job.job_id)}`;
+  // Standard UPI URI for scanning
+  const upiUri = `upi://pay?pa=${upiId || 'merchant@upi'}&pn=${encodeURIComponent(shopName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Job ' + jobId)}`;
 
   const generateLink = async () => {
+    if (!user) return;
     setLoading(true);
     try {
-      // Check if link already exists
-      const { data: existing } = await supabase
-        .from('payment_links')
-        .select('*')
-        .eq('job_id', jobId)
-        .eq('user_id', user.id)
-        .eq('status', 'pending')
-        .maybeSingle();
-
-      if (existing) {
-        setLinkToken(existing.link_token);
-      } else {
-        const { data, error } = await supabase.from('payment_links').insert({
-          job_id: jobId,
-          user_id: user.id,
-          amount,
-          customer_name: customerName,
-          customer_phone: customerPhone || '',
-        }).select().single();
-        if (error) throw error;
-        setLinkToken(data.link_token);
-      }
-    } catch (e) {
+      const trackingUrl = `${window.location.origin}/track?id=${jobId}`;
+      
+      // Save link to DB (optional tracking)
+      await supabase.from('payment_links').insert({
+        user_id: user.id,
+        job_id: job.id,
+        amount,
+        status: 'active',
+        expires_at: new Date(Date.now() + parseInt(expiryDays) * 86400000).toISOString()
+      });
+      
+      setGeneratedLink(trackingUrl);
+      toast.success('Payment Link Generated!');
+    } catch (err) {
+      console.error(err);
       toast.error('Failed to generate link');
+    } finally {
+      setLoading(false);
     }
-    setGenerating(false);
   };
 
-  const copyLink = async () => {
-    await navigator.clipboard.writeText(paymentUrl);
+  const logMessage = async (type: 'whatsapp' | 'sms') => {
+    if (!user || !job) return;
+    try {
+      await supabase.from('message_logs').insert({
+        user_id: user.id,
+        job_id: jobId,
+        customer_name: customerName,
+        customer_phone: customerMobile,
+        message_type: type,
+        message_content: `Payment link shared via ${type}: ${generatedLink}`,
+        status: 'sent'
+      } as any);
+    } catch (err) {
+      console.error('Failed to log message:', err);
+    }
+  };
+
+  const shareWhatsApp = () => {
+    const msg = `*Payment Request from ${shopName}*\n\nJob ID: *${jobId}*\nCustomer: ${customerName}\nAmount: *₹${amount}*\n\nPay securely using GPay, PhonePe or Paytm here:\n🔗 ${generatedLink}`;
+    window.open(`https://wa.me/${customerMobile.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+    logMessage('whatsapp');
+  };
+
+  const shareSMS = () => {
+    const msg = `Hi ${customerName}, Pay ₹${amount} for Job ${jobId} securely here: ${generatedLink} - ${shopName}`;
+    window.open(`sms:${customerMobile.replace(/\D/g, '')}?body=${encodeURIComponent(msg)}`);
+    logMessage('sms');
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedLink);
     setCopied(true);
-    toast.success('Payment link copied!');
+    toast.success('Link copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
-    await logMessage('whatsapp', `Link copied for ${customerName}`);
-  };
-
-  const logMessage = async (type: 'whatsapp' | 'sms', content: string) => {
-    if (!user) return;
-    await supabase.from('message_logs').insert({
-      user_id: user.id,
-      job_id: jobId,
-      customer_name: customerName,
-      customer_phone: customerPhone || '',
-      message_type: type,
-      message_content: content,
-      status: 'sent'
-    });
-  };
-
-  const whatsappMsg = `🔧 *TEKYSYS Service Center*\nHi ${customerName} 👋\n\nYour device repair is ready! 🎉\nJob ID: *${jobId}*\n\n💳 *Payment Details:*\nAmount Due: *₹${amount.toLocaleString()}*\nPay Now: ${paymentUrl}\n\nScan QR or click the link to track & pay.\nThank you! 🙏`;
-
-  const smsMsg = `TEKYSYS: Hi ${customerName}, your device repair is ready. Pay Rs.${amount}: ${paymentUrl} Job#${jobId}`;
-
-  const sendWhatsApp = async () => {
-    if (!linkToken) { toast.error('Generate link first'); return; }
-    const url = `https://wa.me/${customerPhone ? customerPhone.replace(/\D/g, '') : ''}?text=${encodeURIComponent(whatsappMsg)}`;
-    window.open(url, '_blank');
-    await logMessage('whatsapp', whatsappMsg);
-    toast.success('WhatsApp opened!');
-  };
-
-  const sendSMS = async () => {
-    if (!linkToken) { toast.error('Generate link first'); return; }
-    const url = `sms:${customerPhone || ''}?body=${encodeURIComponent(smsMsg)}`;
-    window.location.href = url;
-    await logMessage('sms', smsMsg);
-    toast.success('SMS app opened!');
   };
 
   const downloadQR = () => {
@@ -130,117 +141,138 @@ export default function PaymentLinkModal({ open, onOpenChange, job }: PaymentLin
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+        <div className="bg-gradient-to-br from-violet-600 to-indigo-700 p-6 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white text-lg flex items-center gap-2">
-              <Share2 className="h-5 w-5" />
-              Payment Link & Share
+            <DialogTitle className="text-xl font-black flex items-center gap-2 text-white">
+              <QrCode className="h-6 w-6" /> Payment Link & QR
             </DialogTitle>
+            <p className="text-violet-100 text-sm opacity-90">Collect payment for Job #{jobId}</p>
           </DialogHeader>
-          <div className="mt-3 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-violet-100 text-sm">
-                <User className="h-3.5 w-3.5" />
-                <span>{customerName}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-white font-black text-2xl">
-                <IndianRupee className="h-5 w-5" />
-                <span>{amount.toLocaleString()}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <Badge className="bg-white/20 text-white border-0 text-xs">Job #{jobId}</Badge>
-              <div className="flex items-center gap-1 text-violet-200 text-xs mt-1">
-                <Clock className="h-3 w-3" />
-                <span>Expires in 7 days</span>
-              </div>
-            </div>
+          
+          <div className="mt-4 flex items-center justify-between bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+             <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center font-bold">{customerName.charAt(0)}</div>
+                <div>
+                  <p className="text-xs font-bold text-white/70 uppercase">Customer</p>
+                  <p className="text-sm font-bold">{customerName}</p>
+                </div>
+             </div>
+             <div className="text-right">
+                <p className="text-xs font-bold text-white/70 uppercase">Amount Due</p>
+                <p className="text-xl font-black text-white">₹{amount.toLocaleString()}</p>
+             </div>
           </div>
         </div>
 
-        <div className="p-5 space-y-4">
-          {/* Generate Link */}
-          {!linkToken ? (
-            <Button
-              className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25"
-              onClick={generateLink}
-              disabled={generating}
-            >
-              <Link2 className="h-4 w-4 mr-2" />
-              {generating ? 'Generating...' : 'Generate Payment Link'}
-            </Button>
+        <div className="p-6 space-y-6 bg-white dark:bg-slate-900">
+          {!generatedLink ? (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Link Expiry</Label>
+                <select 
+                  className="w-full h-12 rounded-2xl border bg-muted/30 px-4 text-sm focus:ring-2 focus:ring-violet-500 transition-all outline-none"
+                  value={expiryDays}
+                  onChange={(e) => setExpiryDays(e.target.value)}
+                >
+                  <option value="1">1 Day</option>
+                  <option value="7">7 Days (Recommended)</option>
+                  <option value="30">30 Days</option>
+                </select>
+              </div>
+
+              <Button 
+                onClick={generateLink} 
+                disabled={loading}
+                className="w-full h-14 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-2xl font-black text-lg shadow-xl shadow-violet-500/25 transition-all active:scale-95"
+              >
+                {loading ? 'Generating...' : 'Generate Smart Link'}
+              </Button>
+              <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold">Safe & Secure Payment via UPI</p>
+            </div>
           ) : (
-            <>
-              {/* Link Display */}
-              <div className="flex items-center gap-2 bg-muted/50 border border-dashed border-violet-300 rounded-xl p-3">
-                <Link2 className="h-4 w-4 text-violet-500 shrink-0" />
-                <span className="text-xs font-mono text-muted-foreground flex-1 truncate">{paymentUrl}</span>
-                <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-violet-100" onClick={copyLink}>
-                    {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 text-violet-600" />}
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-violet-100" onClick={() => window.open(paymentUrl, '_blank')}>
-                    <ExternalLink className="h-3.5 w-3.5 text-violet-600" />
+            <div className="space-y-6 animate-in zoom-in-95 duration-500">
+              {/* QR Code Section */}
+              <div className="border rounded-3xl p-5 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-900 space-y-4">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                      <QrCode className="h-4 w-4 text-violet-600" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Scan to Pay</span>
+                   </div>
+                   <Button size="sm" variant="ghost" className="h-8 text-violet-600 hover:bg-violet-50 rounded-lg text-xs font-bold" onClick={downloadQR}>
+                      <Download className="h-3.5 w-3.5 mr-1" /> Download
+                   </Button>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  <div ref={qrRef} className="bg-white p-3 rounded-2xl shadow-xl border-4 border-violet-50 shrink-0">
+                    <QRCodeSVG value={upiUri} size={130} fgColor="#4f46e5" includeMargin />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <img src="https://img.icons8.com/color/48/google-pay-india.png" className="h-6 w-6" alt="GPay" />
+                      <img src="https://img.icons8.com/color/48/phonepe.png" className="h-6 w-6" alt="PhonePe" />
+                      <img src="https://img.icons8.com/color/48/paytm.png" className="h-6 w-6" alt="Paytm" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
+                      Customer can scan this QR with any UPI app to pay directly to your account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Link Sharing */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Payment Link</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 h-12 bg-muted/50 rounded-2xl border border-dashed border-violet-300 flex items-center px-4 overflow-hidden">
+                    <span className="text-xs font-mono text-violet-600 truncate">{generatedLink}</span>
+                  </div>
+                  <Button size="icon" variant="secondary" className="h-12 w-12 rounded-2xl shrink-0" onClick={copyToClipboard}>
+                    {copied ? <Check className="h-5 w-5 text-emerald-500" /> : <Copy className="h-5 w-5" />}
                   </Button>
                 </div>
               </div>
 
-              {/* Share Buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={sendWhatsApp}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/15 transition-all hover:scale-105"
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={shareWhatsApp}
+                  className="bg-[#25D366] hover:bg-[#1EBE57] text-white rounded-2xl h-14 font-black shadow-lg shadow-emerald-500/20 gap-2 text-base"
                 >
-                  <div className="h-10 w-10 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg shadow-[#25D366]/30">
-                    <MessageCircle className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xs font-bold text-[#25D366]">WhatsApp</span>
-                </button>
-
-                <button
-                  onClick={sendSMS}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-blue-500/30 bg-blue-50 hover:bg-blue-100 transition-all hover:scale-105"
+                  <MessageCircle className="h-5 w-5" /> WhatsApp
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="rounded-2xl h-14 font-black gap-2 border-2 border-slate-200 hover:bg-slate-50 transition-all text-base"
+                  onClick={shareSMS}
                 >
-                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                    <Smartphone className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xs font-bold text-blue-600">SMS</span>
-                </button>
-
-                <button
-                  onClick={copyLink}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-purple-500/30 bg-purple-50 hover:bg-purple-100 transition-all hover:scale-105"
-                >
-                  <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                    {copied ? <Check className="h-5 w-5 text-white" /> : <Copy className="h-5 w-5 text-white" />}
-                  </div>
-                  <span className="text-xs font-bold text-purple-600">Copy Link</span>
-                </button>
+                  <Smartphone className="h-5 w-5" /> Send SMS
+                </Button>
               </div>
 
-              {/* QR Code */}
-              <div className="border rounded-2xl p-4 bg-gradient-to-b from-muted/30 to-muted/10 space-y-3">
-                <div className="flex items-center gap-2 text-sm font-bold">
-                  <QrCode className="h-4 w-4 text-violet-600" />
-                  <span>QR Code — Scan to Pay / Track</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div ref={qrRef} className="bg-white p-3 rounded-xl shadow-md border">
-                    <QRCodeSVG value={paymentUrl} size={120} fgColor="#4f46e5" />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <p className="text-xs text-muted-foreground">Customer can scan this QR to track order & pay online directly.</p>
-                    <Button size="sm" variant="outline" className="w-full text-xs border-violet-300 text-violet-600 hover:bg-violet-50" onClick={downloadQR}>
-                      <Download className="h-3.5 w-3.5 mr-1.5" />
-                      Download QR PNG
+              {!upiId && (
+                <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900 flex items-start gap-3 animate-pulse">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400">UPI ID NOT SET</p>
+                    <p className="text-[10px] text-amber-600 leading-tight">
+                      You haven't configured your UPI ID in Shop Settings. QR code will not work correctly.
+                    </p>
+                    <Button variant="link" className="p-0 h-auto text-[10px] text-amber-700 font-bold underline" onClick={() => window.location.href='/settings'}>
+                      Configure Now →
                     </Button>
                   </div>
                 </div>
+              )}
+
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900 flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold leading-tight uppercase tracking-tight">
+                  Secure & Encrypted. Payments go directly to your linked UPI ID: {upiId || 'Not Set'}
+                </p>
               </div>
-            </>
+            </div>
           )}
         </div>
       </DialogContent>

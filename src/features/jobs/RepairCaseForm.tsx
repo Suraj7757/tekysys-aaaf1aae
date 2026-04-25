@@ -98,22 +98,24 @@ export default function RepairCaseForm({ data, onChange }: RepairCaseFormProps) 
                 key={cat.id}
                 type="button"
                 onClick={() => handleTabChange(cat.id)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
-                  isActive
-                    ? 'border-transparent shadow-lg scale-105'
-                    : 'border-border hover:border-muted-foreground/30 hover:scale-102 bg-muted/30'
-                }`}
-                style={isActive ? { background: `linear-gradient(135deg, var(--tw-gradient-stops))` } : {}}
+                className={`
+                  relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-300
+                  ${isActive 
+                    ? `border-transparent shadow-lg scale-105 bg-gradient-to-br ${cat.color} text-white` 
+                    : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:border-slate-300'
+                  }
+                `}
               >
-                <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${
-                  isActive ? `bg-gradient-to-br ${cat.color} shadow-md` : 'bg-muted'
-                }`}>
-                  <Icon className={`h-4.5 w-4.5 ${isActive ? 'text-white' : 'text-muted-foreground'}`} style={{ height: '1.1rem', width: '1.1rem' }} />
-                </div>
-                <span className={`text-[10px] font-bold ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {cat.name}
-                </span>
-                {isActive && <CheckCircle2 className="h-3 w-3 text-primary absolute" style={{ marginTop: '-2px' }} />}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeCheck"
+                    className="absolute -top-1.5 -right-1.5 bg-white text-primary rounded-full p-0.5 shadow-md border border-primary/20"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </motion.div>
+                )}
+                <Icon className={`h-6 w-6 mb-1.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span className="text-[10px] font-black uppercase tracking-tight line-clamp-1">{cat.name}</span>
               </button>
             );
           })}
