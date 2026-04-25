@@ -125,7 +125,7 @@ export default function TrackOrder({ isModal = false }: { isModal?: boolean }) {
         </div>
 
         <div className="flex gap-2">
-          <Input placeholder="e.g. hari4599job00001" value={trackingId}
+          <Input placeholder="e.g. TRK-JOB-0001 or your Job/Sell ID" value={trackingId}
             onChange={e => setTrackingId(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleTrack()} className="font-mono" />
           <Button onClick={handleTrack} disabled={loading}><Search className="h-4 w-4" /></Button>

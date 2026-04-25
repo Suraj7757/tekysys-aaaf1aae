@@ -4,12 +4,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Smartphone, Wrench, Package, ShoppingCart, BarChart3, Shield, Users, Wallet,
   Gift, Monitor, Bell, MessageCircle, ArrowRight, CheckCircle, Star, Zap, Mail, ConciergeBell,
+  Download, ChevronDown,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NewsTicker } from '@/components/layout/NewsTicker';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import TrackOrder from '@/features/jobs/TrackOrder';
+import MultiServiceShowcase from '@/features/dashboard/MultiServiceShowcase';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const ADMIN_WHATSAPP = '7319884599';
 const SUPER_ADMIN = 'krs715665@gmail.com';
@@ -57,10 +60,12 @@ const roadmap = [
 ];
 
 const updates = [
-  { date: '24-Apr-2026', title: 'Internal Admin Chat & UI Enhancements', description: 'Launched a new Internal Chat system for admins and refined the customer tracking experience with an immersive popup interface.' },
+  { date: '24-Apr-2026', title: '🎉 Multi-Service Repair Form Redesign', description: 'Repair case form ab category-specific fields support karta hai — Mobile, Laptop, TV, AC, Fridge, PC. Framer Motion animations bhi add ki gayi hain.' },
+  { date: '24-Apr-2026', title: '🆕 Animated Multi-Service Homepage Section', description: 'Homepage pe ek brand new animated service showcase add kiya gaya hai with clickable category tabs and smooth transitions.' },
+  { date: '24-Apr-2026', title: '🔧 Quick Create Button in Sidebar', description: 'Sidebar mein ab ek single "+ Create New" button hai jisme tap karne se Job ya Sell create karne ka popup aata hai.' },
+  { date: '24-Apr-2026', title: '📥 Download Section Added', description: 'Homepage pe Download menu add kiya gaya hai — Android App aur Windows PC exe ke liye direct download links.' },
   { date: '22-Apr-2026', title: 'Enterprise ERP Modules Launched', description: 'Major update! Added 35+ advanced modules including Expense Tracking, Lead Management, Task Assignment, and a Digital Signature Canvas.' },
   { date: '21-Apr-2026', title: 'Smart AI Chatbot Launched', description: 'Added a context-aware AI Assistant that supports Hinglish. Customers can check job status, create new jobs, and get FAQs.' },
-  { date: '21-Apr-2026', title: 'Multi Services Management', description: 'Brand-new Service Catalog module: manage all your repair services with pricing ranges, turnaround times, and category grouping.' },
 ];
 
 const landingServices = [
@@ -97,13 +102,34 @@ export default function Landing() {
             <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <Smartphone className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM CRM</span>
+            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Features</a>
             <button onClick={() => setShowRoadmapModal(true)} className="text-muted-foreground hover:text-foreground transition-colors font-medium">Roadmap</button>
             <button onClick={() => setShowUpdatesModal(true)} className="text-muted-foreground hover:text-foreground transition-colors font-medium">Updates</button>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Pricing</a>
+            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Plans</a>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Download className="h-3.5 w-3.5" /> Download <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <a href="#" className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-lg">🤖</span>
+                    <div><p className="font-semibold text-xs">Android App</p><p className="text-[10px] text-muted-foreground">Coming Soon</p></div>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="#" className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-lg">🖥️</span>
+                    <div><p className="font-semibold text-xs">Windows PC (.exe)</p><p className="text-[10px] text-muted-foreground">Coming Soon</p></div>
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" size="sm" onClick={() => setShowTrackModal(true)}>Track Order</Button>
             <Link to="/auth"><Button size="sm">Sign In</Button></Link>
           </nav>
@@ -114,75 +140,37 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="container mx-auto px-4 py-16 md:py-24 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm text-muted-foreground mb-6">
-          <Zap className="h-4 w-4 text-primary" />
+      {/* Hero — compact */}
+      <section className="container mx-auto px-4 py-10 md:py-14 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1 text-xs text-muted-foreground mb-4">
+          <Zap className="h-3.5 w-3.5 text-primary" />
           7-Day Free Trial • No Credit Card Required
         </div>
-        <h1 className="text-5xl md:text-7xl font-black text-foreground leading-[1.1] max-w-4xl mx-auto tracking-tighter">
-          The Ultimate <span className="text-primary italic">SaaS CRM</span> for Service Experts
+        <h1 className="text-4xl md:text-6xl font-black text-foreground leading-[1.1] max-w-3xl mx-auto tracking-tighter">
+          Smart Service Management for <span className="text-primary italic">Repair Experts</span>
         </h1>
-        <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Manage your service catalog, repair jobs, inventory, sales & earnings — all in one powerful Multi-Service CRM platform.
+        <p className="mt-4 text-base text-muted-foreground max-w-xl mx-auto">
+          Manage repair jobs, inventory, sales & payments — all in one place. Built for mobile, laptop, TV, AC & more.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/auth?mode=signup">
-            <Button size="lg" className="text-base px-8">
-              Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
+            <Button size="default" className="px-8 font-bold">
+              Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
-          <Button variant="outline" size="lg" className="text-base px-8" onClick={() => setShowTrackModal(true)}>
+          <Button variant="outline" size="default" className="px-8" onClick={() => setShowTrackModal(true)}>
             📦 Track Your Order
           </Button>
         </div>
-        <div className="mt-10 flex items-center justify-center gap-6 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> Free Forever Plan</span>
-          <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> GST Invoicing</span>
-          <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> WhatsApp Support</span>
+        <div className="mt-6 flex items-center justify-center gap-5 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> Free Forever Plan</span>
+          <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> GST Invoicing</span>
+          <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> WhatsApp Support</span>
         </div>
       </section>
 
-      {/* Services Marquee */}
-      <div className="w-full bg-primary/5 py-8 border-y border-primary/10 overflow-hidden mb-16 relative group">
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
-        
-        <div className="flex gap-6 items-center animate-marquee whitespace-nowrap px-4 group-hover:[animation-play-state:paused]">
-          {[...landingServices, ...landingServices, ...landingServices].map((service, i) => (
-            <Card 
-              key={i} 
-              className="shrink-0 w-72 cursor-pointer hover:shadow-xl transition-all border-primary/10 hover:border-primary/40 hover:-translate-y-1 bg-card/80 backdrop-blur-sm"
-              onClick={() => setSelectedService(service)}
-            >
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <service.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm leading-tight text-foreground">{service.name}</h4>
-                      <p className="text-[10px] text-muted-foreground">{service.category}</p>
-                    </div>
-                  </div>
-                  {service.popular && <Star className="h-4 w-4 text-amber-500 fill-amber-500 shrink-0 animate-pulse" />}
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40">
-                  <div>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Pricing</p>
-                    <p className="text-xs font-bold text-primary">{service.price}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Turnaround</p>
-                    <p className="text-xs font-semibold">{service.tat}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* Multi Services Management Showcase */}
+      <MultiServiceShowcase />
 
       {/* Features */}
       <section id="features" className="container mx-auto px-4 py-8">
@@ -208,82 +196,30 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="pricing" className="container mx-auto px-4 py-16">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-foreground">Simple Pricing</h2>
-          <p className="mt-3 text-muted-foreground">Start free, upgrade when you need more.</p>
-        </div>
-        
-        {/* Billing Toggle */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-muted p-1 rounded-full inline-flex relative shadow-inner">
-            <button 
-              onClick={() => setBillingCycle('monthly')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Monthly
-            </button>
-            <button 
-              onClick={() => setBillingCycle('quarterly')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'quarterly' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Quarterly
-            </button>
-            <button 
-              onClick={() => setBillingCycle('annually')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold transition-colors ${billingCycle === 'annually' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Annually <Badge className="absolute -top-3 -right-3 bg-green-500 hover:bg-green-600 border-0 shadow-lg text-[9px] animate-pulse py-0">SAVE BIG</Badge>
-            </button>
-            
-            {/* Sliding highlight */}
-            <div 
-              className="absolute top-1 bottom-1 bg-primary rounded-full transition-all duration-300 shadow-md"
-              style={{
-                left: billingCycle === 'monthly' ? '4px' : billingCycle === 'quarterly' ? '33.33%' : '66.66%',
-                width: 'calc(33.33% - 4px)',
-              }}
-            />
+      {/* Plans CTA — compact, links to subscription page */}
+      <section id="pricing" className="container mx-auto px-4 py-10">
+        <div className="max-w-3xl mx-auto bg-card border rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+          <div className="flex-1 space-y-3 text-center md:text-left relative z-10">
+            <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest py-1 px-3">Flexible Pricing</Badge>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight">Plans starting from <span className="text-primary">₹249/mo</span></h2>
+            <p className="text-sm text-muted-foreground">Basic, Standard, Enterprise & Premium plans. Start free, upgrade anytime.</p>
+            <div className="flex flex-wrap gap-3 justify-center md:justify-start pt-1 text-xs font-semibold">
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-green-500" />Free Forever Plan</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-green-500" />GST Invoicing</span>
+              <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-green-500" />No Hidden Fees</span>
+            </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {getPlans(billingCycle).map((plan, i) => (
-            <Card key={i} className={`relative overflow-hidden flex flex-col ${plan.popular ? 'border-primary shadow-xl ring-2 ring-primary/20 scale-105 z-10' : ''}`}>
-              {plan.badge && (
-                <div className="bg-primary text-primary-foreground text-[10px] font-black tracking-widest text-center py-1.5 uppercase">
-                  {plan.badge}
-                </div>
-              )}
-              {plan.popular && !plan.badge && (
-                <div className="bg-primary text-primary-foreground text-[10px] font-black tracking-widest text-center py-1.5 uppercase">
-                  POPULAR CHOICE
-                </div>
-              )}
-              <CardContent className="p-6 flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-                <div className="mt-4 mb-6">
-                  <span className="text-4xl font-black text-foreground tracking-tighter">{plan.price}</span>
-                  <span className="text-muted-foreground font-medium">{plan.period}</span>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-64 mb-6 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
-                  <ul className="space-y-3">
-                    {plan.features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" /> 
-                        <span className="leading-tight">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <Link to="/auth?mode=signup" className="mt-auto">
-                  <Button className="w-full font-bold" variant={plan.popular ? 'default' : 'outline'} size="lg">{plan.cta}</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+          <div className="shrink-0 relative z-10 flex flex-col gap-3">
+            <Link to="/subscription">
+              <Button size="lg" className="px-8 font-bold shadow-lg shadow-primary/20">
+                View All Plans <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/auth?mode=signup">
+              <Button variant="outline" size="sm" className="w-full">Start Free Today</Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -336,9 +272,9 @@ export default function Landing() {
                 <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-md">
                   <Smartphone className="h-4 w-4 text-primary-foreground" />
                 </div>
-                <span className="font-black text-lg text-foreground tracking-tight">MSM CRM</span>
+                <span className="font-black text-lg text-foreground tracking-tight">MSM</span>
               </div>
-              <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Multi Service Manager CRM.<br/>Premium SaaS Solution for Repair & Sales.</p>
+              <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} MSM — Multi Service Manager.<br/>Repair, Sales & Service Management Platform.</p>
             </div>
             
             <div className="flex flex-col items-center md:items-start">

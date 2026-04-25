@@ -20,20 +20,21 @@ import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
 import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
+import RepairCaseForm from "./RepairCaseForm";
 
 // Quick service catalog for job creation (mirrors ServicesManagement seed)
 const SERVICE_CATALOG = [
-  { label: 'Screen Replacement', price: 800, problem: 'Screen replacement needed' },
-  { label: 'Battery Replacement', price: 350, problem: 'Battery replacement needed' },
-  { label: 'Charging Port Repair', price: 200, problem: 'Charging port not working' },
-  { label: 'Motherboard Repair', price: 500, problem: 'Motherboard/chip-level repair required' },
-  { label: 'Water Damage Treatment', price: 400, problem: 'Water damage — ultrasonic cleaning required' },
-  { label: 'Laptop Screen Repair', price: 1500, problem: 'Laptop screen replacement needed' },
-  { label: 'Laptop Keyboard Replacement', price: 700, problem: 'Keyboard replacement needed' },
-  { label: 'RAM / SSD Upgrade', price: 300, problem: 'RAM/SSD upgrade requested' },
-  { label: 'TV Panel Repair', price: 1200, problem: 'TV LED panel fault — repair needed' },
-  { label: 'Printer Head Cleaning', price: 150, problem: 'Printer head cleaning & alignment' },
-  { label: 'Other / Custom', price: 0, problem: '' },
+  { label: 'Screen Replacement', price: 800, problem: 'Screen replacement needed', category: 'mobile' },
+  { label: 'Battery Replacement', price: 350, problem: 'Battery replacement needed', category: 'mobile' },
+  { label: 'Charging Port Repair', price: 200, problem: 'Charging port not working', category: 'mobile' },
+  { label: 'Motherboard Repair', price: 500, problem: 'Motherboard/chip-level repair required', category: 'mobile' },
+  { label: 'Water Damage Treatment', price: 400, problem: 'Water damage — ultrasonic cleaning required', category: 'mobile' },
+  { label: 'Laptop Screen Repair', price: 1500, problem: 'Laptop screen replacement needed', category: 'laptop' },
+  { label: 'Laptop Keyboard Replacement', price: 700, problem: 'Keyboard replacement needed', category: 'laptop' },
+  { label: 'RAM / SSD Upgrade', price: 300, problem: 'RAM/SSD upgrade requested', category: 'laptop' },
+  { label: 'TV Panel Repair', price: 1200, problem: 'TV LED panel fault — repair needed', category: 'tv' },
+  { label: 'Printer Head Cleaning', price: 150, problem: 'Printer head cleaning & alignment', category: 'pc' },
+  { label: 'Other / Custom', price: 0, problem: '', category: 'mobile' },
 ];
 
 type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
@@ -76,26 +77,25 @@ export default function RepairJobs() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [deviceBrand, setDeviceBrand] = useState("");
-  const [deviceModel, setDeviceModel] = useState("");
-  const [problem, setProblem] = useState("");
   const [technician, setTechnician] = useState("");
-  const [estimatedCost, setEstimatedCost] = useState("");
-
   const [serviceType, setServiceType] = useState("");
-
   const [editName, setEditName] = useState("");
   const [editMobile, setEditMobile] = useState("");
-  const [editBrand, setEditBrand] = useState("");
-  const [editModel, setEditModel] = useState("");
-  const [editProblem, setEditProblem] = useState("");
   const [editTech, setEditTech] = useState("");
-  const [editCost, setEditCost] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [qrReceiver, setQrReceiver] = useState(settings?.qr_receivers?.[0] || "Admin QR");
   const [customQr, setCustomQr] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
+
+  const [formState, setFormState] = useState<any>({
+    device_brand: "",
+    device_model: "",
+    problem_description: "",
+    estimated_cost: "",
+    service_category: "mobile",
+    device_details: {}
+  });
 
   const allStatuses: JobStatus[] = ['Received', 'In Progress', 'Ready', 'Delivered', 'Rejected', 'Unrepairable'];
 
@@ -131,7 +131,7 @@ export default function RepairJobs() {
   const { limits, planType } = usePlanRestrictions();
 
   const handleCreateJob = async () => {
-    if (!customerName || !customerMobile || !deviceBrand || !problem || !user) {
+    if (!customerName || !customerMobile || !formState.device_brand || !formState.problem_description || !user) {
       toast.error("Please fill all required fields"); return;
     }
 
@@ -149,14 +149,24 @@ export default function RepairJobs() {
     await supabase.from('repair_jobs').insert({
       user_id: user.id, job_id: jobId, customer_id: customer?.id,
       customer_name: customerName, customer_mobile: customerMobile,
-      device_brand: deviceBrand, device_model: deviceModel || null,
-      problem_description: problem, technician_name: technician || null,
-      status: 'Received' as any, estimated_cost: parseFloat(estimatedCost) || 0,
-    });
+      device_brand: formState.device_brand, device_model: formState.device_model || null,
+      problem_description: formState.problem_description, technician_name: technician || null,
+      status: 'Received' as any, estimated_cost: parseFloat(formState.estimated_cost) || 0,
+      service_category: formState.service_category,
+      device_details: formState.device_details
+    } as any);
     refetch();
     setCreateOpen(false);
     setServiceType("");
-    setCustomerMobile(""); setCustomerName(""); setDeviceBrand(""); setDeviceModel(""); setProblem(""); setTechnician(""); setEstimatedCost("");
+    setCustomerMobile(""); setCustomerName(""); setTechnician("");
+    setFormState({
+      device_brand: "",
+      device_model: "",
+      problem_description: "",
+      estimated_cost: "",
+      service_category: "mobile",
+      device_details: {}
+    });
     toast.success(`Job ${jobId} created`);
   };
 
@@ -164,27 +174,41 @@ export default function RepairJobs() {
     setSelectedJob(job);
     setEditName(job.customer_name);
     setEditMobile(job.customer_mobile);
-    setEditBrand(job.device_brand);
-    setEditModel(job.device_model || '');
-    setEditProblem(job.problem_description);
     setEditTech(job.technician_name || '');
-    setEditCost(String(job.estimated_cost));
+    setFormState({
+      device_brand: job.device_brand,
+      device_model: job.device_model || '',
+      problem_description: job.problem_description,
+      estimated_cost: String(job.estimated_cost),
+      service_category: job.service_category || 'mobile',
+      device_details: job.device_details || {}
+    });
     setEditOpen(true);
   };
 
   const handleEditJob = async () => {
-    if (!selectedJob || !editName || !editMobile || !editBrand || !editProblem) {
+    if (!selectedJob || !editName || !editMobile || !formState.device_brand || !formState.problem_description) {
       toast.error("Please fill all required fields"); return;
     }
     await supabase.from('repair_jobs').update({
       customer_name: editName, customer_mobile: editMobile,
-      device_brand: editBrand, device_model: editModel || null,
-      problem_description: editProblem, technician_name: editTech || null,
-      estimated_cost: parseFloat(editCost) || 0,
-    }).eq('id', selectedJob.id);
+      device_brand: formState.device_brand, device_model: formState.device_model || null,
+      problem_description: formState.problem_description, technician_name: editTech || null,
+      estimated_cost: parseFloat(formState.estimated_cost) || 0,
+      service_category: formState.service_category,
+      device_details: formState.device_details
+    } as any).eq('id', selectedJob.id);
     refetch();
     setEditOpen(false);
     setSelectedJob(null);
+    setFormState({
+      device_brand: "",
+      device_model: "",
+      problem_description: "",
+      estimated_cost: "",
+      service_category: "mobile",
+      device_details: {}
+    });
     toast.success(`Job ${selectedJob.job_id} updated`);
   };
 
@@ -427,21 +451,28 @@ export default function RepairJobs() {
                   </div>
                   <div><Label className="text-xs font-bold uppercase text-muted-foreground">Mobile Number *</Label><Input className="mt-1 font-mono" placeholder="9876543210" value={customerMobile} onChange={e => handleMobileSearch(e.target.value)} /></div>
                   <div><Label className="text-xs font-bold uppercase text-muted-foreground">Customer Name *</Label><Input className="mt-1" placeholder="John Doe" value={customerName} onChange={e => setCustomerName(e.target.value)} /></div>
+                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Assigned Technician</Label><Input className="mt-1" placeholder="Optional" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
                 </div>
 
                 {/* Service Selection */}
                 <div className="space-y-4 bg-muted/30 p-4 rounded-xl border">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">2</span>
-                    <h3 className="font-semibold text-sm">Service Selection</h3>
+                    <h3 className="font-semibold text-sm">Quick Service Pick</h3>
                   </div>
                   <div>
                     <Label className="flex items-center gap-1 text-xs font-bold uppercase text-muted-foreground mb-1"><ConciergeBell className="h-3 w-3" /> Quick Pick (Catalog)</Label>
                     <Select value={serviceType} onValueChange={v => {
                       setServiceType(v);
                       const svc = SERVICE_CATALOG.find(s => s.label === v);
-                      if (svc && svc.problem) setProblem(svc.problem);
-                      if (svc && svc.price > 0) setEstimatedCost(String(svc.price));
+                      if (svc) {
+                        setFormState(prev => ({
+                          ...prev,
+                          problem_description: svc.problem || prev.problem_description,
+                          estimated_cost: svc.price > 0 ? String(svc.price) : prev.estimated_cost,
+                          service_category: svc.category || prev.service_category
+                        }));
+                      }
                     }}>
                       <SelectTrigger><SelectValue placeholder="Pick a service (optional)" /></SelectTrigger>
                       <SelectContent>
@@ -449,24 +480,23 @@ export default function RepairJobs() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                    <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Tip</p>
+                    <p className="text-xs text-muted-foreground">Select a category below to see specific fields for AC, TV, Fridge, etc.</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Device Details */}
+              {/* Redesigned Repair Case Form */}
               <div className="space-y-4 bg-muted/30 p-4 rounded-xl border">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">3</span>
-                  <h3 className="font-semibold text-sm">Device & Repair Info</h3>
+                  <h3 className="font-semibold text-sm">Repair Case Details</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Device Brand *</Label><Input className="mt-1" placeholder="Samsung, Apple..." value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} /></div>
-                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Model</Label><Input className="mt-1" placeholder="Galaxy S23, iPhone 14" value={deviceModel} onChange={e => setDeviceModel(e.target.value)} /></div>
-                </div>
-                <div><Label className="text-xs font-bold uppercase text-muted-foreground">Problem Description *</Label><Textarea className="mt-1 resize-none h-20" placeholder="Describe the issue in detail..." value={problem} onChange={e => setProblem(e.target.value)} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Assigned Technician</Label><Input className="mt-1" placeholder="Optional" value={technician} onChange={e => setTechnician(e.target.value)} /></div>
-                  <div><Label className="text-xs font-bold uppercase text-muted-foreground">Estimated Cost (₹) *</Label><Input className="mt-1 font-bold text-primary" type="number" placeholder="0" value={estimatedCost} onChange={e => setEstimatedCost(e.target.value)} /></div>
-                </div>
+                <RepairCaseForm 
+                  data={formState}
+                  onChange={setFormState}
+                />
               </div>
 
             </div>
@@ -478,22 +508,27 @@ export default function RepairJobs() {
         </Dialog>
 
         {/* Edit Job Dialog */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Edit Job — {selectedJob?.job_id}</DialogTitle></DialogHeader>
-            <div className="grid gap-4">
+        <Dialog open={editOpen} onOpenChange={(val) => {
+          setEditOpen(val);
+          if (!val) setSelectedJob(null);
+        }}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Job — {selectedJob?.job_id}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Customer Mobile *</Label><Input value={editMobile} onChange={e => setEditMobile(e.target.value)} /></div>
-                <div><Label>Customer Name *</Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
+                <div><Label className="text-xs font-bold uppercase text-muted-foreground">Customer Mobile</Label><Input value={editMobile} onChange={e => setEditMobile(e.target.value)} /></div>
+                <div><Label className="text-xs font-bold uppercase text-muted-foreground">Customer Name</Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
               </div>
+              
+              <RepairCaseForm 
+                data={formState}
+                onChange={setFormState}
+              />
+
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Device Brand *</Label><Input value={editBrand} onChange={e => setEditBrand(e.target.value)} /></div>
-                <div><Label>Device Model</Label><Input value={editModel} onChange={e => setEditModel(e.target.value)} /></div>
-              </div>
-              <div><Label>Problem Description *</Label><Textarea value={editProblem} onChange={e => setEditProblem(e.target.value)} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Technician</Label><Input value={editTech} onChange={e => setEditTech(e.target.value)} /></div>
-                <div><Label>Estimated Cost (₹)</Label><Input type="number" value={editCost} onChange={e => setEditCost(e.target.value)} /></div>
+                <div><Label className="text-xs font-bold uppercase text-muted-foreground">Technician</Label><Input value={editTech} onChange={e => setEditTech(e.target.value)} /></div>
               </div>
             </div>
             <DialogFooter>
@@ -556,11 +591,26 @@ export default function RepairJobs() {
                 <div className="grid grid-cols-2 gap-4">
                   <div><p className="text-xs text-muted-foreground">Customer</p><p className="font-semibold">{selectedJob.customer_name}</p></div>
                   <div><p className="text-xs text-muted-foreground">Mobile</p><p className="font-semibold">{selectedJob.customer_mobile}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Category</p><Badge variant="outline" className="uppercase text-[10px]">{selectedJob.service_category || 'General'}</Badge></div>
                   <div><p className="text-xs text-muted-foreground">Device</p><p className="font-semibold">{selectedJob.device_brand} {selectedJob.device_model}</p></div>
                   <div><p className="text-xs text-muted-foreground">Status</p><Badge className={statusColors[selectedJob.status]}>{selectedJob.status}</Badge></div>
                   <div><p className="text-xs text-muted-foreground">Cost</p><p className="font-semibold">₹{Number(selectedJob.estimated_cost).toLocaleString()}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Date</p><p className="font-semibold">{new Date(selectedJob.created_at).toLocaleDateString()}</p></div>
                 </div>
+                
+                {selectedJob.device_details && Object.keys(selectedJob.device_details).length > 0 && (
+                  <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2">Specific Details</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(selectedJob.device_details).map(([key, val]: [string, any]) => (
+                        <div key={key}>
+                          <p className="text-[9px] text-muted-foreground uppercase">{key.replace('_', ' ')}</p>
+                          <p className="text-xs font-bold capitalize">{val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="border-t pt-2">
                   <p className="text-xs text-muted-foreground mb-1">Problem Description</p>
                   <p className="text-sm p-3 bg-muted rounded-lg">{selectedJob.problem_description}</p>

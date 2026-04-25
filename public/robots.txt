@@ -1,14 +1,23 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /auth
+Allow: /track
+Allow: /privacy
+Allow: /terms
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /jobs
+Disallow: /sells
+Disallow: /inventory
+Disallow: /payments
+Disallow: /settlements
+Disallow: /reports
+Disallow: /settings
+Disallow: /wallet
+Disallow: /subscription
+Disallow: /enterprise
+Disallow: /services
+Disallow: /customers
+Disallow: /trash
+
+Sitemap: https://dukandiary.vercel.app/sitemap.xml

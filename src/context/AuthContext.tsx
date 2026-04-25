@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName: string, mobile: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
 }
@@ -88,21 +89,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchRole]);
 
   const signUp = async (email: string, password: string, displayName: string, mobile: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email, password,
-      options: { 
-        data: { 
-          display_name: displayName,
-          mobile: mobile
-        } 
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
+        data: { display_name: displayName, mobile }
       }
     });
 
+    // If email confirmation is enabled, data.session will be null
+    // If it's null, user needs to confirm email first (correct flow)
     let errorMessage = error?.message || null;
     if (errorMessage && errorMessage.toLowerCase().includes('rate limit')) {
-      errorMessage = "Security: Too many signup attempts (Supabase Rate Limit). To test freely, please go to your Supabase Dashboard -> Authentication -> Providers -> Email and disable 'Confirm Email', or increase your Rate Limits in Auth -> Rate Limits.";
+      errorMessage = 'Too many signup attempts. Please wait a few minutes and try again.';
     }
-
     return { error: errorMessage };
   };
 
@@ -132,6 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth` }
+    });
+    return { error: error?.message || null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -147,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, isBanned, isMaintenance, isPlanExpired, loading, signUp, signIn, signOut, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, session, role, isBanned, isMaintenance, isPlanExpired, loading, signUp, signIn, signInWithGoogle, signOut, sendPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );
