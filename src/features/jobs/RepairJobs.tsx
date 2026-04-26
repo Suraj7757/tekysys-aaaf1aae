@@ -23,6 +23,7 @@ import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
 import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
+import { QRCodeSVG } from 'qrcode.react';
 import RepairCaseForm from "./RepairCaseForm";
 import PaymentLinkModal from "../payments/PaymentLinkModal";
 
@@ -651,7 +652,6 @@ export default function RepairJobs() {
               </div>
               {paymentMethod === 'UPI/QR' && (
                 <div>
-                  <Label>QR Receiver</Label>
                   <Select value={qrReceiver} onValueChange={setQrReceiver}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -660,6 +660,28 @@ export default function RepairJobs() {
                     </SelectContent>
                   </Select>
                   {qrReceiver === 'Custom' && (<Input className="mt-2" placeholder="Enter QR name" value={customQr} onChange={e => setCustomQr(e.target.value)} />)}
+                  
+                  {/* Integrated UPI QR Preview */}
+                  <div className="mt-4 p-4 border rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center gap-3">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Scan to Pay ₹{Number(paymentAmount).toLocaleString()}</p>
+                    <div className="bg-white p-3 rounded-xl shadow-md border-2 border-primary/10">
+                      {settings?.upi_id ? (
+                        <QRCodeSVG 
+                          value={`upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.shop_name || 'Merchant')}&am=${paymentAmount}&cu=INR&tn=${encodeURIComponent('Job ' + (selectedJob?.job_id || ''))}`}
+                          size={140} fgColor="#4f46e5" includeMargin
+                        />
+                      ) : (
+                        <div className="h-[140px] w-[140px] flex items-center justify-center text-xs text-muted-foreground text-center p-4">
+                          UPI ID not set in settings
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <img src="https://img.icons8.com/color/48/google-pay-india.png" className="h-5 w-5" alt="GPay" />
+                      <img src="https://img.icons8.com/color/48/phonepe.png" className="h-5 w-5" alt="PhonePe" />
+                      <img src="https://img.icons8.com/color/48/paytm.png" className="h-5 w-5" alt="Paytm" />
+                    </div>
+                  </div>
                 </div>
               )}
               {splitEnabled && (

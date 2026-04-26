@@ -25,9 +25,9 @@ export default function Dashboard() {
     return deletedCustomers.filter((c: any) => c.deleted).length + deletedJobs.filter((j: any) => j.deleted).length;
   }, [deletedCustomers, deletedJobs]);
 
-  const erpTasks = useMemo(() => JSON.parse(localStorage.getItem('erp_tasks') || '[]'), []);
-  const erpExpenses = useMemo(() => JSON.parse(localStorage.getItem('erp_expenses') || '[]'), []);
-  const erpLeads = useMemo(() => JSON.parse(localStorage.getItem('erp_leads') || '[]'), []);
+  const { data: erpTasks } = useSupabaseQuery<any>('erp_tasks');
+  const { data: erpExpenses } = useSupabaseQuery<any>('erp_expenses');
+  const { data: erpLeads } = useSupabaseQuery<any>('erp_leads');
 
   const stats = useMemo(() => {
     const unsettledPayments = payments.filter((p: any) => !p.settled);

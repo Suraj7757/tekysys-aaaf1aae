@@ -235,6 +235,84 @@ export type Database = {
         }
         Relationships: []
       }
+      erp_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          description: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      erp_leads: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      erp_tasks: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       features: {
         Row: {
           created_at: string
@@ -1170,6 +1248,21 @@ export type Database = {
       admin_set_user_ban: {
         Args: { ban_status: boolean; target_user_id: string }
         Returns: undefined
+      }
+      create_repair_job: {
+        Args: {
+          p_user_id: string
+          p_customer_name: string
+          p_customer_mobile: string
+          p_device_brand: string
+          p_device_model: string | null
+          p_problem_description: string
+          p_technician_name: string | null
+          p_estimated_cost: number
+          p_service_category: string | null
+          p_device_details: Json | null
+        }
+        Returns: string
       }
       generate_alphanumeric_id: { Args: { len: number }; Returns: string }
       generate_random_string: { Args: { length: number }; Returns: string }

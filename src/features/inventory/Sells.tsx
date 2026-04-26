@@ -18,6 +18,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 import { formatTrackingId } from '@/utils/idGenerator';
+import { QRCodeSVG } from 'qrcode.react';
 
 async function getNextSellId(userId: string): Promise<string> {
   const { data, error } = await supabase.rpc('next_sell_id', { _user_id: userId });
@@ -161,7 +162,7 @@ export default function Sells() {
   };
 
   const exportSellsToPDF = () => {
-    const doc = jsPDF() as any;
+    const doc = new jsPDF() as any;
     doc.text("Sales History Report", 14, 15);
     const tableData = (sells as any[]).map(s => [
       s.sell_id,
@@ -311,6 +312,23 @@ export default function Sells() {
                   </SelectContent>
                 </Select>
               </div>
+              {paymentMethod === 'UPI/QR' && (
+                <div className="mt-2 p-4 border rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center gap-3">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Scan to Pay ₹{(qty * (parseFloat(sellPrice) || 0)).toLocaleString()}</p>
+                  <div className="bg-white p-3 rounded-xl shadow-md border-2 border-primary/10">
+                    {settings?.upi_id ? (
+                      <QRCodeSVG 
+                        value={`upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.shop_name || 'Merchant')}&am=${qty * (parseFloat(sellPrice) || 0)}&cu=INR&tn=${encodeURIComponent('Sale ' + (selectedItem?.name || ''))}`}
+                        size={140} fgColor="#4f46e5" includeMargin
+                      />
+                    ) : (
+                      <div className="h-[140px] w-[140px] flex items-center justify-center text-xs text-muted-foreground text-center p-4">
+                        UPI ID not set in settings
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="bg-muted rounded-lg p-3 text-sm">
                 <div className="flex justify-between"><span>Total</span><strong>Rs.{(qty * (parseFloat(sellPrice) || 0)).toLocaleString()}</strong></div>
               </div>

@@ -10,6 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Building2, FileSignature, WalletCards, ShieldCheck, Mail, Briefcase, PhoneCall, CheckCircle, Smartphone, Crown, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlanRestrictions } from '@/hooks/usePlanRestrictions';
+import { useAuth } from '@/context/AuthContext';
+import { useSupabaseQuery } from '@/hooks/useSupabaseData';
+import { supabase } from '@/services/supabase';
 import { Link } from 'react-router-dom';
 
 export default function EnterpriseModules() {
@@ -55,64 +58,89 @@ export default function EnterpriseModules() {
       </MainLayout>
     );
   }
-  // State for Expenses
-  const [expenses, setExpenses] = useState<{id: number, desc: string, amount: number, date: string}[]>([]);
+  const { user } = useAuth();
+  const { data: expenses, refetch: refetchExpenses } = useSupabaseQuery<any>('erp_expenses');
+  const { data: leads, refetch: refetchLeads } = useSupabaseQuery<any>('erp_leads');
+  const { data: tasks, refetch: refetchTasks } = useSupabaseQuery<any>('erp_tasks');
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form states
   const [expDesc, setExpDesc] = useState('');
   const [expAmt, setExpAmt] = useState('');
-
-  // State for Leads
-  const [leads, setLeads] = useState<{id: number, name: string, phone: string, status: string}[]>([]);
   const [leadName, setLeadName] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
-
-  // State for Tasks
-  const [tasks, setTasks] = useState<{id: number, title: string, done: boolean}[]>([]);
   const [taskTitle, setTaskTitle] = useState('');
 
-  useEffect(() => {
-    setExpenses(JSON.parse(localStorage.getItem('erp_expenses') || '[]'));
-    setLeads(JSON.parse(localStorage.getItem('erp_leads') || '[]'));
-    setTasks(JSON.parse(localStorage.getItem('erp_tasks') || '[]'));
-  }, []);
-
-  const saveLocal = (key: string, data: any) => {
-    localStorage.setItem(key, JSON.stringify(data));
+  const addExpense = async () => {
+    if (!expDesc || !expAmt || !user) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('erp_expenses').insert({
+        user_id: user.id,
+        description: expDesc,
+        amount: Number(expAmt),
+        date: new Date().toISOString()
+      });
+      if (error) throw error;
+      toast.success('Expense Added');
+      setExpDesc(''); setExpAmt('');
+      refetchExpenses();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add expense');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const addExpense = () => {
-    if (!expDesc || !expAmt) return;
-    const newExp = { id: Date.now(), desc: expDesc, amount: Number(expAmt), date: new Date().toISOString() };
-    const updated = [newExp, ...expenses];
-    setExpenses(updated);
-    saveLocal('erp_expenses', updated);
-    setExpDesc(''); setExpAmt('');
-    toast.success('Expense Added');
+  const addLead = async () => {
+    if (!leadName || !leadPhone || !user) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('erp_leads').insert({
+        user_id: user.id,
+        name: leadName,
+        phone: leadPhone,
+        status: 'New'
+      });
+      if (error) throw error;
+      toast.success('Lead Added');
+      setLeadName(''); setLeadPhone('');
+      refetchLeads();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add lead');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const addLead = () => {
-    if (!leadName || !leadPhone) return;
-    const newLead = { id: Date.now(), name: leadName, phone: leadPhone, status: 'New' };
-    const updated = [newLead, ...leads];
-    setLeads(updated);
-    saveLocal('erp_leads', updated);
-    setLeadName(''); setLeadPhone('');
-    toast.success('Lead Added');
+  const addTask = async () => {
+    if (!taskTitle || !user) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from('erp_tasks').insert({
+        user_id: user.id,
+        title: taskTitle,
+        done: false
+      });
+      if (error) throw error;
+      toast.success('Task Added');
+      setTaskTitle('');
+      refetchTasks();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add task');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const addTask = () => {
-    if (!taskTitle) return;
-    const newTask = { id: Date.now(), title: taskTitle, done: false };
-    const updated = [newTask, ...tasks];
-    setTasks(updated);
-    saveLocal('erp_tasks', updated);
-    setTaskTitle('');
-    toast.success('Task Added');
-  };
-
-  const toggleTask = (id: number) => {
-    const updated = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
-    setTasks(updated);
-    saveLocal('erp_tasks', updated);
+  const toggleTask = async (id: string, done: boolean) => {
+    const { error } = await supabase.from('erp_tasks').update({ done: !done }).eq('id', id);
+    if (error) {
+      toast.error('Failed to update task');
+    } else {
+      refetchTasks();
+    }
   };
 
   return (
@@ -146,9 +174,9 @@ export default function EnterpriseModules() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4 mb-6">
-                  <Input placeholder="Expense Description (e.g. Tea/Coffee)" value={expDesc} onChange={e => setExpDesc(e.target.value)} />
-                  <Input placeholder="Amount (₹)" type="number" value={expAmt} onChange={e => setExpAmt(e.target.value)} className="w-32" />
-                  <Button onClick={addExpense}>Add</Button>
+                  <Input placeholder="Expense Description (e.g. Tea/Coffee)" value={expDesc} onChange={e => setExpDesc(e.target.value)} disabled={isSubmitting} />
+                  <Input placeholder="Amount (₹)" type="number" value={expAmt} onChange={e => setExpAmt(e.target.value)} className="w-32" disabled={isSubmitting} />
+                  <Button onClick={addExpense} disabled={isSubmitting}>{isSubmitting ? '...' : 'Add'}</Button>
                 </div>
                 <Table>
                   <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Description</TableHead><TableHead>Amount</TableHead></TableRow></TableHeader>
@@ -175,9 +203,9 @@ export default function EnterpriseModules() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4 mb-6">
-                  <Input placeholder="Customer Name" value={leadName} onChange={e => setLeadName(e.target.value)} />
-                  <Input placeholder="Mobile Number" value={leadPhone} onChange={e => setLeadPhone(e.target.value)} />
-                  <Button onClick={addLead}>Capture Lead</Button>
+                  <Input placeholder="Customer Name" value={leadName} onChange={e => setLeadName(e.target.value)} disabled={isSubmitting} />
+                  <Input placeholder="Mobile Number" value={leadPhone} onChange={e => setLeadPhone(e.target.value)} disabled={isSubmitting} />
+                  <Button onClick={addLead} disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Capture Lead'}</Button>
                 </div>
                 <Table>
                   <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
@@ -205,12 +233,12 @@ export default function EnterpriseModules() {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4 mb-6">
-                  <Input placeholder="What needs to be done?" value={taskTitle} onChange={e => setTaskTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addTask()} />
-                  <Button onClick={addTask}>Add Task</Button>
+                  <Input placeholder="What needs to be done?" value={taskTitle} onChange={e => setTaskTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addTask()} disabled={isSubmitting} />
+                  <Button onClick={addTask} disabled={isSubmitting}>{isSubmitting ? '...' : 'Add Task'}</Button>
                 </div>
                 <div className="space-y-2">
-                  {tasks.map(t => (
-                    <div key={t.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border cursor-pointer hover:bg-muted" onClick={() => toggleTask(t.id)}>
+                  {tasks.map((t: any) => (
+                    <div key={t.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border cursor-pointer hover:bg-muted" onClick={() => toggleTask(t.id, t.done)}>
                       <CheckCircle className={`h-5 w-5 ${t.done ? 'text-green-500' : 'text-muted-foreground'}`} />
                       <span className={t.done ? 'line-through text-muted-foreground' : 'font-medium'}>{t.title}</span>
                     </div>
