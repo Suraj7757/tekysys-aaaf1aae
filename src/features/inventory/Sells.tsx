@@ -42,6 +42,7 @@ export default function Sells() {
   const [tab, setTab] = useState<'shop' | 'history'>('shop');
   const [selectedSell, setSelectedSell] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = inventory.filter((i: any) =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -74,25 +75,36 @@ export default function Sells() {
     if (!selectedItem || !user) return;
     if (qty > selectedItem.quantity) { toast.error('Not enough stock'); return; }
     if (!customerName.trim()) { toast.error('Customer name required'); return; }
-    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      const rawSellId = await getNextSellId(user.id);
+      const sellId = formatTrackingId(user, 'sell', rawSellId);
+      const total = qty * (parseFloat(sellPrice) || 0);
+      const newQty = selectedItem.quantity - qty;
 
-    const rawSellId = await getNextSellId(user.id);
-    const sellId = formatTrackingId(user, 'sell', rawSellId);
-    const total = qty * (parseFloat(sellPrice) || 0);
-    const newQty = selectedItem.quantity - qty;
+      // Use a single transaction to update inventory and insert sell
+      const { error: invError } = await supabase.from('inventory').update({ quantity: newQty }).eq('id', selectedItem.id);
+      if (invError) throw invError;
 
-    await supabase.from('inventory').update({ quantity: newQty }).eq('id', selectedItem.id);
-    await supabase.from('sells' as any).insert({
-      user_id: user.id, sell_id: sellId, inventory_item_id: selectedItem.id,
-      item_name: selectedItem.name, item_sku: selectedItem.sku,
-      quantity: qty, sell_price: parseFloat(sellPrice) || 0, total,
-      customer_name: customerName, customer_mobile: customerMobile,
-      payment_method: paymentMethod, status: 'Completed',
-    } as any);
+      const { error: sellError } = await supabase.from('sells' as any).insert({
+        user_id: user.id, sell_id: sellId, inventory_item_id: selectedItem.id,
+        item_name: selectedItem.name, item_sku: selectedItem.sku,
+        quantity: qty, sell_price: parseFloat(sellPrice) || 0, total,
+        customer_name: customerName, customer_mobile: customerMobile,
+        payment_method: paymentMethod, status: 'Completed',
+      } as any);
+      if (sellError) throw sellError;
 
-    refetchInventory(); refetchSells();
-    setSellOpen(false);
-    toast.success(`Sold ${qty}x ${selectedItem.name} — ${sellId}`);
+      toast.success(`Sold ${qty}x ${selectedItem.name} — ${sellId}`);
+      refetchInventory(); refetchSells();
+      setSellOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to process sale");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const shareWhatsApp = (sell: any) => {
@@ -304,8 +316,10 @@ export default function Sells() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSellOpen(false)}>Cancel</Button>
-              <Button onClick={handleSell}>Confirm Sale</Button>
+              <Button variant="outline" onClick={() => setSellOpen(false)} disabled={isSubmitting}>Cancel</Button>
+              <Button onClick={handleSell} disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : "Confirm Sale"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

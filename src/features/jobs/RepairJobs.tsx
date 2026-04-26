@@ -85,6 +85,8 @@ export default function RepairJobs() {
   const [returnOpen, setReturnOpen] = useState(false);
   const [returnReason, setReturnReason] = useState("");
   const [returnNominalCharge, setReturnNominalCharge] = useState("0");
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [customerMobile, setCustomerMobile] = useState("");
@@ -151,35 +153,46 @@ export default function RepairJobs() {
       toast.error(`Plan Limit Reached: Your ${planType} plan only supports up to ${limits.maxJobs} jobs. Please upgrade to continue.`);
       return;
     }
-    let { data: customer } = await (supabase.from('customers').select('*') as any).eq('user_id', user.id).eq('mobile', customerMobile).eq('deleted', false).maybeSingle();
-    if (!customer) {
-      const { data: newC } = await supabase.from('customers').insert({ user_id: user.id, name: customerName, mobile: customerMobile }).select('id').single();
-      customer = newC;
+
+    setIsCreating(true);
+    try {
+      // Use the optimized RPC to create the job in a single round-trip
+      const { data: jobId, error: rpcError } = await supabase.rpc('create_repair_job', {
+        p_user_id: user.id,
+        p_customer_name: customerName,
+        p_customer_mobile: customerMobile,
+        p_device_brand: formState.device_brand,
+        p_device_model: formState.device_model || null,
+        p_problem_description: formState.problem_description,
+        p_technician_name: technician || null,
+        p_estimated_cost: parseFloat(formState.estimated_cost) || 0,
+        p_service_category: formState.service_category,
+        p_device_details: formState.device_details
+      });
+
+      if (rpcError) throw rpcError;
+
+      toast.success(`Job ${jobId} created`);
+      refetch();
+      setCreateOpen(false);
+      setServiceType("");
+      setCustomerMobile(""); 
+      setCustomerName(""); 
+      setTechnician("");
+      setFormState({
+        device_brand: "",
+        device_model: "",
+        problem_description: "",
+        estimated_cost: "",
+        service_category: "mobile",
+        device_details: {}
+      });
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to create job");
+    } finally {
+      setIsCreating(false);
     }
-    const rawJobId = await getNextJobId(user.id);
-    const jobId = formatTrackingId(user, 'job', rawJobId);
-    await supabase.from('repair_jobs').insert({
-      user_id: user.id, job_id: jobId, customer_id: customer?.id,
-      customer_name: customerName, customer_mobile: customerMobile,
-      device_brand: formState.device_brand, device_model: formState.device_model || null,
-      problem_description: formState.problem_description, technician_name: technician || null,
-      status: 'Received' as any, estimated_cost: parseFloat(formState.estimated_cost) || 0,
-      service_category: formState.service_category,
-      device_details: formState.device_details
-    } as any);
-    refetch();
-    setCreateOpen(false);
-    setServiceType("");
-    setCustomerMobile(""); setCustomerName(""); setTechnician("");
-    setFormState({
-      device_brand: "",
-      device_model: "",
-      problem_description: "",
-      estimated_cost: "",
-      service_category: "mobile",
-      device_details: {}
-    });
-    toast.success(`Job ${jobId} created`);
   };
 
   const openEdit = (job: any) => {
@@ -202,26 +215,37 @@ export default function RepairJobs() {
     if (!selectedJob || !editName || !editMobile || !formState.device_brand || !formState.problem_description) {
       toast.error("Please fill all required fields"); return;
     }
-    await supabase.from('repair_jobs').update({
-      customer_name: editName, customer_mobile: editMobile,
-      device_brand: formState.device_brand, device_model: formState.device_model || null,
-      problem_description: formState.problem_description, technician_name: editTech || null,
-      estimated_cost: parseFloat(formState.estimated_cost) || 0,
-      service_category: formState.service_category,
-      device_details: formState.device_details
-    } as any).eq('id', selectedJob.id);
-    refetch();
-    setEditOpen(false);
-    setSelectedJob(null);
-    setFormState({
-      device_brand: "",
-      device_model: "",
-      problem_description: "",
-      estimated_cost: "",
-      service_category: "mobile",
-      device_details: {}
-    });
-    toast.success(`Job ${selectedJob.job_id} updated`);
+    setIsEditing(true);
+    try {
+      const { error } = await supabase.from('repair_jobs').update({
+        customer_name: editName, customer_mobile: editMobile,
+        device_brand: formState.device_brand, device_model: formState.device_model || null,
+        problem_description: formState.problem_description, technician_name: editTech || null,
+        estimated_cost: parseFloat(formState.estimated_cost) || 0,
+        service_category: formState.service_category,
+        device_details: formState.device_details
+      } as any).eq('id', selectedJob.id);
+
+      if (error) throw error;
+
+      toast.success(`Job ${selectedJob.job_id} updated`);
+      refetch();
+      setEditOpen(false);
+      setSelectedJob(null);
+      setFormState({
+        device_brand: "",
+        device_model: "",
+        problem_description: "",
+        estimated_cost: "",
+        service_category: "mobile",
+        device_details: {}
+      });
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to update job");
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   const changeStatus = async (job: any, newStatus: JobStatus) => {
@@ -557,8 +581,20 @@ export default function RepairJobs() {
 
             </div>
             <DialogFooter className="border-t pt-4">
-              <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreateJob} className="w-full sm:w-auto px-8"><Plus className="h-4 w-4 mr-2" /> Create Job</Button>
+              <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={isCreating}>Cancel</Button>
+              <Button onClick={handleCreateJob} className="w-full sm:w-auto px-8" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Job
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -588,8 +624,10 @@ export default function RepairJobs() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-              <Button onClick={handleEditJob}>Save Changes</Button>
+              <Button variant="outline" onClick={() => setEditOpen(false)} disabled={isEditing}>Cancel</Button>
+              <Button onClick={handleEditJob} disabled={isEditing}>
+                {isEditing ? "Saving..." : "Save Changes"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

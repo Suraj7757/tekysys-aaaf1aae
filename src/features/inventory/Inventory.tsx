@@ -20,6 +20,7 @@ export default function Inventory() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = items.filter((i: any) =>
     i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.toLowerCase().includes(search.toLowerCase())
@@ -27,27 +28,35 @@ export default function Inventory() {
 
   const handleAdd = async () => {
     if (!form.name || !form.sku || !user) { toast.error("Name and SKU required"); return; }
-    if (editingItem) {
-      await supabase.from('inventory').update({
-        name: form.name, sku: form.sku, category: form.category || null,
-        quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
-        cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
-        gst_percent: parseFloat(form.gstPercent) || 18,
-      }).eq('id', editingItem.id);
-      toast.success("Item updated");
-    } else {
-      await supabase.from('inventory').insert({
-        user_id: user.id, name: form.name, sku: form.sku, category: form.category || null,
-        quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
-        cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
-        gst_percent: parseFloat(form.gstPercent) || 18,
-      });
-      toast.success("Item added");
+    setIsSubmitting(true);
+    try {
+      if (editingItem) {
+        await supabase.from('inventory').update({
+          name: form.name, sku: form.sku, category: form.category || null,
+          quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
+          cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
+          gst_percent: parseFloat(form.gstPercent) || 18,
+        }).eq('id', editingItem.id);
+        toast.success("Item updated");
+      } else {
+        await supabase.from('inventory').insert({
+          user_id: user.id, name: form.name, sku: form.sku, category: form.category || null,
+          quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
+          cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
+          gst_percent: parseFloat(form.gstPercent) || 18,
+        });
+        toast.success("Item added");
+      }
+      refetch();
+      setOpen(false);
+      setEditingItem(null);
+      setForm({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Operation failed");
+    } finally {
+      setIsSubmitting(false);
     }
-    refetch();
-    setOpen(false);
-    setEditingItem(null);
-    setForm({ name: '', sku: '', category: '', quantity: '', minStock: '', costPrice: '', sellPrice: '', gstPercent: '18' });
   };
 
   const openEdit = (item: any) => {
@@ -156,8 +165,10 @@ export default function Inventory() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleAdd}>{editingItem ? 'Save Changes' : 'Add Item'}</Button>
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>Cancel</Button>
+              <Button onClick={handleAdd} disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : (editingItem ? 'Save Changes' : 'Add Item')}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
