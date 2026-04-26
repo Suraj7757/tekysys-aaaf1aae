@@ -94,7 +94,6 @@ export default function Dashboard() {
           <StatCard icon={Smartphone} label="Digital" value={`₹${stats.upiTotal.toLocaleString()}`} sub="UPI & QR" variant="info" link="/payments" />
           <StatCard icon={ConciergeBell} label="Services" value="Catalog" sub="Manage all services" variant="info" link="/services" />
           <StatCard icon={AlertTriangle} label="Low Stock" value={lowStockItems.length} sub="Items needing restock" variant="warning" link="/inventory" />
-          <StatCard icon={Trash2} label="Trash" value={deletedCount} sub="Recoverable items" variant="primary" link="/admin" />
         </div>
 
         {splitEnabled && (

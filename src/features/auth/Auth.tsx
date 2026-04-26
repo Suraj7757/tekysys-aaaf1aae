@@ -246,7 +246,7 @@ export default function Auth() {
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                    <Input className="pl-10 h-11 bg-muted/30 border-0 focus-visible:ring-1" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+                    <Input className="pl-10 h-11 bg-muted/30 border-0 focus-visible:ring-1" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="off" />
                   </div>
                 </div>
 
@@ -255,14 +255,15 @@ export default function Auth() {
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
                     <div className="relative">
                       <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                      <Input
-                        className="pl-10 pr-10 h-11 bg-muted/30 border-0 focus-visible:ring-1 font-mono"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                      />
+                        <Input
+                          className="pl-10 pr-10 h-11 bg-muted/30 border-0 focus-visible:ring-1 font-mono"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={e => setPassword(e.target.value)}
+                          required
+                          autoComplete="off"
+                        />
                       <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>

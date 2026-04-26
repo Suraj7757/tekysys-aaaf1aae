@@ -11,20 +11,37 @@ export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    let query = supabase.from(table).select('*') as any;
-    if (!['customer_feedback', 'system_config'].includes(table)) {
-      query = query.eq('user_id', user.id);
+    try {
+      let query = supabase.from(table).select('*') as any;
+      if (!['customer_feedback', 'system_config'].includes(table)) {
+        query = query.eq('user_id', user.id);
+      }
+      if (!includeDeleted && !['activity_log', 'shop_settings', 'payment_submissions', 'wallets', 'wallet_transactions', 'withdraw_requests', 'profiles', 'customer_payments', 'payment_links', 'payment_refunds', 'message_logs', 'customer_feedback', 'notifications'].includes(table)) {
+        query = query.eq('deleted', false);
+      }
+      query = query.order('created_at', { ascending: false });
+      const { data: result, error } = await query;
+      
+      if (error) {
+        // Only show error if it's not a common "not found" or "permission" error during initial load
+        if (error.code !== 'PGRST116') {
+          console.error(`Query error on ${table}:`, error);
+          // toast.error(`Failed to load ${table}`); // Silencing for better UX, logging to console instead
+        }
+        setData([]);
+      } else {
+        setData((result as T[]) ?? []);
+      }
+    } catch (err) {
+      console.error(`Unexpected error on ${table}:`, err);
+    } finally {
+      setLoading(false);
     }
-    if (!includeDeleted && !['activity_log', 'shop_settings', 'payment_submissions', 'wallets', 'wallet_transactions', 'withdraw_requests', 'profiles', 'customer_payments', 'payment_links', 'payment_refunds', 'message_logs', 'customer_feedback', 'notifications'].includes(table)) {
-      query = query.eq('deleted', false);
-    }
-    query = query.order('created_at', { ascending: false });
-    const { data: result, error } = await query;
-    if (error) { console.error(error); toast.error('Failed to load data'); }
-    else setData((result as T[]) ?? []);
-    setLoading(false);
   }, [user, table, includeDeleted]);
 
   useEffect(() => { refetch(); }, [refetch]);

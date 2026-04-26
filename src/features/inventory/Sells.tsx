@@ -19,6 +19,8 @@ import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 import { formatTrackingId } from '@/utils/idGenerator';
 import { QRCodeSVG } from 'qrcode.react';
+import TrackDialog from '../jobs/components/TrackDialog';
+import { Copy } from 'lucide-react';
 
 async function getNextSellId(userId: string): Promise<string> {
   const { data, error } = await supabase.rpc('next_sell_id', { _user_id: userId });
@@ -44,6 +46,8 @@ export default function Sells() {
   const [selectedSell, setSelectedSell] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState('');
 
   const filtered = inventory.filter((i: any) =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -254,7 +258,17 @@ export default function Sells() {
                 <tbody>
                   {(sells as any[]).map((s: any) => (
                     <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-mono font-semibold text-primary cursor-pointer hover:underline" onClick={() => { setSelectedSell(s); setDetailsOpen(true); }}>{s.sell_id}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono font-bold text-primary cursor-pointer hover:underline" onClick={() => { setSelectedSell(s); setDetailsOpen(true); }}>{s.sell_id}</span>
+                          <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => { navigator.clipboard.writeText(s.sell_id); toast.success('Copied!'); }}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => { setSelectedTrackId(s.sell_id); setTrackOpen(true); }}>
+                            <Share2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </td>
                       <td className="p-3">{s.item_name}</td>
                       <td className="p-3 hidden sm:table-cell">{s.customer_name || '—'}</td>
                       <td className="p-3">{s.quantity}</td>
@@ -364,6 +378,7 @@ export default function Sells() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <TrackDialog open={trackOpen} onOpenChange={setTrackOpen} initialId={selectedTrackId} />
       </div>
     </MainLayout>
   );

@@ -78,10 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchRole(session.user.id, session.user.email);
+      if (session?.user) {
+        await fetchRole(session.user.id, session.user.email);
+      }
       setLoading(false);
     });
 

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete, useShopSettings } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { ArrowLeftRight, CheckCircle2, Trash2, Calculator } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, Trash2, Calculator, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Settlements() {
@@ -93,9 +93,24 @@ export default function Settlements() {
     toast.success("Settlement completed successfully!");
   };
 
-  const handleDeleteSettlement = async (s: any) => {
-    const ok = await softDelete('settlement_cycles', s.id, `${s.start_date} → ${s.end_date}`);
-    if (ok) { toast.success("Settlement moved to trash"); refetchSettlements(); }
+  const handleUnsettle = async (s: any) => {
+    const confirm = window.confirm(`Are you sure you want to unsettle the period ${s.start_date} → ${s.end_date}? This will move all linked jobs back to 'Unsettled' status.`);
+    if (!confirm) return;
+
+    // 1. Revert payments
+    const { error: payErr } = await supabase.from('payments')
+      .update({ settled: false, settlement_cycle_id: null })
+      .eq('settlement_cycle_id', s.id);
+    
+    if (payErr) { toast.error("Failed to revert payments"); return; }
+
+    // 2. Delete the cycle
+    const { error: cycleErr } = await supabase.from('settlement_cycles').delete().eq('id', s.id);
+    if (cycleErr) { toast.error("Failed to delete settlement cycle"); return; }
+
+    toast.success("Settlement reverted successfully");
+    refetchSettlements();
+    refetchPayments();
   };
 
   const updatePartCost = (id: string, val: string) => {
@@ -156,9 +171,11 @@ export default function Settlements() {
                     <td className="p-3">₹{Number(s.staff_share).toLocaleString()}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(s.settled_at).toLocaleDateString()}</td>
                     <td className="p-3">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive" onClick={() => handleDeleteSettlement(s)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => handleUnsettle(s)} title="Unsettle / Revert">
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

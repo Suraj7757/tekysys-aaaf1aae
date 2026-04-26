@@ -14,7 +14,7 @@ import { useSupabaseQuery, useSoftDelete, useShopSettings, getNextJobId } from "
 import { supabase } from "@/services/supabase";
 import { 
   Plus, Search, MoreVertical, Trash2, FileText, 
-  AlertCircle, Pencil, Share2, ConciergeBell, QrCode, RotateCcw 
+  AlertCircle, Pencil, Share2, ConciergeBell, QrCode, RotateCcw, Copy 
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateInvoicePDF } from "@/lib/invoice";
@@ -26,6 +26,7 @@ import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
 import { QRCodeSVG } from 'qrcode.react';
 import RepairCaseForm from "./RepairCaseForm";
 import PaymentLinkModal from "../payments/PaymentLinkModal";
+import TrackDialog from "./components/TrackDialog";
 
 // Quick service catalog for job creation (mirrors ServicesManagement seed)
 const SERVICE_CATALOG = [
@@ -87,7 +88,10 @@ export default function RepairJobs() {
   const [returnReason, setReturnReason] = useState("");
   const [returnNominalCharge, setReturnNominalCharge] = useState("0");
   const [isCreating, setIsCreating] = useState(false);
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [customerMobile, setCustomerMobile] = useState("");
@@ -481,7 +485,20 @@ export default function RepairJobs() {
                   const allowedNext = nextStatuses[job.status as JobStatus] || [];
                   return (
                     <tr key={job.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-mono font-semibold text-primary cursor-pointer hover:underline" onClick={() => { setSelectedJob(job); setDetailsOpen(true); }}>{job.job_id}</td>
+                      <td className="p-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono font-bold text-primary cursor-pointer hover:underline" onClick={() => { setSelectedJob(job); setDetailsOpen(true); }}>{job.job_id}</span>
+                            <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => { navigator.clipboard.writeText(job.job_id); toast.success('Copied!'); }}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-4 w-4" onClick={() => { setSelectedTrackId(job.job_id); setTrackOpen(true); }}>
+                              <Share2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">{new Date(job.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </td>
                       <td className="p-3"><div>{job.customer_name}</div><div className="text-xs text-muted-foreground">{job.customer_mobile}</div></td>
                       <td className="p-3 hidden md:table-cell">{job.device_brand} {job.device_model}</td>
                       <td className="p-3 hidden lg:table-cell max-w-48 truncate">{job.problem_description}</td>
@@ -515,6 +532,9 @@ export default function RepairJobs() {
         </Card>
 
         {/* Create Job Dialog */}
+        <PaymentLinkModal open={shareOpen} onOpenChange={setShareOpen} job={selectedJob} />
+        <TrackDialog open={trackOpen} onOpenChange={setTrackOpen} initialId={selectedTrackId} />
+
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20">
             <DialogHeader>

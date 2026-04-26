@@ -68,6 +68,7 @@ export default function Settings() {
       staff_share_percent: parseInt(staffShare) || 0,
       revenue_split_enabled: splitEnabled,
       qr_receivers: qrReceivers.filter(q => q.trim()),
+      upi_id: upiId,
     });
     if (ok) toast.success('Shop settings saved');
   };
