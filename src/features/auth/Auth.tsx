@@ -30,7 +30,7 @@ function getPasswordStrength(pwd: string) {
 }
 
 export default function Auth() {
-  const { signIn, signUp, signInWithGoogle, sendPasswordReset } = useAuth();
+  const { signIn, signUp, signInWithGoogle, sendPasswordReset, resendVerification } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>((searchParams.get('mode') as AuthMode) || 'login');
@@ -42,8 +42,15 @@ export default function Auth() {
   const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [isEmailValid, setIsEmailValid] = useState(false);
 
   const pwdStrength = getPasswordStrength(password);
+
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setIsEmailValid(emailRegex.test(email));
+  }, [email]);
 
   // Intercept Supabase email confirmation magic link
   useEffect(() => {
@@ -72,8 +79,21 @@ export default function Auth() {
       } else if (mode === 'login') {
         if (!password) { toast.error('Password is required'); setLoading(false); return; }
         const { error } = await signIn(email, password);
-        if (error) toast.error(error);
-        else toast.success('Welcome back!');
+        if (error) {
+          if (error.toLowerCase().includes('email not confirmed')) {
+            toast.error('Email not verified. Please check your inbox.', {
+              action: {
+                label: 'Resend Link',
+                onClick: handleResendVerification
+              },
+              duration: 10000
+            });
+          } else {
+            toast.error(error);
+          }
+        } else {
+          toast.success('Welcome back!');
+        }
 
       } else if (mode === 'signup') {
         if (!password) { toast.error('Password is required'); setLoading(false); return; }
@@ -93,6 +113,18 @@ export default function Auth() {
       toast.error(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email || !isEmailValid) { toast.error('Please enter a valid email first'); return; }
+    setResendLoading(true);
+    const { error } = await resendVerification(email);
+    setResendLoading(false);
+    if (error) toast.error(error);
+    else {
+      toast.success('Verification link resent! Please check your inbox.');
+      setMode('signup_done');
     }
   };
 
@@ -243,10 +275,20 @@ export default function Auth() {
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
+                  <div className="flex justify-between items-center px-1">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email Address</Label>
+                    {email && (
+                      <span className={`text-[9px] font-bold uppercase tracking-widest ${isEmailValid ? 'text-green-500' : 'text-red-500'}`}>
+                        {isEmailValid ? 'Valid Format' : 'Invalid Email'}
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                    <Input className="pl-10 h-11 bg-muted/30 border-0 focus-visible:ring-1" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="off" />
+                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isEmailValid ? 'text-green-500' : 'text-primary/50'}`} />
+                    <Input className={`pl-10 h-11 bg-muted/30 border-0 focus-visible:ring-1 transition-all ${isEmailValid ? 'ring-1 ring-green-500/30' : ''}`} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="off" />
+                    {isEmailValid && (
+                      <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500 animate-in zoom-in" />
+                    )}
                   </div>
                 </div>
 
