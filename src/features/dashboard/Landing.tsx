@@ -60,9 +60,19 @@ const roadmap = [
 ];
 
 const updates = [
+  { date: '29-Apr-2026', title: '🧠 AI-Powered Repair Diagnostics', description: 'Ab system customer ki problem description padh kar automatically potential issues aur estimated cost suggest karega.' },
+  { date: '29-Apr-2026', title: '📸 AI Device Image Analysis', description: 'Tute hue phone ki photo upload karein aur AI khud detect karega ki screen damage hai ya panel, aur parts ka cost batayega.' },
+  { date: '29-Apr-2026', title: '📈 Predictive Inventory Restock (AI)', description: 'AI ab past trends ko analyze karke batayega ki agle hafte kaun se parts ki demand sabse jyada hone wali hai.' },
+  { date: '29-Apr-2026', title: '💬 AI WhatsApp Auto-Reply Bot', description: 'Fully automated WhatsApp bot jo customers ko unke tracking ID ke base par real-time repair status batayega bina human touch ke.' },
+  { date: '29-Apr-2026', title: '👤 Advanced Staff Management', local: true, description: 'Shop owners ab apne technicians aur receptionists ko add kar sakte hain, specific roles de sakte hain aur unki performance track kar sakte hain.' },
+  { date: '29-Apr-2026', title: '📊 Profit & Loss Deep Analytics', description: 'Naya Financials dashboard jisme Revenue, Expenses, Part Costs, aur Net Profit ko beautiful charts ke through visualize kiya gaya hai.' },
+  { date: '28-Apr-2026', title: '📝 AI Smart Invoicing', description: 'Invoice generate karte time AI automatically professional repair descriptions aur terms & conditions add kar dega.' },
+  { date: '28-Apr-2026', title: '📱 Customer Self-Service Portal', description: 'Customers ab ek secure link ke through apne repair estimates ko online approve ya reject kar sakte hain.' },
+  { date: '28-Apr-2026', title: '🛡️ Advanced Fraud Detection', description: 'Agar koi staff unusually high discount deta hai ya suspicious entry karta hai, toh owner ko turant alert jayega.' },
+  { date: '28-Apr-2026', title: '🌐 Multi-Language Support (Beta)', description: 'Local staff ki suvidha ke liye ab system Hindi, Marathi, Bengali aur anya regional languages support karta hai.' },
   { date: '24-Apr-2026', title: '🎉 Multi-Service Repair Form Redesign', description: 'Repair case form ab category-specific fields support karta hai — Mobile, Laptop, TV, AC, Fridge, PC. Framer Motion animations bhi add ki gayi hain.' },
   { date: '24-Apr-2026', title: '🆕 Animated Multi-Service Homepage Section', description: 'Homepage pe ek brand new animated service showcase add kiya gaya hai with clickable category tabs and smooth transitions.' },
-  { date: '24-Apr-2026', title: '🔧 Quick Create Button in Sidebar', description: 'Sidebar mein ab ek single "+ Create New" button hai jisme tap karne se Job ya Sell create karne ka popup aata hai.' },
+  { date: '24-Apr-2026', title: '🔧 Quick Create Button in Sidebar', description: 'Sidebar mein ab ek single "+ Create New" button hai jisme tap karne se Job, Sell, Customer, ya Inventory create karne ka popup aata hai.' },
   { date: '24-Apr-2026', title: '📥 Download Section Added', description: 'Homepage pe Download menu add kiya gaya hai — Android App aur Windows PC exe ke liye direct download links.' },
   { date: '22-Apr-2026', title: 'Enterprise ERP Modules Launched', description: 'Major update! Added 35+ advanced modules including Expense Tracking, Lead Management, Task Assignment, and a Digital Signature Canvas.' },
   { date: '21-Apr-2026', title: 'Smart AI Chatbot Launched', description: 'Added a context-aware AI Assistant that supports Hinglish. Customers can check job status, create new jobs, and get FAQs.' },

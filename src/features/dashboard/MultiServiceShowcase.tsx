@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Smartphone, Laptop, Tv2, Wind, Refrigerator, Monitor,
@@ -67,13 +67,35 @@ const servicesByCategory: Record<string, ServiceItem[]> = {
 
 export default function MultiServiceShowcase() {
   const [activeTab, setActiveTab] = useState<string>('mobile');
+  const [isHovered, setIsHovered] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeCategory = categories.find(c => c.id === activeTab)!;
   const ActiveIcon = activeCategory.icon;
   const services = servicesByCategory[activeTab] ?? [];
 
+  useEffect(() => {
+    if (isHovered) return;
+
+    timerRef.current = setInterval(() => {
+      setActiveTab(current => {
+        const currentIndex = categories.findIndex(c => c.id === current);
+        const nextIndex = (currentIndex + 1) % categories.length;
+        return categories[nextIndex].id;
+      });
+    }, 4000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isHovered]);
+
   return (
-    <section className="py-20 bg-gradient-to-b from-transparent to-primary/5">
+    <section 
+      className="py-20 bg-gradient-to-b from-transparent to-primary/5 relative overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="container mx-auto px-4">
 
         {/* Header */}

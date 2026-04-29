@@ -5,12 +5,13 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Wrench, IndianRupee, ArrowLeftRight, Package, ShoppingCart,
-  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown, ConciergeBell, Building2, PlusCircle, X,
+  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown, ConciergeBell, Building2, PlusCircle, X, BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ADMIN_WHATSAPP = '917319884599';
 const ADMIN_EMAIL = 'krs715665@gmail.com';
@@ -27,9 +28,11 @@ const mainItems = [
 const secondaryItems = [
   { title: 'Services', url: '/services', icon: ConciergeBell },
   { title: 'Inventory', url: '/inventory', icon: Package },
+  { title: 'Staff', url: '/staff', icon: Users },
   { title: 'Sells', url: '/sells', icon: ShoppingCart },
   { title: 'Wallet', url: '/wallet', icon: Wallet },
   { title: 'Subscription', url: '/subscription', icon: Crown },
+  { title: 'Financials', url: '/financials', icon: BarChart3 },
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Enterprise ERP', url: '/enterprise', icon: Building2 },
   { title: 'Settings', url: '/settings', icon: Settings },
@@ -49,10 +52,12 @@ export function Sidebar() {
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with RepairXpert')}`, '_blank');
   };
 
-  const handleCreate = (type: 'job' | 'sell') => {
+  const handleCreate = (type: 'job' | 'sell' | 'customer' | 'inventory') => {
     setCreateOpen(false);
     if (type === 'job') navigate('/jobs#new');
-    else navigate('/sells#new');
+    else if (type === 'sell') navigate('/sells#new');
+    else if (type === 'customer') navigate('/customers#new');
+    else if (type === 'inventory') navigate('/inventory#new');
   };
 
   return (
@@ -138,45 +143,77 @@ export function Sidebar() {
 
       {/* Create Popup Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-xs p-0 overflow-hidden border-0 shadow-2xl">
-          <div className="bg-card rounded-2xl overflow-hidden">
-            <div className="gradient-primary p-5 text-center">
-              <h2 className="text-lg font-black text-primary-foreground">Create New</h2>
-              <p className="text-xs text-primary-foreground/70 mt-1">Select what you want to create</p>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleCreate('job')}
-                className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all group"
+        <DialogContent className="max-w-md p-0 overflow-hidden border-0 shadow-2xl bg-transparent">
+          <AnimatePresence>
+            {createOpen && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-card rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10"
               >
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Wrench className="h-6 w-6 text-primary" />
+                <div className="gradient-primary p-6 text-center relative">
+                  <button 
+                    onClick={() => setCreateOpen(false)}
+                    className="absolute right-4 top-4 text-primary-foreground/50 hover:text-primary-foreground transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                  <motion.div
+                    initial={{ y: -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <h2 className="text-xl font-black text-primary-foreground tracking-tight">Quick Action Center</h2>
+                    <p className="text-xs text-primary-foreground/70 mt-1 font-medium">What would you like to do today?</p>
+                  </motion.div>
                 </div>
-                <div className="text-center">
-                  <p className="font-bold text-sm">Repair Job</p>
-                  <p className="text-[10px] text-muted-foreground">New repair case</p>
+                
+                <div className="p-6 grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'job', label: 'Repair Job', sub: 'New repair case', icon: Wrench, color: 'text-primary', bg: 'bg-primary/10' },
+                    { id: 'sell', label: 'New Sale', sub: 'Sell an item', icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+                    { id: 'customer', label: 'Customer', sub: 'Add new client', icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10' },
+                    { id: 'inventory', label: 'Inventory', sub: 'Add stock item', icon: Package, color: 'text-amber-600', bg: 'bg-amber-500/10' }
+                  ].map((item, index) => (
+                    <motion.button
+                      key={item.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + index * 0.05 }}
+                      onClick={() => handleCreate(item.id as any)}
+                      className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-transparent bg-muted/30 hover:bg-muted hover:border-primary/20 hover:shadow-lg transition-all group"
+                    >
+                      <div className={`h-12 w-12 rounded-2xl ${item.bg} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                        <item.icon className={`h-6 w-6 ${item.color}`} />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-bold text-sm tracking-tight">{item.label}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium">{item.sub}</p>
+                      </div>
+                    </motion.button>
+                  ))}
                 </div>
-              </button>
 
-              <button
-                onClick={() => handleCreate('sell')}
-                className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-primary/20 hover:border-primary hover:bg-primary/5 transition-all group"
-              >
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ShoppingCart className="h-6 w-6 text-emerald-600" />
+                <div className="px-6 pb-6 pt-2">
+                  <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Smartphone className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Track Status</p>
+                        <p className="text-xs font-medium text-muted-foreground">Quickly find a job</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" className="rounded-xl font-bold" onClick={() => { setCreateOpen(false); navigate('/track'); }}>
+                      Go
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="font-bold text-sm">New Sale</p>
-                  <p className="text-[10px] text-muted-foreground">Sell an item</p>
-                </div>
-              </button>
-            </div>
-            <div className="px-4 pb-4">
-              <Button variant="ghost" className="w-full text-sm text-muted-foreground" onClick={() => setCreateOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </DialogContent>
       </Dialog>
     </>

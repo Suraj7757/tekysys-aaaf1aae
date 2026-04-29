@@ -24,6 +24,8 @@ import WalletPage from '@/features/wallet/WalletPage';
 import Subscription from '@/features/settings/Subscription';
 import ServicesManagement from '@/features/services/ServicesManagement';
 import EnterpriseModules from '@/features/enterprise/EnterpriseModules';
+import StaffManagement from '@/features/staff/StaffManagement';
+import Financials from '@/features/dashboard/Financials';
 import PrivacyPolicy from '@/features/dashboard/PrivacyPolicy';
 import TermsConditions from '@/features/dashboard/TermsConditions';
 import NotFound from '@/components/common/NotFound';
@@ -78,6 +80,8 @@ function AppRoutes() {
           <Route path="/subscription" element={<ProtectedRoute allowExpired>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Subscription />}</ProtectedRoute>} />
           <Route path="/services" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <ServicesManagement />}</ProtectedRoute>} />
           <Route path="/enterprise" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <EnterpriseModules />}</ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <StaffManagement />}</ProtectedRoute>} />
+          <Route path="/financials" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Financials />}</ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsConditions />} />

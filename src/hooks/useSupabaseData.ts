@@ -3,7 +3,7 @@ import { supabase } from '@/services/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
-type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells' | 'payment_submissions' | 'wallets' | 'wallet_transactions' | 'withdraw_requests' | 'profiles' | 'customer_payments' | 'payment_links' | 'payment_refunds' | 'message_logs' | 'customer_feedback' | 'notifications' | 'erp_expenses' | 'erp_leads' | 'erp_tasks';
+type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells' | 'payment_submissions' | 'wallets' | 'wallet_transactions' | 'withdraw_requests' | 'profiles' | 'customer_payments' | 'payment_links' | 'payment_refunds' | 'message_logs' | 'customer_feedback' | 'notifications' | 'erp_expenses' | 'erp_leads' | 'erp_tasks' | 'user_roles';
 
 export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
   const { user } = useAuth();
