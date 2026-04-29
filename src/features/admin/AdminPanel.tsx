@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/services/supabase';
-import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings, Download, Megaphone, AlertTriangle, Ban, RotateCcw } from 'lucide-react';
+import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings, Download, Megaphone, AlertTriangle, Ban, RotateCcw, ToggleLeft } from 'lucide-react';
 import AdminRefunds from './AdminRefunds';
 import BroadcastMessage from './BroadcastMessage';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ export default function AdminPanel() {
   const [promoCodes, setPromoCodes] = useState<any[]>([]);
   const [allJobs, setAllJobs] = useState<any[]>([]);
   const [allPayments, setAllPayments] = useState<any[]>([]);
+  const [features, setFeatures] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +71,7 @@ export default function AdminPanel() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes, jobsRes, paymentsRes, configRes] = await Promise.all([
+    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes, jobsRes, paymentsRes, configRes, featuresRes] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }) as any,
       supabase.from('wallets').select('*') as any,
       supabase.from('withdraw_requests').select('*').order('created_at', { ascending: false }) as any,
@@ -82,6 +83,7 @@ export default function AdminPanel() {
       supabase.from('repair_jobs').select('*') as any,
       supabase.from('payments').select('*') as any,
       supabase.from('system_config').select('*').eq('id', 'maintenance').maybeSingle() as any,
+      supabase.from('features').select('*').order('name') as any,
     ]);
     setUsers(profilesRes.data || []);
     setWallets(walletsRes.data || []);
@@ -96,6 +98,7 @@ export default function AdminPanel() {
     if (configRes.data) {
       setMaintenance(configRes.data.value?.enabled || false);
     }
+    setFeatures(featuresRes.data || []);
     setLoading(false);
   };
 
@@ -144,6 +147,12 @@ export default function AdminPanel() {
 
   const toggleAd = async (id: string, active: boolean) => {
     await supabase.from('ads').update({ active: !active } as any).eq('id', id);
+    fetchAll();
+  };
+
+  const toggleFeature = async (id: string, isEnabled: boolean) => {
+    await supabase.from('features').update({ is_enabled: !isEnabled } as any).eq('id', id);
+    toast.success('Feature toggled successfully');
     fetchAll();
   };
 
@@ -285,6 +294,7 @@ export default function AdminPanel() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="refunds" className="flex items-center gap-1"><RotateCcw className="h-3 w-3" />Refunds</TabsTrigger>
             <TabsTrigger value="broadcast" className="flex items-center gap-1"><Megaphone className="h-3 w-3" />Broadcast</TabsTrigger>
+            <TabsTrigger value="features" className="flex items-center gap-1"><ToggleLeft className="h-3 w-3" />Features</TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
           </TabsList>
 
@@ -589,7 +599,47 @@ export default function AdminPanel() {
             <BroadcastMessage />
           </TabsContent>
 
+          {/* Features Toggle Tab */}
+          <TabsContent value="features" className="space-y-4">
+            <div className="rounded-md border overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Feature Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {features.map(f => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-bold">{f.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{f.description || 'No description'}</TableCell>
+                      <TableCell>
+                        <Badge variant={f.is_enabled ? 'default' : 'secondary'}>
+                          {f.is_enabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" variant={f.is_enabled ? 'outline' : 'default'} onClick={() => toggleFeature(f.id, f.is_enabled)}>
+                          {f.is_enabled ? 'Disable' : 'Enable'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {features.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No features found in database.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
           {/* System Tab */}
+
           <TabsContent value="system" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="shadow-card border-primary/20">

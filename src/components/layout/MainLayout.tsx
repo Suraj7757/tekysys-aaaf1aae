@@ -2,6 +2,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { Chatbot } from "@/components/common/Chatbot";
+import { WhatsAppButton } from "@/components/common/WhatsAppButton";
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -32,7 +34,9 @@ export function MainLayout({ children, title }: LayoutProps) {
             {children}
           </main>
           <Chatbot />
+          <WhatsAppButton />
         </div>
+
       </div>
     </SidebarProvider>
   );

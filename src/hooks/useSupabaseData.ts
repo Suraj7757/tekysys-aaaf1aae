@@ -3,7 +3,7 @@ import { supabase } from '@/services/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
-type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells' | 'payment_submissions' | 'wallets' | 'wallet_transactions' | 'withdraw_requests' | 'profiles' | 'customer_payments' | 'payment_links' | 'payment_refunds' | 'message_logs' | 'customer_feedback' | 'notifications' | 'erp_expenses' | 'erp_leads' | 'erp_tasks' | 'user_roles';
+type TableName = 'customers' | 'repair_jobs' | 'payments' | 'settlement_cycles' | 'inventory' | 'shop_settings' | 'activity_log' | 'sells' | 'payment_submissions' | 'wallets' | 'wallet_transactions' | 'withdraw_requests' | 'profiles' | 'customer_payments' | 'payment_links' | 'payment_refunds' | 'message_logs' | 'customer_feedback' | 'notifications' | 'erp_expenses' | 'erp_leads' | 'erp_tasks' | 'user_roles' | 'features';
 
 export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
   const { user } = useAuth();
@@ -18,10 +18,10 @@ export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
     setLoading(true);
     try {
       let query = supabase.from(table).select('*') as any;
-      if (!['customer_feedback', 'system_config'].includes(table)) {
+      if (!['customer_feedback', 'system_config', 'features'].includes(table)) {
         query = query.eq('user_id', user.id);
       }
-      if (!includeDeleted && !['activity_log', 'shop_settings', 'payment_submissions', 'wallets', 'wallet_transactions', 'withdraw_requests', 'profiles', 'customer_payments', 'payment_links', 'payment_refunds', 'message_logs', 'customer_feedback', 'notifications'].includes(table)) {
+      if (!includeDeleted && !['activity_log', 'shop_settings', 'payment_submissions', 'wallets', 'wallet_transactions', 'withdraw_requests', 'profiles', 'customer_payments', 'payment_links', 'payment_refunds', 'message_logs', 'customer_feedback', 'notifications', 'features'].includes(table)) {
         query = query.eq('deleted', false);
       }
       query = query.order('created_at', { ascending: false });
