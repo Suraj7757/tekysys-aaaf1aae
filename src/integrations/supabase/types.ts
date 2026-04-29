@@ -369,6 +369,7 @@ export type Database = {
           is_banned: boolean
           plan_expires_at: string | null
           referral_code: string | null
+          tracking_id: string | null
           updated_at: string
           user_id: string
         }
@@ -380,6 +381,7 @@ export type Database = {
           is_banned?: boolean
           plan_expires_at?: string | null
           referral_code?: string | null
+          tracking_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -391,6 +393,7 @@ export type Database = {
           is_banned?: boolean
           plan_expires_at?: string | null
           referral_code?: string | null
+          tracking_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -674,6 +677,7 @@ export type Database = {
           shop_name: string
           staff_share_percent: number
           updated_at: string
+          upi_id: string | null
           user_id: string
         }
         Insert: {
@@ -688,6 +692,7 @@ export type Database = {
           shop_name?: string
           staff_share_percent?: number
           updated_at?: string
+          upi_id?: string | null
           user_id: string
         }
         Update: {
@@ -702,6 +707,7 @@ export type Database = {
           shop_name?: string
           staff_share_percent?: number
           updated_at?: string
+          upi_id?: string | null
           user_id?: string
         }
         Relationships: []
