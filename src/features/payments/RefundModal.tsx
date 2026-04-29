@@ -101,7 +101,7 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
 
       // Mark payment as refunded
       if (payment.id) {
-        await supabase.from('payments').update({ method: 'Refunded' }).eq('id', payment.id);
+        await supabase.from('payments').update({ method: 'Refunded' as any }).eq('id', payment.id);
       }
 
       setDone(true);
