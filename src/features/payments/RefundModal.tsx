@@ -21,6 +21,7 @@ interface RefundModalProps {
     id?: string;
     job_id: string;
     amount: number;
+    customer_name?: string;
     customer_mobile?: string;
   } | null;
   onSuccess?: () => void;
