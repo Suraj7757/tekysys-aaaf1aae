@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 import Landing from '@/features/dashboard/Landing';
 import Auth from '@/features/auth/Auth';
@@ -107,6 +108,7 @@ export default function App() {
           <BrowserRouter>
             <Toaster position="top-right" richColors />
             <AppRoutes />
+            <SpeedInsights />
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>
