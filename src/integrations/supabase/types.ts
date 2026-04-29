@@ -366,6 +366,8 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_banned: boolean
+          plan_expires_at: string | null
           referral_code: string | null
           updated_at: string
           user_id: string
@@ -375,6 +377,8 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_banned?: boolean
+          plan_expires_at?: string | null
           referral_code?: string | null
           updated_at?: string
           user_id: string
@@ -384,6 +388,8 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_banned?: boolean
+          plan_expires_at?: string | null
           referral_code?: string | null
           updated_at?: string
           user_id?: string
@@ -856,6 +862,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_not_banned: { Args: never; Returns: boolean }
       next_job_id: { Args: { _user_id: string }; Returns: string }
       next_sell_id: { Args: { _user_id: string }; Returns: string }
       track_order: { Args: { _tracking_id: string }; Returns: Json }
