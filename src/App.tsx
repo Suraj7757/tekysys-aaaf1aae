@@ -90,8 +90,8 @@ function AppRoutes() {
 
 export default function App() {
   useEffect(() => {
-    localStorage.setItem('msm-skin', 'default');
-    const layout = localStorage.getItem('msm-layout') || 'default';
+    localStorage.setItem('rx-skin', 'default');
+    const layout = localStorage.getItem('rx-layout') || 'default';
     document.documentElement.setAttribute('data-skin', 'default');
     document.documentElement.setAttribute('data-layout', layout);
   }, []);

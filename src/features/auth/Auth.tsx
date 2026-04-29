@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Smartphone, Mail, Lock, User, Gift, Tag, KeyRound, CheckCircle,
-  PartyPopper, ArrowRight, ArrowLeft, Eye, EyeOff, AlertCircle,
+  PartyPopper, ArrowRight, ArrowLeft, Eye, EyeOff, AlertCircle, Wrench,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/services/supabase';
@@ -119,7 +119,7 @@ export default function Auth() {
             </div>
             <div className="bg-green-500/5 rounded-2xl border border-green-500/20 p-4 w-full text-left space-y-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle className="h-4 w-4 text-green-500 shrink-0" /><span className="font-semibold">Email verified successfully</span></div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle className="h-4 w-4 text-green-500 shrink-0" /><span>Your MSM account is now active</span></div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle className="h-4 w-4 text-green-500 shrink-0" /><span>Your RepairXpert account is now active</span></div>
             </div>
             <Button className="w-full h-12 font-black gradient-primary" onClick={() => setMode('login')}>
               Login to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
@@ -186,10 +186,10 @@ export default function Auth() {
             <div className="absolute top-0 inset-x-0 h-1 gradient-primary opacity-50" />
             <CardHeader className="text-center space-y-3 pb-6">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl gradient-primary shadow-2xl shadow-primary/30 rotate-3 transform transition-transform hover:rotate-0">
-                <Smartphone className="h-10 w-10 text-primary-foreground" />
+                <Wrench className="h-10 w-10 text-primary-foreground" />
               </div>
               <CardTitle className="text-4xl font-black tracking-tighter">
-                MSM <span className="text-primary italic">Pro</span>
+                RepairXpert
               </CardTitle>
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
                 {mode === 'login' && 'Premium Business Access'}
@@ -339,7 +339,7 @@ export default function Auth() {
         {/* Right Panel */}
         <div className="hidden lg:flex w-1/2 flex-col justify-center space-y-8 p-8">
           <div className="space-y-2">
-            <h3 className="text-3xl font-black tracking-tight">Why choose <span className="text-primary italic">MSM?</span></h3>
+            <h3 className="text-3xl font-black tracking-tight">Why choose <span className="text-primary italic">RepairXpert?</span></h3>
             <p className="text-muted-foreground">The most advanced multi-service management platform.</p>
           </div>
           <div className="grid gap-4">
@@ -372,7 +372,7 @@ export default function Auth() {
         </div>
       </div>
 
-      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-50">Secured by MSM Enterprise Infrastructure</p>
+      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-50">Secured by RepairXpert Enterprise Infrastructure</p>
     </div>
   );
 }

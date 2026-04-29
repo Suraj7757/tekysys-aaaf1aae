@@ -100,9 +100,9 @@ export default function Landing() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <Smartphone className="h-6 w-6 text-primary-foreground" />
+              <Wrench className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">MSM</span>
+            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">RepairXpert</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">Features</a>
@@ -270,11 +270,11 @@ export default function Landing() {
             <div className="flex flex-col items-center md:items-start">
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-md">
-                  <Smartphone className="h-4 w-4 text-primary-foreground" />
+                  <Wrench className="h-4 w-4 text-primary-foreground" />
                 </div>
-                <span className="font-black text-lg text-foreground tracking-tight">MSM</span>
+                <span className="font-black text-lg text-foreground tracking-tight">RepairXpert</span>
               </div>
-              <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} MSM — Multi Service Manager.<br/>Repair, Sales & Service Management Platform.</p>
+              <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} RepairXpert — Advanced Repair CRM.<br/>Repair, Sales & Service Management Platform.</p>
             </div>
             
             <div className="flex flex-col items-center md:items-start">

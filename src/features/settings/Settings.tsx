@@ -187,16 +187,19 @@ export default function Settings() {
                   { id: 'default', name: 'Midnight', color: 'bg-[#4338ca]' },
                   { id: 'emerald', name: 'Emerald', color: 'bg-[#059669]' },
                   { id: 'rose', name: 'Rose', color: 'bg-[#e11d48]' },
-                  { id: 'amber', name: 'Amber', color: 'bg-[#d97706]' },
-                  { id: 'violet', name: 'Violet', color: 'bg-[#7c3aed]' },
+                  { id: 'default', name: 'Standard', color: 'bg-[#4338ca]' },
+                  { id: 'emerald', name: 'Verdant', color: 'bg-[#059669]' },
+                  { id: 'rose', name: 'Crimson', color: 'bg-[#e11d48]' },
+                  { id: 'amber', name: 'Gold', color: 'bg-[#d97706]' },
+                  { id: 'violet', name: 'Royal', color: 'bg-[#7c3aed]' },
                 ].map((skin) => (
                   <Button
                     key={skin.id}
                     variant="outline"
-                    className={`h-12 justify-start gap-2 ${localStorage.getItem('msm-skin') === skin.id ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                    className={`h-12 justify-start gap-2 ${localStorage.getItem('rx-skin') === skin.id ? 'border-primary ring-2 ring-primary/20' : ''}`}
                     onClick={() => {
                       document.documentElement.setAttribute('data-skin', skin.id);
-                      localStorage.setItem('msm-skin', skin.id);
+                      localStorage.setItem('rx-skin', skin.id);
                       toast.success(`${skin.name} skin applied`);
                       refetch(); // Trigger re-render to update selection UI
                     }}
@@ -222,10 +225,10 @@ export default function Settings() {
                   <Button
                     key={layout.id}
                     variant="outline"
-                    className={`h-10 justify-center gap-2 ${localStorage.getItem('msm-layout') === layout.id || (!localStorage.getItem('msm-layout') && layout.id === 'default') ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                    className={`h-10 justify-center gap-2 ${localStorage.getItem('rx-layout') === layout.id || (!localStorage.getItem('rx-layout') && layout.id === 'default') ? 'border-primary ring-2 ring-primary/20' : ''}`}
                     onClick={() => {
                       document.documentElement.setAttribute('data-layout', layout.id);
-                      localStorage.setItem('msm-layout', layout.id);
+                      localStorage.setItem('rx-layout', layout.id);
                       toast.success(`${layout.name} layout applied`);
                       refetch(); // Trigger re-render to update selection UI
                     }}
@@ -244,7 +247,7 @@ export default function Settings() {
             <CardTitle className="text-sm font-semibold flex items-center gap-2"><Store className="h-4 w-4" /> Shop Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div><Label>Shop Name</Label><Input value={shopName} onChange={e => setShopName(e.target.value)} /></div>
+            <div><Label>Shop Name</Label><Input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="e.g. RepairXpert Central" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} /></div>
               <div><Label>GSTIN</Label><Input value={gstin} onChange={e => setGstin(e.target.value)} /></div>

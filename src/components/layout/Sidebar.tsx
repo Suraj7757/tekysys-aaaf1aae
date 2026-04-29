@@ -46,7 +46,7 @@ export function Sidebar() {
   const [createOpen, setCreateOpen] = useState(false);
 
   const openWhatsApp = () => {
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with MSM')}`, '_blank');
+    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent('Hello, I need help with RepairXpert')}`, '_blank');
   };
 
   const handleCreate = (type: 'job' | 'sell') => {
@@ -62,11 +62,11 @@ export function Sidebar() {
           {/* Logo */}
           <div className={`px-6 pb-6 flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
             <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-              <Smartphone className="h-6 w-6 text-primary-foreground" />
+              <Wrench className="h-6 w-6 text-primary-foreground" />
             </div>
             {!collapsed && (
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-sidebar-foreground tracking-tight">MSM</span>
+                <span className="text-lg font-bold text-sidebar-foreground tracking-tight">RepairXpert</span>
                 <span className="text-[10px] text-sidebar-muted font-medium uppercase tracking-widest">v2.0 Pro</span>
               </div>
             )}
