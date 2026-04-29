@@ -403,7 +403,13 @@ export default function AdminPanel() {
                         <TableCell><Badge variant="outline">{p.plan}</Badge></TableCell>
                         <TableCell>
                           {p.screenshot_url ? (
-                            <Button size="sm" variant="ghost" onClick={() => setPreviewUrl(p.screenshot_url)}>
+                            <Button size="sm" variant="ghost" onClick={async () => {
+                              const val = p.screenshot_url as string;
+                              if (val.startsWith('http')) { setPreviewUrl(val); return; }
+                              const { data, error } = await supabase.storage.from('payment-screenshots').createSignedUrl(val, 300);
+                              if (error || !data) { toast.error('Cannot load screenshot'); return; }
+                              setPreviewUrl(data.signedUrl);
+                            }}>
                               <Image className="h-4 w-4" />
                             </Button>
                           ) : '-'}
