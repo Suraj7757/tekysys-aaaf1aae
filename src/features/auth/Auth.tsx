@@ -41,6 +41,7 @@ export default function Auth() {
   const [mobile, setMobile] = useState('');
   const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [couponCode, setCouponCode] = useState('');
+  const [accountType, setAccountType] = useState<'shopkeeper' | 'wholesaler' | 'customer'>('shopkeeper');
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
@@ -101,7 +102,7 @@ export default function Auth() {
           toast.error('Password must have uppercase, lowercase, number & special character'); setLoading(false); return;
         }
         if (!mobile || mobile.length < 10) { toast.error('Valid 10-digit mobile is required'); setLoading(false); return; }
-        const { error } = await signUp(email, password, displayName, mobile);
+        const { error } = await signUp(email, password, displayName, mobile, accountType);
         if (error) {
           toast.error(error);
         } else {
@@ -258,10 +259,29 @@ export default function Auth() {
                 {mode === 'signup' && (
                   <>
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Business Name</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">I am a</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([
+                          { v: 'shopkeeper', label: 'Shopkeeper' },
+                          { v: 'wholesaler', label: 'Wholesaler' },
+                          { v: 'customer', label: 'Customer' },
+                        ] as const).map(o => (
+                          <button
+                            type="button"
+                            key={o.v}
+                            onClick={() => setAccountType(o.v)}
+                            className={`h-10 rounded-lg text-xs font-bold uppercase tracking-wider border-2 transition-all ${accountType === o.v ? 'bg-primary text-primary-foreground border-primary shadow-md' : 'bg-muted/30 text-muted-foreground border-transparent hover:border-primary/30'}`}
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">{accountType === 'customer' ? 'Full Name' : accountType === 'wholesaler' ? 'Wholesale Business Name' : 'Business Name'}</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                        <Input className="pl-10 h-11 bg-muted/30 border-0 focus-visible:ring-1" placeholder="E.g. Mobile Hub" value={displayName} onChange={e => setDisplayName(e.target.value)} required />
+                        <Input className="pl-10 h-11 bg-muted/30 border-0 focus-visible:ring-1" placeholder={accountType === 'customer' ? 'Your name' : 'E.g. Mobile Hub'} value={displayName} onChange={e => setDisplayName(e.target.value)} required />
                       </div>
                     </div>
                     <div className="space-y-1.5">

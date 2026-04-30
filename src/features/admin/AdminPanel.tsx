@@ -734,17 +734,23 @@ export default function AdminPanel() {
 
         {/* Edit User Dialog */}
         <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Edit User</DialogTitle></DialogHeader>
-            <div className="space-y-3">
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Edit User — Super Admin Controls</DialogTitle></DialogHeader>
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+              <div className="text-xs text-muted-foreground">
+                <span className="font-semibold">{editUser?.display_name}</span> · {editUser?.account_type || 'shopkeeper'}
+              </div>
               <div><Label>Display Name</Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
               <div>
                 <Label>Role</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="admin">Admin (Shopkeeper)</SelectItem>
                     <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="wholesaler">Wholesaler</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="shopkeeper">Shopkeeper</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -763,6 +769,36 @@ export default function AdminPanel() {
                 </Select>
               </div>
               <div><Label>Plan Expiry Date</Label><Input type="date" value={editPlanExpiry} onChange={e => setEditPlanExpiry(e.target.value)} /></div>
+
+              <div className="pt-2 border-t mt-2">
+                <Label className="text-primary font-bold">Wallet Adjustment</Label>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input type="number" placeholder="Amount (+/-)" id="walletDelta" />
+                <Input placeholder="Note" id="walletNote" />
+              </div>
+              <Button size="sm" variant="outline" onClick={async () => {
+                const delta = parseFloat((document.getElementById('walletDelta') as HTMLInputElement)?.value || '0');
+                const note = (document.getElementById('walletNote') as HTMLInputElement)?.value || 'Admin adjustment';
+                if (!delta || !editUser) return;
+                const { error } = await (supabase as any).rpc('admin_adjust_wallet', { _user_id: editUser.user_id, _delta: delta, _note: note });
+                if (error) toast.error(error.message); else { toast.success('Wallet updated'); fetchAll(); }
+              }}>Apply Wallet Change</Button>
+
+              <div className="pt-2 border-t mt-2">
+                <Label className="text-primary font-bold">Custom Discount</Label>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input type="number" placeholder="Percent (e.g. 20)" id="discPct" />
+                <Input placeholder="Reason" id="discReason" />
+              </div>
+              <Button size="sm" variant="outline" onClick={async () => {
+                const pct = parseFloat((document.getElementById('discPct') as HTMLInputElement)?.value || '0');
+                const reason = (document.getElementById('discReason') as HTMLInputElement)?.value || 'Admin grant';
+                if (!pct || !editUser) return;
+                const { error } = await (supabase as any).rpc('admin_apply_discount', { _user_id: editUser.user_id, _percent: pct, _reason: reason });
+                if (error) toast.error(error.message); else toast.success('Discount applied');
+              }}>Grant Discount</Button>
             </div>
             <DialogFooter><Button onClick={handleUpdateUser}>Save Changes</Button></DialogFooter>
           </DialogContent>

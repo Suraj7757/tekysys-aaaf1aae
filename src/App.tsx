@@ -35,6 +35,9 @@ import Expenses from '@/features/expenses/Expenses';
 import Loyalty from '@/features/loyalty/Loyalty';
 import BookingsAdmin from '@/features/booking/BookingsAdmin';
 import PublicBooking from '@/features/booking/PublicBooking';
+import WholesaleDashboard from '@/features/wholesale/WholesaleDashboard';
+import CustomerDashboard from '@/features/customer/CustomerDashboard';
+import { homePathFor, isSuperAdmin } from '@/lib/accountType';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Chatbot } from '@/components/common/Chatbot';
@@ -55,22 +58,24 @@ function ProtectedRoute({ children, allowExpired = false }: { children: React.Re
 }
 
 function AppRoutes() {
-  const { user, loading, isPlanExpired } = useAuth();
+  const { user, loading, accountType } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+  const home = user ? homePathFor(accountType, isSuperAdmin(user)) : '/';
 
   return (
     <ErrorBoundary>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
         <Routes>
-          <Route path="/" element={user ? <Navigate to={user.email === 'krs715665@gmail.com' ? "/admin" : "/dashboard"} replace /> : <Landing />} />
+          <Route path="/" element={user ? <Navigate to={home} replace /> : <Landing />} />
           <Route path="/auth" element={(() => {
-            // Allow email confirmation link to land on Auth (it will sign out & show account confirmed)
             const hash = typeof window !== 'undefined' ? window.location.hash : '';
             const hashParams = new URLSearchParams(hash.replace('#', '?'));
             const isEmailConfirm = hashParams.get('type') === 'signup' || hashParams.get('type') === 'magiclink';
-            if (user && !isEmailConfirm) return <Navigate to={user.email === 'krs715665@gmail.com' ? "/admin" : "/dashboard"} replace />;
+            if (user && !isEmailConfirm) return <Navigate to={home} replace />;
             return <Auth />;
           })()} />
+          <Route path="/wholesale" element={<ProtectedRoute><WholesaleDashboard /></ProtectedRoute>} />
+          <Route path="/customer" element={<ProtectedRoute><CustomerDashboard /></ProtectedRoute>} />
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Dashboard />}</ProtectedRoute>} />
