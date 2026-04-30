@@ -72,6 +72,17 @@ export default function Customers() {
     }
   };
 
+  const redeemPoints = async (c: any) => {
+    const input = prompt(`Customer ${c.name} has ${c.points || 0} points. How many to redeem?`);
+    if (!input) return;
+    const pts = parseInt(input);
+    if (!pts || pts <= 0) { toast.error('Invalid points'); return; }
+    const { data, error } = await (supabase as any).rpc('redeem_loyalty_points', { _customer_id: c.id, _points: pts });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Redeemed ${data.points_redeemed} pts → ₹${data.rupee_value} discount`);
+    refetch();
+  };
+
   return (
     <MainLayout title="Customers">
       <div className="space-y-4 animate-fade-in">
