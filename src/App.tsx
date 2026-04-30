@@ -30,6 +30,11 @@ import Analytics from '@/features/dashboard/Analytics';
 import PrivacyPolicy from '@/features/dashboard/PrivacyPolicy';
 import TermsConditions from '@/features/dashboard/TermsConditions';
 import NotFound from '@/components/common/NotFound';
+import Branches from '@/features/branches/Branches';
+import Expenses from '@/features/expenses/Expenses';
+import Loyalty from '@/features/loyalty/Loyalty';
+import BookingsAdmin from '@/features/booking/BookingsAdmin';
+import PublicBooking from '@/features/booking/PublicBooking';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Suspense } from 'react';
@@ -85,6 +90,11 @@ function AppRoutes() {
           <Route path="/staff" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <StaffManagement />}</ProtectedRoute>} />
           <Route path="/financials" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Financials />}</ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+          <Route path="/branches" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Branches />}</ProtectedRoute>} />
+          <Route path="/expenses" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Expenses />}</ProtectedRoute>} />
+          <Route path="/loyalty" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Loyalty />}</ProtectedRoute>} />
+          <Route path="/bookings" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <BookingsAdmin />}</ProtectedRoute>} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsConditions />} />
           <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
