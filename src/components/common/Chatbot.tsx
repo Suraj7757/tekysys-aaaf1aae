@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { MessageCircle, X, Send, User, Bot, Phone, Mail, Sparkles } from "lucide
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const SUPPORT_WHATSAPP = "7319884599";
 const SUPPORT_EMAIL = "krs715665@gmail.com";
@@ -21,12 +23,14 @@ export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const location = useLocation();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
       content:
-        "Namaste! 🙏 Mai **RepairXpert AI Assistant** hu. Mai aapko mobile, laptop, AC, TV repair ke baare me suggestions de sakta hu, parts cost estimate kar sakta hu, ya CRM features samjha sakta hu.\n\n**Try karein:**\n- *Samsung M31 charging nahi ho raha*\n- *Laptop overheating fix kaise karu?*\n- *AC me gas refill ka kya cost hai?*",
+        "Namaste! 🙏 Mai **RepairXpert AI Assistant** hu. Repair sawal, parts cost, ya app feature — kuch bhi puchein.\n\n**Try karein:**\n- *Samsung M31 charging issue*\n- *Mera tracking ID JSAM0042K9X kaha hai?*\n- *New job kaise banaye?*\n- *Subscription kaise renew karu?*",
     },
   ]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -75,7 +79,10 @@ export function Chatbot() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({
+          messages: history,
+          context: { isAuthed: !!user, route: location.pathname },
+        }),
         signal: abortRef.current.signal,
       });
 

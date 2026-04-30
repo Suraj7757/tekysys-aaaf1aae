@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { Chatbot } from "@/components/common/Chatbot";
+
 import { WhatsAppButton } from "@/components/common/WhatsAppButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { InstallPWAPrompt } from "@/components/common/InstallPWAPrompt";
@@ -37,7 +37,7 @@ export function MainLayout({ children, title }: LayoutProps) {
           <main className="flex-1 p-6 lg:p-8 pb-24 md:pb-8 animate-fade-in overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
             {children}
           </main>
-          <Chatbot />
+          {/* Chatbot mounted globally in App.tsx */}
           <WhatsAppButton />
           <InstallPWAPrompt />
           <MobileBottomNav />

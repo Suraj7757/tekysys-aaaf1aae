@@ -37,6 +37,7 @@ import BookingsAdmin from '@/features/booking/BookingsAdmin';
 import PublicBooking from '@/features/booking/PublicBooking';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Chatbot } from '@/components/common/Chatbot';
 import { Suspense } from 'react';
 
 const queryClient = new QueryClient();
@@ -119,6 +120,7 @@ export default function App() {
           <BrowserRouter>
             <Toaster position="top-right" richColors />
             <AppRoutes />
+            <Chatbot />
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>
