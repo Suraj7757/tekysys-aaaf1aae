@@ -41,6 +41,7 @@ export default function Auth() {
   const [mobile, setMobile] = useState('');
   const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [couponCode, setCouponCode] = useState('');
+  const [accountType, setAccountType] = useState<'shopkeeper' | 'wholesaler' | 'customer'>('shopkeeper');
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
@@ -101,7 +102,7 @@ export default function Auth() {
           toast.error('Password must have uppercase, lowercase, number & special character'); setLoading(false); return;
         }
         if (!mobile || mobile.length < 10) { toast.error('Valid 10-digit mobile is required'); setLoading(false); return; }
-        const { error } = await signUp(email, password, displayName, mobile);
+        const { error } = await signUp(email, password, displayName, mobile, accountType);
         if (error) {
           toast.error(error);
         } else {
