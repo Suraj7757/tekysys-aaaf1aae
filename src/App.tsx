@@ -35,6 +35,9 @@ import Expenses from '@/features/expenses/Expenses';
 import Loyalty from '@/features/loyalty/Loyalty';
 import BookingsAdmin from '@/features/booking/BookingsAdmin';
 import PublicBooking from '@/features/booking/PublicBooking';
+import WholesaleDashboard from '@/features/wholesale/WholesaleDashboard';
+import CustomerDashboard from '@/features/customer/CustomerDashboard';
+import { homePathFor, isSuperAdmin } from '@/lib/accountType';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Chatbot } from '@/components/common/Chatbot';
