@@ -79,6 +79,39 @@ export type Database = {
           },
         ]
       }
+      admin_discounts: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          percent: number
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          percent?: number
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          percent?: number
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ads: {
         Row: {
           active: boolean
@@ -247,6 +280,42 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      customer_orders: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          items: Json
+          notes: string | null
+          shopkeeper_id: string
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          shopkeeper_id: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          shopkeeper_id?: string
+          status?: string
+          total?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -614,6 +683,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
           avatar_url: string | null
           created_at: string
           display_name: string
@@ -626,6 +696,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string
@@ -638,6 +709,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string
@@ -1090,6 +1162,54 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesale_catalog: {
+        Row: {
+          active: boolean
+          bulk_price: number
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          item_name: string
+          moq: number
+          sku: string
+          stock: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          bulk_price?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          item_name: string
+          moq?: number
+          sku?: string
+          stock?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          bulk_price?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          item_name?: string
+          moq?: number
+          sku?: string
+          stock?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       withdraw_requests: {
         Row: {
           admin_note: string | null
@@ -1127,6 +1247,30 @@ export type Database = {
     Functions: {
       _tracking_code: { Args: { _text: string }; Returns: string }
       _tracking_suffix: { Args: never; Returns: string }
+      admin_adjust_wallet: {
+        Args: { _delta: number; _note: string; _user_id: string }
+        Returns: undefined
+      }
+      admin_apply_discount: {
+        Args: {
+          _expires_at?: string
+          _percent: number
+          _reason: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      admin_set_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      admin_set_user_plan: {
+        Args: { _expires_at: string; _plan: string; _user_id: string }
+        Returns: undefined
+      }
       convert_booking_to_job: {
         Args: {
           _booking_id: string
@@ -1174,7 +1318,7 @@ export type Database = {
       track_order: { Args: { _tracking_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "staff"
+      app_role: "admin" | "staff" | "customer" | "shopkeeper" | "wholesaler"
       job_status:
         | "Received"
         | "In Progress"
@@ -1310,7 +1454,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff"],
+      app_role: ["admin", "staff", "customer", "shopkeeper", "wholesaler"],
       job_status: [
         "Received",
         "In Progress",

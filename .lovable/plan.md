@@ -1,87 +1,104 @@
+# Multi-Account Types + Super Admin God-Mode
+
 ## Goal
-
-Currently `job_id` (JOB000001) and `sell_id` (SELL000001) are **per-user counters**, so two different shops can both have `JOB000001`. The public `/track` page uses `track_order(_tracking_id)` which just matches by string — it can return the *wrong* shop's order. We will:
-
-1. Make every tracking ID **globally unique** (no two jobs/sells across the entire platform can share an ID).
-2. Encode a **short form of the job/sell details** directly into the ID so the ID itself hints at what it is (device brand for jobs, item shorthand for sells).
-3. Keep IDs short, uppercase, scan-friendly, and shareable on WhatsApp.
+1. Signup pe user choose kare: **Customer / Shopkeeper / Wholesaler** (Repair shop ke alawa). Har type ka apna dashboard.
+2. Super Admin (krs715665@gmail.com) ke paas **har** user, plan, promo, referral, discount, wallet, subscription pe full edit/control.
 
 ---
 
-## New tracking ID format
+## Part 1 — Account Types & Dashboards
 
-**Repair Job:**
-```
-J-<BRAND3>-<SEQ4>-<RAND3>
-e.g.  J-SAM-0042-K9X    (Samsung, shop's 42nd job, 3 random chars)
-       J-IPH-0007-2QM   (iPhone)
-       J-XIA-0118-A4F   (Xiaomi)
-```
+### Database changes (migration)
+- Extend `app_role` enum: add `'customer'`, `'shopkeeper'`, `'wholesaler'` (keep existing `admin`, `staff`).
+- Add `account_type text` column to `profiles` (values: `shopkeeper` | `wholesaler` | `customer`; default `shopkeeper` for backward compat).
+- Update `handle_new_user()` trigger:
+  - Read `raw_user_meta_data->>'account_type'` from signup metadata.
+  - Insert correct `account_type` into profiles.
+  - Assign matching role into `user_roles`.
+  - Skip creating `shop_settings`/`job_counter`/`sell_counter` for `customer` accounts (not needed).
+- New table `wholesale_catalog` (id, user_id, item_name, sku, bulk_price, moq, stock, category, created_at) with RLS — owner manage, public select for active items.
+- New table `customer_orders` (id, customer_id auth.uid, shopkeeper_id, items jsonb, total, status, created_at) — RLS for customer + target shopkeeper.
 
-**Inventory Sell:**
-```
-S-<ITEM3>-<SEQ4>-<RAND3>
-e.g.  S-SCR-0015-7BD    (Screen sale)
-       S-BAT-0009-MX2   (Battery sale)
-       S-ACC-0033-PL8   (Accessory)
-```
+### Auth UI (`src/features/auth/Auth.tsx`)
+- Add "Account Type" tab/segment on signup form: Shopkeeper (default) | Wholesaler | Customer.
+- Pass `account_type` in `signUp` metadata via `AuthContext.signUp`.
 
-- **Prefix** (`J` / `S`) → instantly tells job vs sell
-- **3-letter code** → device brand (jobs) or item category shorthand (sells), derived from first 3 letters uppercased, fallback `GEN`
-- **4-digit sequence** → user's running counter (existing `job_counter` / `sell_counter`)
-- **3-char random suffix** → makes it globally unique even if two shops both reach SEQ 0042 on Samsung; uses crypto-safe alphanumerics (no confusing 0/O/1/I)
+### Routing (`src/App.tsx`)
+- After login, route based on `account_type`:
+  - `admin` (super) → `/admin`
+  - `shopkeeper` / `staff` → existing `/dashboard`
+  - `wholesaler` → new `/wholesale`
+  - `customer` → new `/customer`
+- Add `<Route path="/wholesale">` → `WholesaleDashboard` (catalog mgmt, bulk orders).
+- Add `<Route path="/customer">` → `CustomerDashboard` (browse shops, my repair orders via `/track`, my bookings).
+- Update `ProtectedRoute` to check `account_type` and redirect mismatched routes.
 
-Total length: 13–14 chars. Easy to type, hard to guess, self-descriptive.
+### New pages
+- `src/features/wholesale/WholesaleDashboard.tsx` — catalog CRUD, incoming orders, revenue.
+- `src/features/customer/CustomerDashboard.tsx` — my bookings (`booking_requests` filtered by email), order tracking shortcut, browse shops, loyalty points across shops.
 
----
-
-## Database changes (one migration)
-
-1. **Add UNIQUE indexes** on `repair_jobs.job_id` and `sells.sell_id` (global, not per-user) to *guarantee* no collisions at the DB level. If a duplicate exists in current data, migration will append a random suffix to fix it before adding the constraint.
-
-2. **Replace `next_job_id(_user_id)`** to return new format. It will:
-   - Take an extra param `_brand text` (device brand)
-   - Increment user's `job_counter`
-   - Build `J-<BRAND3>-<SEQ4>-<RAND3>` using `gen_random_bytes` + base32-style alphabet
-   - Loop with retry if (extremely unlikely) the random suffix collides with the unique index
-
-3. **Replace `next_sell_id(_user_id)`** the same way, taking `_item_name text`.
-
-4. **Update `track_order(_tracking_id)`** — already matches on `job_id` / `sell_id`, no logic change needed, but it now benefits from the unique index.
-
-5. **Old IDs keep working** — existing `JOB000001` rows are untouched; only *new* jobs/sells get the new format. Track dialog works for both.
+### Sidebar (`src/components/layout/Sidebar.tsx`)
+- Render different nav based on `account_type` (re-use existing components).
 
 ---
 
-## Code changes
+## Part 2 — Super Admin God-Mode
 
-| File | Change |
-|---|---|
-| `src/features/jobs/RepairCaseForm.tsx` (or wherever `next_job_id` is called) | Pass `_brand: deviceBrand` when calling the RPC |
-| `src/features/inventory/Sells.tsx` | Pass `_item_name: itemName` when calling `next_sell_id` |
-| `src/features/jobs/components/TrackDialog.tsx` | Update placeholder to `e.g. J-SAM-0042-K9X` |
-| `src/features/jobs/TrackOrder.tsx` | Same placeholder update |
-| `src/integrations/supabase/types.ts` | Auto-regenerated after migration — no manual edit |
-| `src/utils/idGenerator.ts` | Delete — no longer used (server generates the ID) |
+Super admin already has `/admin`. Extend it with full control:
 
-No changes needed to WhatsApp templates, invoices, or PaymentLinkModal — they already read `job_id` / `sell_id` as opaque strings.
+### Database (RLS additions via migration)
+Add admin-level policies (using `has_role(auth.uid(), 'admin')`) to allow **SELECT/UPDATE/DELETE** on:
+- `subscriptions` (already SELECT, add UPDATE for plan/expiry change)
+- `profiles` (already covered)
+- `wallets` (already covered)
+- `referrals` (add UPDATE/DELETE for admin)
+- `promo_codes` (already ALL)
+- `loyalty_settings` (add admin override)
+- `shop_settings` (add admin SELECT/UPDATE)
+- `repair_jobs`, `sells`, `payments`, `inventory`, `expenses`, `branches`, `booking_requests` — add admin SELECT (read-only audit) + UPDATE/DELETE.
+- `wholesale_catalog`, `customer_orders` (admin full).
+
+### Admin RPCs (SECURITY DEFINER, admin-only)
+- `admin_set_user_plan(_user_id, _plan, _expires_at)` — update profiles + subscriptions.
+- `admin_set_role(_user_id, _role)` — change user_roles.
+- `admin_adjust_wallet(_user_id, _delta, _note)` — credit/debit + log txn.
+- `admin_apply_discount(_user_id, _percent, _reason)` — store in new `admin_discounts` table.
+- `admin_force_delete_user(_user_id)` — soft-ban + cascade soft delete.
+
+### Admin Panel UI (`src/features/admin/AdminPanel.tsx`)
+Add new tabs / extend existing:
+- **Users tab**: filter by `account_type` (All / Shopkeeper / Wholesaler / Customer / Staff). Per-row actions: Edit Plan, Change Role, Adjust Wallet, Apply Discount, Ban/Unban, Impersonate-view (read-only drill into their data).
+- **Plans tab**: bulk update plans, set custom expiry, grant free trial extensions.
+- **Promo & Discounts tab**: existing promo + new "Custom Discount per User" form.
+- **Referrals tab**: approve/reject, modify reward amount, mark paid.
+- **Wholesale tab**: view all catalogs, moderate listings.
+- **Customer Orders tab**: view all customer→shopkeeper orders.
+- **Audit tab**: read-only feed of `activity_log` across all users.
+
+### Super-admin override everywhere
+- All ProtectedRoute checks already bypass for `krs715665@gmail.com` — keep that pattern.
+- Add helper `isSuperAdmin(user)` in `src/lib/utils.ts` and use uniformly.
 
 ---
 
-## Why this is safe
+## Files to Create
+- `supabase/migrations/<ts>_account_types_and_admin_godmode.sql`
+- `src/features/wholesale/WholesaleDashboard.tsx`
+- `src/features/customer/CustomerDashboard.tsx`
+- `src/features/admin/tabs/UsersAdvanced.tsx` (extracted)
+- `src/features/admin/tabs/DiscountsTab.tsx`
+- `src/lib/accountType.ts` (helpers)
 
-- **Backward compatible**: old IDs (`JOB000001`, `SELL000001`) keep working in tracking, invoices, WhatsApp messages, payment links.
-- **Globally unique**: enforced by DB unique index + random suffix → even across 1000s of shops, collision probability per generation is ~1 in 32,768; retry loop handles the edge case.
-- **No data loss**: we only ADD the unique constraint; if existing duplicates are found, we patch them with a random suffix in the same migration.
-- **Self-describing**: support staff can glance at `J-IPH-0042-K9X` and know it's an iPhone repair job without opening the record.
+## Files to Edit
+- `src/features/auth/Auth.tsx` — account type selector
+- `src/context/AuthContext.tsx` — signUp passes account_type, expose `accountType`
+- `src/App.tsx` — new routes + redirect logic
+- `src/components/layout/Sidebar.tsx` — role-based nav
+- `src/features/admin/AdminPanel.tsx` — new tabs & controls
+- `src/lib/utils.ts` — `isSuperAdmin()`
 
----
+## Out of scope (will confirm before doing)
+- Payment gateway for customer→shopkeeper orders (manual UPI for now).
+- Wholesale → shopkeeper purchase order workflow with invoicing (basic only this phase).
 
-## Execution order
-
-1. Run migration (adds unique indexes, rewrites `next_job_id` / `next_sell_id`).
-2. Update `RepairCaseForm.tsx` and `Sells.tsx` to pass brand/item to the RPC.
-3. Update tracking placeholders.
-4. Verify by creating one new job and one new sell — confirm new format appears and old IDs still track correctly.
-
-Ready to implement on approval.
+Approve karein to mai migration + code dono ek saath implement kar dunga.
