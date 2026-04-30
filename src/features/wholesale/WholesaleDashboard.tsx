@@ -29,8 +29,8 @@ export default function WholesaleDashboard() {
   const load = async () => {
     setLoading(true);
     const [itemsRes, ordersRes] = await Promise.all([
-      supabase.from('wholesale_catalog').select('*').eq('user_id', user!.id).order('created_at', { ascending: false }),
-      supabase.from('customer_orders').select('*').eq('shopkeeper_id', user!.id).order('created_at', { ascending: false }),
+      (supabase.from('wholesale_catalog' as any) as any).select('*').eq('user_id', user!.id).order('created_at', { ascending: false }),
+      (supabase.from('customer_orders' as any) as any).select('*').eq('shopkeeper_id', user!.id).order('created_at', { ascending: false }),
     ]);
     setItems(itemsRes.data || []);
     setOrders(ordersRes.data || []);
@@ -52,8 +52,8 @@ export default function WholesaleDashboard() {
       description: form.description,
     };
     const { error } = editing
-      ? await supabase.from('wholesale_catalog').update(payload).eq('id', editing.id)
-      : await supabase.from('wholesale_catalog').insert(payload);
+      ? await (supabase.from('wholesale_catalog' as any) as any).update(payload).eq('id', editing.id)
+      : await (supabase.from('wholesale_catalog' as any) as any).insert(payload);
     if (error) return toast.error(error.message);
     toast.success(editing ? 'Updated' : 'Added');
     setOpen(false); reset(); load();
@@ -61,13 +61,13 @@ export default function WholesaleDashboard() {
 
   const del = async (id: string) => {
     if (!confirm('Delete item?')) return;
-    const { error } = await supabase.from('wholesale_catalog').delete().eq('id', id);
+    const { error } = await (supabase.from('wholesale_catalog' as any) as any).delete().eq('id', id);
     if (error) return toast.error(error.message);
     load();
   };
 
   const updateOrder = async (id: string, status: string) => {
-    const { error } = await supabase.from('customer_orders').update({ status }).eq('id', id);
+    const { error } = await (supabase.from('customer_orders' as any) as any).update({ status }).eq('id', id);
     if (error) return toast.error(error.message);
     load();
   };

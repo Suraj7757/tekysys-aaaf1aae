@@ -18,9 +18,9 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     if (!user?.email) return;
-    supabase.from('booking_requests').select('*').eq('customer_email', user.email).order('created_at', { ascending: false })
+    (supabase.from('booking_requests') as any).select('*').eq('customer_email', user.email).order('created_at', { ascending: false })
       .then(({ data }) => setOrders(data || []));
-    supabase.from('shop_settings').select('user_id, shop_name, address, phone, booking_slug').eq('booking_enabled', true).limit(20)
+    (supabase.from('shop_settings') as any).select('user_id, shop_name, address, phone, booking_slug').eq('booking_enabled', true).limit(20)
       .then(({ data }) => setShops(data || []));
   }, [user?.id]);
 
