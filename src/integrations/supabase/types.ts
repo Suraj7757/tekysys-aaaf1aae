@@ -897,6 +897,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _tracking_code: { Args: { _text: string }; Returns: string }
+      _tracking_suffix: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -905,8 +907,14 @@ export type Database = {
         Returns: boolean
       }
       is_not_banned: { Args: never; Returns: boolean }
-      next_job_id: { Args: { _user_id: string }; Returns: string }
-      next_sell_id: { Args: { _user_id: string }; Returns: string }
+      next_job_id: {
+        Args: { _brand?: string; _user_id: string }
+        Returns: string
+      }
+      next_sell_id: {
+        Args: { _item_name?: string; _user_id: string }
+        Returns: string
+      }
       track_order: { Args: { _tracking_id: string }; Returns: Json }
     }
     Enums: {

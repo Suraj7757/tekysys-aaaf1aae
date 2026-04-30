@@ -1,144 +1,87 @@
-# Phase 2 — Pro Features Rollout
+## Goal
 
-Aapne earlier 4 features select kiye the. Ab unhe ek-ek karke clean tarah se add karenge bina kuch break kiye.
+Currently `job_id` (JOB000001) and `sell_id` (SELL000001) are **per-user counters**, so two different shops can both have `JOB000001`. The public `/track` page uses `track_order(_tracking_id)` which just matches by string — it can return the *wrong* shop's order. We will:
 
----
-
-## 1. AI Repair Assistant (Lovable AI powered)
-
-Existing `Chatbot.tsx` rule-based hai. Use upgrade karenge real AI me using **Lovable AI Gateway** (no API key needed — `LOVABLE_API_KEY` already configured).
-
-**Kya milega:**
-- Real conversational AI (Hinglish + English)
-- Device-specific repair suggestions ("Samsung M31 charging issue" → probable causes + parts + estimate)
-- Job context aware: agar user job ID daale to AI us job ka actual data fetch karke jawab dega
-- Streaming responses (token-by-token, ChatGPT jaisa feel)
-- Markdown rendering for formatted answers
-
-**Technical:**
-- New edge function: `supabase/functions/ai-assistant/index.ts` — streams from Lovable AI Gateway (`google/gemini-3-flash-preview` default)
-- System prompt: "Tu RepairXpert ka expert technician AI hai. Mobile/laptop/AC/TV repair me madad karta hai. Hinglish me jawab de."
-- Tool calling enabled: AI khud `get_job_status`, `create_job`, `check_inventory` jaise tools call kar sake
-- Rewrite `src/components/common/Chatbot.tsx` to call edge function with SSE streaming
-- Add `react-markdown` for response rendering
-- Conversation history maintained in component state (last 10 messages sent for context)
+1. Make every tracking ID **globally unique** (no two jobs/sells across the entire platform can share an ID).
+2. Encode a **short form of the job/sell details** directly into the ID so the ID itself hints at what it is (device brand for jobs, item shorthand for sells).
+3. Keep IDs short, uppercase, scan-friendly, and shareable on WhatsApp.
 
 ---
 
-## 2. Advanced Analytics Dashboard
+## New tracking ID format
 
-Existing `Reports.tsx` basic hai. New analytics page banayenge with deep insights.
-
-**Kya milega:**
-- **Revenue Trends**: Daily/Weekly/Monthly line charts (last 90 days)
-- **Top Devices**: Pie chart — sabse zyada repair hone wale brands/models
-- **Top Issues**: Bar chart — most common problems
-- **Customer Insights**: Repeat customers %, avg jobs per customer, top 10 customers by revenue
-- **Technician Performance**: Jobs completed, avg turnaround time, revenue per technician
-- **Inventory Movement**: Fast-moving vs dead stock, reorder alerts
-- **Profit Margins**: Cost vs sell analysis per category
-- **Peak Hours/Days**: Heatmap — kab sabse zyada jobs aate hain
-- **Conversion Rate**: Received → Delivered ratio
-- **Export**: PDF/Excel download
-
-**Technical:**
-- New page: `src/features/dashboard/Analytics.tsx` (route `/analytics`)
-- Use existing `recharts` library
-- Client-side aggregations on Supabase data (jobs, sells, payments)
-- Date range filter (7d / 30d / 90d / custom)
-- Add to sidebar under "Reports"
-
----
-
-## 3. Automation & Reminders
-
-**Kya milega:**
-
-### A) Status-change auto WhatsApp
-- Jab job status change ho (Received → Diagnosed → Ready → Delivered) → automatic WhatsApp message draft khulta hai with template
-- Toggle in Settings: "Auto-notify customer on status change"
-
-### B) Pending job reminders
-- Jobs jo 3+ din se same status pe stuck hain → daily notification badge + dashboard widget "⚠️ 5 jobs need attention"
-
-### C) Payment due reminders
-- Delivered jobs jinka payment pending hai → reminder list with one-click WhatsApp follow-up
-
-### D) Low-stock auto alerts
-- Inventory item `quantity <= min_stock` → notification + dashboard banner
-
-### E) Subscription expiry warning
-- 7/3/1 din pehle dashboard banner + email-style toast on login
-
-### F) Daily summary
-- Login pe ek toast: "Aaj 5 new jobs, ₹12,500 revenue, 3 delivered ✅"
-
-**Technical:**
-- New table: `automation_settings` (per user toggles)
-- New hook: `src/hooks/useAutomation.ts` — runs on dashboard mount, computes pending/overdue/low-stock
-- Reuse existing `notifications` table (already exists per useSupabaseData)
-- WhatsApp templates in `src/lib/whatsappTemplates.ts`
-- Edge function `supabase/functions/daily-digest/index.ts` (optional cron) for digest
-
----
-
-## 4. Mobile App Feel (PWA+)
-
-PWA already configured per memory. Ab enhance karenge native-app feel ke liye.
-
-**Kya milega:**
-- **Bottom tab bar** on mobile (Dashboard / Jobs / Add / Sells / More) — sirf `< md` screens pe
-- **FAB (Floating Action Button)** "+" — quick add Job/Sell/Customer from anywhere
-- **Pull-to-refresh** on list pages (jobs, sells, customers)
-- **Swipe gestures**: Swipe left on job card → quick actions (call, WhatsApp, edit)
-- **Haptic feedback** on key actions (where supported)
-- **Splash screen** improvement (branded loading)
-- **Install prompt banner** — "Add RepairXpert to home screen" (smart, only show once)
-- **Offline indicator** — top banner agar net na ho
-- **Skeleton loaders** instead of spinners (better perceived speed)
-- **Smooth page transitions** (slide animations between routes)
-
-**Technical:**
-- New component: `src/components/layout/MobileBottomNav.tsx`
-- New component: `src/components/common/QuickAddFAB.tsx`
-- New component: `src/components/common/InstallPWAPrompt.tsx`
-- New component: `src/components/common/OfflineBanner.tsx`
-- New hook: `src/hooks/usePullToRefresh.ts`
-- Add `framer-motion` for transitions (already may be installed)
-- Update `MainLayout.tsx` to render mobile nav + FAB conditionally
-- Replace key spinners with `Skeleton` components
-
----
-
-## Execution Order (safe rollout, no breakage)
-
+**Repair Job:**
 ```
-Step 1 → AI Repair Assistant       (edge function + chatbot rewrite)
-Step 2 → Mobile/PWA+ enhancements   (UI shell upgrades, low risk)
-Step 3 → Advanced Analytics         (new page, isolated)
-Step 4 → Automation & Reminders    (new table + hooks + settings toggles)
+J-<BRAND3>-<SEQ4>-<RAND3>
+e.g.  J-SAM-0042-K9X    (Samsung, shop's 42nd job, 3 random chars)
+       J-IPH-0007-2QM   (iPhone)
+       J-XIA-0118-A4F   (Xiaomi)
 ```
 
-Har step ke baad preview verify karenge taaki kuch break na ho.
+**Inventory Sell:**
+```
+S-<ITEM3>-<SEQ4>-<RAND3>
+e.g.  S-SCR-0015-7BD    (Screen sale)
+       S-BAT-0009-MX2   (Battery sale)
+       S-ACC-0033-PL8   (Accessory)
+```
+
+- **Prefix** (`J` / `S`) → instantly tells job vs sell
+- **3-letter code** → device brand (jobs) or item category shorthand (sells), derived from first 3 letters uppercased, fallback `GEN`
+- **4-digit sequence** → user's running counter (existing `job_counter` / `sell_counter`)
+- **3-char random suffix** → makes it globally unique even if two shops both reach SEQ 0042 on Samsung; uses crypto-safe alphanumerics (no confusing 0/O/1/I)
+
+Total length: 13–14 chars. Easy to type, hard to guess, self-descriptive.
 
 ---
 
-## Database Changes Required
+## Database changes (one migration)
 
-**New table:** `automation_settings`
-- `id`, `user_id`, `auto_whatsapp_status` (bool), `pending_threshold_days` (int default 3), `daily_digest_enabled` (bool), `low_stock_alerts` (bool)
-- RLS: user_id = auth.uid()
+1. **Add UNIQUE indexes** on `repair_jobs.job_id` and `sells.sell_id` (global, not per-user) to *guarantee* no collisions at the DB level. If a duplicate exists in current data, migration will append a random suffix to fix it before adding the constraint.
 
-No other schema changes — existing tables sufficient.
+2. **Replace `next_job_id(_user_id)`** to return new format. It will:
+   - Take an extra param `_brand text` (device brand)
+   - Increment user's `job_counter`
+   - Build `J-<BRAND3>-<SEQ4>-<RAND3>` using `gen_random_bytes` + base32-style alphabet
+   - Loop with retry if (extremely unlikely) the random suffix collides with the unique index
+
+3. **Replace `next_sell_id(_user_id)`** the same way, taking `_item_name text`.
+
+4. **Update `track_order(_tracking_id)`** — already matches on `job_id` / `sell_id`, no logic change needed, but it now benefits from the unique index.
+
+5. **Old IDs keep working** — existing `JOB000001` rows are untouched; only *new* jobs/sells get the new format. Track dialog works for both.
 
 ---
 
-## New Secrets
+## Code changes
 
-None required. `LOVABLE_API_KEY` already set.
+| File | Change |
+|---|---|
+| `src/features/jobs/RepairCaseForm.tsx` (or wherever `next_job_id` is called) | Pass `_brand: deviceBrand` when calling the RPC |
+| `src/features/inventory/Sells.tsx` | Pass `_item_name: itemName` when calling `next_sell_id` |
+| `src/features/jobs/components/TrackDialog.tsx` | Update placeholder to `e.g. J-SAM-0042-K9X` |
+| `src/features/jobs/TrackOrder.tsx` | Same placeholder update |
+| `src/integrations/supabase/types.ts` | Auto-regenerated after migration — no manual edit |
+| `src/utils/idGenerator.ts` | Delete — no longer used (server generates the ID) |
+
+No changes needed to WhatsApp templates, invoices, or PaymentLinkModal — they already read `job_id` / `sell_id` as opaque strings.
 
 ---
 
-## Approval
+## Why this is safe
 
-Confirm karein "haan start karo" to main Step 1 (AI Assistant) se shuru karunga. Ya agar koi feature drop/swap karna ho to bata dein.
+- **Backward compatible**: old IDs (`JOB000001`, `SELL000001`) keep working in tracking, invoices, WhatsApp messages, payment links.
+- **Globally unique**: enforced by DB unique index + random suffix → even across 1000s of shops, collision probability per generation is ~1 in 32,768; retry loop handles the edge case.
+- **No data loss**: we only ADD the unique constraint; if existing duplicates are found, we patch them with a random suffix in the same migration.
+- **Self-describing**: support staff can glance at `J-IPH-0042-K9X` and know it's an iPhone repair job without opening the record.
+
+---
+
+## Execution order
+
+1. Run migration (adds unique indexes, rewrites `next_job_id` / `next_sell_id`).
+2. Update `RepairCaseForm.tsx` and `Sells.tsx` to pass brand/item to the RPC.
+3. Update tracking placeholders.
+4. Verify by creating one new job and one new sell — confirm new format appears and old IDs still track correctly.
+
+Ready to implement on approval.
