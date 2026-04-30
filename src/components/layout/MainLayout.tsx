@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { Chatbot } from "@/components/common/Chatbot";
+
 import { WhatsAppButton } from "@/components/common/WhatsAppButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { InstallPWAPrompt } from "@/components/common/InstallPWAPrompt";
