@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { MessageCircle, X, Send, User, Bot, Phone, Mail, Sparkles } from "lucide
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const SUPPORT_WHATSAPP = "7319884599";
 const SUPPORT_EMAIL = "krs715665@gmail.com";
