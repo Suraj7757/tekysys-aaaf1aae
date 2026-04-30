@@ -34,6 +34,7 @@ const secondaryItems = [
   { title: 'Subscription', url: '/subscription', icon: Crown },
   { title: 'Financials', url: '/financials', icon: BarChart3 },
   { title: 'Reports', url: '/reports', icon: FileText },
+  { title: 'Analytics', url: '/analytics', icon: BarChart3 },
   { title: 'Enterprise ERP', url: '/enterprise', icon: Building2 },
   { title: 'Settings', url: '/settings', icon: Settings },
   { title: 'Trash', url: '/trash', icon: Trash2 },

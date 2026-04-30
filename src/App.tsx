@@ -26,6 +26,7 @@ import ServicesManagement from '@/features/services/ServicesManagement';
 import EnterpriseModules from '@/features/enterprise/EnterpriseModules';
 import StaffManagement from '@/features/staff/StaffManagement';
 import Financials from '@/features/dashboard/Financials';
+import Analytics from '@/features/dashboard/Analytics';
 import PrivacyPolicy from '@/features/dashboard/PrivacyPolicy';
 import TermsConditions from '@/features/dashboard/TermsConditions';
 import NotFound from '@/components/common/NotFound';
@@ -74,6 +75,7 @@ function AppRoutes() {
           <Route path="/inventory" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Inventory />}</ProtectedRoute>} />
           <Route path="/sells" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Sells />}</ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Reports />}</ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Analytics />}</ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/trash" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Trash />}</ProtectedRoute>} />
           <Route path="/wallet" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <WalletPage />}</ProtectedRoute>} />
