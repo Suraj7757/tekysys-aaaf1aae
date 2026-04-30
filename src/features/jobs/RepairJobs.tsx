@@ -21,7 +21,7 @@ import { generateInvoicePDF } from "@/lib/invoice";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
-import { formatTrackingId } from "@/utils/idGenerator";
+
 import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
 import { STATUS_TEMPLATES, openWhatsApp } from "@/lib/whatsappTemplates";
 import { useAutomationSettings } from "@/hooks/useAutomation";
