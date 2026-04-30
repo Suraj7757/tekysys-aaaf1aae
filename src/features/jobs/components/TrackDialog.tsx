@@ -58,7 +58,7 @@ export default function TrackDialog({ open, onOpenChange, initialId = '' }: Trac
             <Input 
               value={trackId} 
               onChange={e => setTrackId(e.target.value)} 
-              placeholder="e.g. MS-123456" 
+              placeholder="e.g. J-SAM-0042-K9X" 
               className="bg-white/10 border-white/20 text-white placeholder:text-white/40 h-12 rounded-xl focus:ring-2 focus:ring-white/30"
               onKeyDown={e => e.key === 'Enter' && handleTrack()}
             />
