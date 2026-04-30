@@ -103,6 +103,7 @@ export default function Customers() {
                   <th className="text-left p-3 font-semibold">Mobile</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Email</th>
                   <th className="text-left p-3 font-semibold">Jobs</th>
+                  <th className="text-left p-3 font-semibold">Points</th>
                   <th className="text-left p-3 font-semibold hidden md:table-cell">Since</th>
                   <th className="text-left p-3 font-semibold">Action</th>
                 </tr>
@@ -114,8 +115,12 @@ export default function Customers() {
                     <td className="p-3">{c.mobile}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{c.email || '—'}</td>
                     <td className="p-3">{jobs.filter((j: any) => j.customer_id === c.id).length}</td>
+                    <td className="p-3"><span className="font-bold text-primary">{c.points || 0}</span></td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
                     <td className="p-3">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-amber-600" title="Redeem points" onClick={() => redeemPoints(c)}>
+                        <Gift className="h-4 w-4" />
+                      </Button>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEdit(c)}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                       </Button>
@@ -126,7 +131,7 @@ export default function Customers() {
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No customers found'}</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">{loading ? 'Loading...' : 'No customers found'}</td></tr>
                 )}
               </tbody>
             </table>
