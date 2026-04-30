@@ -175,7 +175,7 @@ export default function TrackOrder({ isModal = false }: { isModal?: boolean }) {
         {/* Search Bar */}
         <div className="flex gap-2 bg-white dark:bg-slate-900 rounded-2xl p-2 shadow-lg border">
           <Input
-            placeholder="e.g. TRK-JOB-0001"
+            placeholder="e.g. J-SAM-0042-K9X"
             value={trackingId}
             onChange={e => setTrackingId(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleTrack()}

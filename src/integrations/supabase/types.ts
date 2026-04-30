@@ -899,6 +899,21 @@ export type Database = {
     Functions: {
       _tracking_code: { Args: { _text: string }; Returns: string }
       _tracking_suffix: { Args: never; Returns: string }
+      create_repair_job: {
+        Args: {
+          p_customer_mobile: string
+          p_customer_name: string
+          p_device_brand: string
+          p_device_details?: Json
+          p_device_model: string
+          p_estimated_cost: number
+          p_problem_description: string
+          p_service_category?: string
+          p_technician_name: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

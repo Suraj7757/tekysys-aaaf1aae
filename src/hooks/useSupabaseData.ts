@@ -128,8 +128,8 @@ export function useShopSettings() {
   return { settings, loading, saveSettings, refetch: fetchSettings };
 }
 
-export async function getNextJobId(userId: string): Promise<string> {
-  const { data, error } = await supabase.rpc('next_job_id', { _user_id: userId });
+export async function getNextJobId(userId: string, brand: string = 'GEN'): Promise<string> {
+  const { data, error } = await supabase.rpc('next_job_id', { _user_id: userId, _brand: brand });
   if (error) throw error;
   return data as string;
 }
