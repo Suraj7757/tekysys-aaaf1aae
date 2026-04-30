@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -7,11 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { CalendarCheck, Copy, ExternalLink, Check, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { CalendarCheck, Copy, ExternalLink, Check, X, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BookingsAdmin() {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [convertBooking, setConvertBooking] = useState<any>(null);
+  const [convertForm, setConvertForm] = useState({ technician_name: '', estimated_cost: '' });
   const [slug, setSlug] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -109,18 +115,62 @@ export default function BookingsAdmin() {
                     </div>
                     <p className="text-sm">{b.problem_description}</p>
                     <p className="text-xs text-muted-foreground">Submitted {new Date(b.created_at).toLocaleString()}</p>
-                    {b.status === 'pending' && (
-                      <div className="flex gap-2 pt-1">
-                        <Button size="sm" onClick={() => updateStatus(b.id, 'accepted')}><Check className="h-3 w-3 mr-1" /> Accept</Button>
-                        <Button size="sm" variant="outline" onClick={() => updateStatus(b.id, 'rejected')}><X className="h-3 w-3 mr-1" /> Reject</Button>
-                      </div>
-                    )}
+                    <div className="flex gap-2 pt-1 flex-wrap">
+                      {b.status === 'pending' && (
+                        <>
+                          <Button size="sm" onClick={() => updateStatus(b.id, 'accepted')}><Check className="h-3 w-3 mr-1" /> Accept</Button>
+                          <Button size="sm" variant="outline" onClick={() => updateStatus(b.id, 'rejected')}><X className="h-3 w-3 mr-1" /> Reject</Button>
+                        </>
+                      )}
+                      {(b.status === 'pending' || b.status === 'accepted') && (
+                        <Button size="sm" variant="default" className="bg-primary" onClick={() => { setConvertBooking(b); setConvertForm({ technician_name: '', estimated_cost: '' }); setConvertOpen(true); }}>
+                          <Wrench className="h-3 w-3 mr-1" /> Convert to Job
+                        </Button>
+                      )}
+                      {b.status === 'converted' && b.converted_job_id && (
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/jobs?search=${b.converted_job_id}`)}>
+                          View Job: {b.converted_job_id}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Convert to Repair Job</DialogTitle></DialogHeader>
+            {convertBooking && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-muted/50 text-sm">
+                  <p><b>{convertBooking.customer_name}</b> · {convertBooking.customer_mobile}</p>
+                  <p className="text-muted-foreground">{convertBooking.device_brand} {convertBooking.device_model}</p>
+                  <p className="mt-1">{convertBooking.problem_description}</p>
+                </div>
+                <div><Label>Assign Technician (optional)</Label><Input value={convertForm.technician_name} onChange={e => setConvertForm({ ...convertForm, technician_name: e.target.value })} placeholder="Technician name" /></div>
+                <div><Label>Estimated Cost (₹)</Label><Input type="number" value={convertForm.estimated_cost} onChange={e => setConvertForm({ ...convertForm, estimated_cost: e.target.value })} placeholder="0" /></div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConvertOpen(false)}>Cancel</Button>
+              <Button onClick={async () => {
+                if (!convertBooking) return;
+                const { data, error } = await (supabase as any).rpc('convert_booking_to_job', {
+                  _booking_id: convertBooking.id,
+                  _technician_name: convertForm.technician_name || null,
+                  _estimated_cost: Number(convertForm.estimated_cost) || 0,
+                });
+                if (error) { toast.error(error.message); return; }
+                toast.success(`Job created: ${data}`);
+                setConvertOpen(false);
+                load();
+              }}>Create Job</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
