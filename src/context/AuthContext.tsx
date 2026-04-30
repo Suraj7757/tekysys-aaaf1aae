@@ -3,17 +3,19 @@ import { supabase } from '@/services/supabase';
 import { lovable } from '@/integrations/lovable';
 import type { User, Session } from '@supabase/supabase-js';
 
-type AppRole = 'admin' | 'staff';
+type AppRole = 'admin' | 'staff' | 'customer' | 'shopkeeper' | 'wholesaler';
+type AccountType = 'shopkeeper' | 'wholesaler' | 'customer';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  accountType: AccountType | null;
   isBanned: boolean;
   isMaintenance: boolean;
   isPlanExpired: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string, mobile: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, displayName: string, mobile: string, accountType?: AccountType) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [isBanned, setIsBanned] = useState(false);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isPlanExpired, setIsPlanExpired] = useState(false);
