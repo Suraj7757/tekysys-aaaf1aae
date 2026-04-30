@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2, Gift } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Customers() {
