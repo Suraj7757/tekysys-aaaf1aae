@@ -79,7 +79,10 @@ export function Chatbot() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({
+          messages: history,
+          context: { isAuthed: !!user, route: location.pathname },
+        }),
         signal: abortRef.current.signal,
       });
 
