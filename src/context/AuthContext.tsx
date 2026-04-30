@@ -38,9 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchRole = useCallback(async (userId: string, email?: string) => {
     const [rolesRes, profileRes, configRes] = await Promise.all([
       supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
-      supabase.from('profiles').select('is_banned, plan_expires_at').eq('user_id', userId).maybeSingle() as any,
+      supabase.from('profiles').select('is_banned, plan_expires_at, account_type').eq('user_id', userId).maybeSingle() as any,
       supabase.from('system_config').select('value').eq('id', 'maintenance').maybeSingle() as any
     ]);
+    setAccountType((profileRes.data?.account_type as AccountType) || 'shopkeeper');
     
     const isMaint = configRes.data?.value?.enabled === true;
     setIsMaintenance(isMaint);
@@ -95,12 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchRole]);
 
-  const signUp = async (email: string, password: string, displayName: string, mobile: string) => {
+  const signUp = async (email: string, password: string, displayName: string, mobile: string, accountType: AccountType = 'shopkeeper') => {
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth`,
-        data: { display_name: displayName, mobile }
+        data: { display_name: displayName, mobile, account_type: accountType }
       }
     });
 
