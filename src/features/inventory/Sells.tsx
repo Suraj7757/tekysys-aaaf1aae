@@ -17,13 +17,12 @@ import { downloadSellInvoice, SellInvoiceData } from '@/lib/invoice';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
-import { formatTrackingId } from '@/utils/idGenerator';
 import { QRCodeSVG } from 'qrcode.react';
 import TrackDialog from '../jobs/components/TrackDialog';
 import { Copy } from 'lucide-react';
 
-async function getNextSellId(userId: string): Promise<string> {
-  const { data, error } = await supabase.rpc('next_sell_id', { _user_id: userId });
+async function getNextSellId(userId: string, itemName: string): Promise<string> {
+  const { data, error } = await supabase.rpc('next_sell_id', { _user_id: userId, _item_name: itemName });
   if (error) throw error;
   return data as string;
 }
