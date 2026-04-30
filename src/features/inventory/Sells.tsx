@@ -82,8 +82,7 @@ export default function Sells() {
     
     setIsSubmitting(true);
     try {
-      const rawSellId = await getNextSellId(user.id);
-      const sellId = formatTrackingId(user, 'sell', rawSellId);
+      const sellId = await getNextSellId(user.id, selectedItem.name);
       const total = qty * (parseFloat(sellPrice) || 0);
       const newQty = selectedItem.quantity - qty;
 
