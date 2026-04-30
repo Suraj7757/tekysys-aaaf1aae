@@ -428,6 +428,7 @@ export default function Landing() {
       {/* Track Order Modal */}
       <Dialog open={showTrackModal} onOpenChange={setShowTrackModal}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 border-0 bg-transparent shadow-none">
+          <DialogTitle className="sr-only">Track Your Order</DialogTitle>
           <div className="bg-background rounded-3xl overflow-hidden">
             <TrackOrder isModal />
           </div>

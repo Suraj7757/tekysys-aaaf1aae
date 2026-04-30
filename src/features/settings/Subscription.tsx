@@ -93,8 +93,8 @@ export default function Subscription() {
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from('payment-screenshots').upload(path, screenshot);
       if (uploadErr) { toast.error('Failed to upload screenshot'); setSubmitting(false); return; }
-      const { data: urlData } = supabase.storage.from('payment-screenshots').getPublicUrl(path);
-      screenshotUrl = urlData.publicUrl;
+      // Store the storage object path; UI generates short-lived signed URLs on demand
+      screenshotUrl = path;
     }
 
     const plansList = getPlans(billingCycle);

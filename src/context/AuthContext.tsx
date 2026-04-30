@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { supabase } from '@/services/supabase';
+import { lovable } from '@/integrations/lovable';
 import type { User, Session } from '@supabase/supabase-js';
 
 type AppRole = 'admin' | 'staff';
@@ -136,14 +137,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { 
-        redirectTo: `${window.location.origin}/auth`,
-        queryParams: { prompt: 'select_account' }
-      }
+    const result = await lovable.auth.signInWithOAuth('google', {
+      redirect_uri: `${window.location.origin}/auth`,
+      extraParams: { prompt: 'select_account' },
     });
-    return { error: error?.message || null };
+    if (result.error) {
+      const msg = result.error instanceof Error ? result.error.message : String(result.error);
+      return { error: msg };
+    }
+    return { error: null };
   };
 
   const signOut = async () => {
