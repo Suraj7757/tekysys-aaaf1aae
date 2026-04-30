@@ -5,7 +5,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Wrench, IndianRupee, ArrowLeftRight, Package, ShoppingCart,
-  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown, ConciergeBell, Building2, PlusCircle, X, BarChart3
+  FileText, Settings, Trash2, Smartphone, MessageCircle, Wallet, Shield, Crown, ConciergeBell, Building2, PlusCircle, X, BarChart3, Gift, CalendarCheck, TrendingDown
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
@@ -28,8 +28,12 @@ const mainItems = [
 const secondaryItems = [
   { title: 'Services', url: '/services', icon: ConciergeBell },
   { title: 'Inventory', url: '/inventory', icon: Package },
-  { title: 'Staff', url: '/staff', icon: Users },
   { title: 'Sells', url: '/sells', icon: ShoppingCart },
+  { title: 'Bookings', url: '/bookings', icon: CalendarCheck },
+  { title: 'Loyalty', url: '/loyalty', icon: Gift },
+  { title: 'Branches', url: '/branches', icon: Building2 },
+  { title: 'Expenses', url: '/expenses', icon: TrendingDown },
+  { title: 'Staff', url: '/staff', icon: Users },
   { title: 'Wallet', url: '/wallet', icon: Wallet },
   { title: 'Subscription', url: '/subscription', icon: Crown },
   { title: 'Financials', url: '/financials', icon: BarChart3 },
