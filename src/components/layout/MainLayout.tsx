@@ -3,6 +3,9 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { Chatbot } from "@/components/common/Chatbot";
 import { WhatsAppButton } from "@/components/common/WhatsAppButton";
+import { MobileBottomNav } from "./MobileBottomNav";
+import { InstallPWAPrompt } from "@/components/common/InstallPWAPrompt";
+import { OfflineBanner } from "@/components/common/OfflineBanner";
 
 
 interface LayoutProps {
@@ -13,6 +16,7 @@ interface LayoutProps {
 export function MainLayout({ children, title }: LayoutProps) {
   return (
     <SidebarProvider>
+      <OfflineBanner />
       <div className="h-screen flex w-full bg-background/95 overflow-hidden">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
@@ -30,13 +34,14 @@ export function MainLayout({ children, title }: LayoutProps) {
             </div>
             <Header />
           </header>
-          <main className="flex-1 p-6 lg:p-8 animate-fade-in overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
+          <main className="flex-1 p-6 lg:p-8 pb-24 md:pb-8 animate-fade-in overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
             {children}
           </main>
           <Chatbot />
           <WhatsAppButton />
+          <InstallPWAPrompt />
+          <MobileBottomNav />
         </div>
-
       </div>
     </SidebarProvider>
   );

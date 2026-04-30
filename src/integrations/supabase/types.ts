@@ -124,6 +124,42 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_settings: {
+        Row: {
+          auto_whatsapp_status: boolean
+          created_at: string
+          daily_digest_enabled: boolean
+          id: string
+          low_stock_alerts: boolean
+          payment_reminders: boolean
+          pending_threshold_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_whatsapp_status?: boolean
+          created_at?: string
+          daily_digest_enabled?: boolean
+          id?: string
+          low_stock_alerts?: boolean
+          payment_reminders?: boolean
+          pending_threshold_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_whatsapp_status?: boolean
+          created_at?: string
+          daily_digest_enabled?: boolean
+          id?: string
+          low_stock_alerts?: boolean
+          payment_reminders?: boolean
+          pending_threshold_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null

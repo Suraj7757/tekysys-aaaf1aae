@@ -23,6 +23,8 @@ import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
 import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
+import { STATUS_TEMPLATES, openWhatsApp } from "@/lib/whatsappTemplates";
+import { useAutomationSettings } from "@/hooks/useAutomation";
 import { QRCodeSVG } from 'qrcode.react';
 import RepairCaseForm from "./RepairCaseForm";
 import PaymentLinkModal from "../payments/PaymentLinkModal";
@@ -75,6 +77,7 @@ export default function RepairJobs() {
   const { data: payments, refetch: refetchPayments } = useSupabaseQuery<any>('payments');
   const { softDelete } = useSoftDelete();
   const { settings } = useShopSettings();
+  const { settings: autoSettings } = useAutomationSettings();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
@@ -275,6 +278,18 @@ export default function RepairJobs() {
     } else {
       await supabase.from('repair_jobs').update({ status: newStatus as any }).eq('id', job.id);
       toast.success(`Job ${job.job_id} → ${newStatus}`);
+    }
+    // Auto WhatsApp notify on status change
+    if (autoSettings?.auto_whatsapp_status && STATUS_TEMPLATES[newStatus] && job.customer_mobile) {
+      const text = STATUS_TEMPLATES[newStatus]({
+        customerName: job.customer_name,
+        jobId: job.job_id,
+        deviceBrand: job.device_brand,
+        deviceModel: job.device_model || "",
+        estimatedCost: Number(job.estimated_cost),
+        shopName: settings?.shop_name || "RepairXpert",
+      });
+      setTimeout(() => openWhatsApp(job.customer_mobile, text), 300);
     }
     refetch();
   };

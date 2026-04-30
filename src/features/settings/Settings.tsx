@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useShopSettings } from '@/hooks/useSupabaseData';
 import { supabase } from '@/services/supabase';
 import { Save, Store, Percent, QrCode, Lock, User, Palette, Sun, Moon, Mail, Copy } from 'lucide-react';
+import { AutomationSettingsCard } from './AutomationSettingsCard';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
@@ -293,6 +294,8 @@ export default function Settings() {
             <Button variant="outline" size="sm" onClick={addQr}>+ Add QR Receiver</Button>
           </CardContent>
         </Card>
+
+        <AutomationSettingsCard />
 
         <Button className="w-full" onClick={handleSaveShop}>
           <Save className="h-4 w-4 mr-1" /> Save All Settings

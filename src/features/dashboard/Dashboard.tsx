@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { AutomationBanner } from "@/components/common/AutomationBanner";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ export default function Dashboard() {
   return (
     <MainLayout title="Dashboard">
       <div className="space-y-6 animate-fade-in">
+        <AutomationBanner />
         <Card className="gradient-primary border-0 shadow-2xl shadow-primary/30 overflow-hidden relative group">
           <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           <CardContent className="py-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">

@@ -70,16 +70,12 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
         payment_id: payment.id || null,
         user_id: user.id,
         customer_name: payment.customer_name || '',
-        customer_mobile: payment.customer_mobile || '',
+        customer_phone: (payment as any).customer_mobile || '',
         original_amount: payment.amount,
         refund_amount: finalAmount,
-        refund_reason: reason,
-        refund_notes: notes,
         refund_method: method,
-        upi_or_account: upiOrAccount || null,
-        status: 'processed',
         processed_at: new Date().toISOString(),
-      });
+      } as any);
 
       if (error) throw error;
 
