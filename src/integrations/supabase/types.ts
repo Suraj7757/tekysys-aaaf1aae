@@ -160,6 +160,96 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_requests: {
+        Row: {
+          branch_id: string | null
+          converted_job_id: string | null
+          created_at: string
+          customer_email: string | null
+          customer_mobile: string
+          customer_name: string
+          device_brand: string
+          device_model: string | null
+          id: string
+          notes: string | null
+          preferred_date: string | null
+          problem_description: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          branch_id?: string | null
+          converted_job_id?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_mobile: string
+          customer_name: string
+          device_brand: string
+          device_model?: string | null
+          id?: string
+          notes?: string | null
+          preferred_date?: string | null
+          problem_description: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          branch_id?: string | null
+          converted_job_id?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_mobile?: string
+          customer_name?: string
+          device_brand?: string
+          device_model?: string | null
+          id?: string
+          notes?: string | null
+          preferred_date?: string | null
+          problem_description?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      branches: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          id: string
+          is_primary: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -170,6 +260,7 @@ export type Database = {
           id: string
           mobile: string
           name: string
+          points: number
           updated_at: string
           user_id: string
         }
@@ -182,6 +273,7 @@ export type Database = {
           id?: string
           mobile: string
           name: string
+          points?: number
           updated_at?: string
           user_id: string
         }
@@ -194,6 +286,52 @@ export type Database = {
           id?: string
           mobile?: string
           name?: string
+          points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          branch_id: string | null
+          category: string
+          created_at: string
+          deleted: boolean
+          deleted_at: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          payment_method: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          branch_id?: string | null
+          category?: string
+          created_at?: string
+          deleted?: boolean
+          deleted_at?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          payment_method?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string | null
+          category?: string
+          created_at?: string
+          deleted?: boolean
+          deleted_at?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          payment_method?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -201,6 +339,7 @@ export type Database = {
       }
       inventory: {
         Row: {
+          branch_id: string | null
           category: string | null
           cost_price: number
           created_at: string
@@ -217,6 +356,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          branch_id?: string | null
           category?: string | null
           cost_price?: number
           created_at?: string
@@ -233,6 +373,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          branch_id?: string | null
           category?: string | null
           cost_price?: number
           created_at?: string
@@ -264,6 +405,78 @@ export type Database = {
         Update: {
           counter?: number
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          min_redeem_points: number
+          points_per_rupee: number
+          rupee_per_point: number
+          signup_bonus: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          min_redeem_points?: number
+          points_per_rupee?: number
+          rupee_per_point?: number
+          signup_bonus?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          min_redeem_points?: number
+          points_per_rupee?: number
+          rupee_per_point?: number
+          signup_bonus?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_transactions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          note: string | null
+          points: number
+          reference_id: string | null
+          reference_type: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          note?: string | null
+          points: number
+          reference_id?: string | null
+          reference_type?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          note?: string | null
+          points?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          type?: string
           user_id?: string
         }
         Relationships: []
@@ -341,6 +554,7 @@ export type Database = {
         Row: {
           admin_share: number
           amount: number
+          branch_id: string | null
           created_at: string
           deleted: boolean
           deleted_at: string | null
@@ -357,6 +571,7 @@ export type Database = {
         Insert: {
           admin_share?: number
           amount?: number
+          branch_id?: string | null
           created_at?: string
           deleted?: boolean
           deleted_at?: string | null
@@ -373,6 +588,7 @@ export type Database = {
         Update: {
           admin_share?: number
           amount?: number
+          branch_id?: string | null
           created_at?: string
           deleted?: boolean
           deleted_at?: string | null
@@ -503,6 +719,7 @@ export type Database = {
       }
       repair_jobs: {
         Row: {
+          branch_id: string | null
           created_at: string
           customer_id: string | null
           customer_mobile: string
@@ -522,6 +739,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string
           customer_id?: string | null
           customer_mobile: string
@@ -541,6 +759,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          branch_id?: string | null
           created_at?: string
           customer_id?: string | null
           customer_mobile?: string
@@ -589,6 +808,7 @@ export type Database = {
       }
       sells: {
         Row: {
+          branch_id: string | null
           created_at: string
           customer_mobile: string
           customer_name: string
@@ -607,6 +827,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string
           customer_mobile?: string
           customer_name?: string
@@ -625,6 +846,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          branch_id?: string | null
           created_at?: string
           customer_mobile?: string
           customer_name?: string
@@ -704,6 +926,8 @@ export type Database = {
         Row: {
           address: string
           admin_share_percent: number
+          booking_enabled: boolean
+          booking_slug: string | null
           created_at: string
           gstin: string
           id: string
@@ -719,6 +943,8 @@ export type Database = {
         Insert: {
           address?: string
           admin_share_percent?: number
+          booking_enabled?: boolean
+          booking_slug?: string | null
           created_at?: string
           gstin?: string
           id?: string
@@ -734,6 +960,8 @@ export type Database = {
         Update: {
           address?: string
           admin_share_percent?: number
+          booking_enabled?: boolean
+          booking_slug?: string | null
           created_at?: string
           gstin?: string
           id?: string
@@ -914,6 +1142,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
