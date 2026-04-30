@@ -1127,6 +1127,14 @@ export type Database = {
     Functions: {
       _tracking_code: { Args: { _text: string }; Returns: string }
       _tracking_suffix: { Args: never; Returns: string }
+      convert_booking_to_job: {
+        Args: {
+          _booking_id: string
+          _estimated_cost?: number
+          _technician_name?: string
+        }
+        Returns: string
+      }
       create_repair_job: {
         Args: {
           p_customer_mobile: string
@@ -1158,6 +1166,10 @@ export type Database = {
       next_sell_id: {
         Args: { _item_name?: string; _user_id: string }
         Returns: string
+      }
+      redeem_loyalty_points: {
+        Args: { _customer_id: string; _points: number }
+        Returns: Json
       }
       track_order: { Args: { _tracking_id: string }; Returns: Json }
     }
