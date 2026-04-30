@@ -23,6 +23,8 @@ import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
 import { formatTrackingId } from "@/utils/idGenerator";
 import { usePlanRestrictions } from "@/hooks/usePlanRestrictions";
+import { STATUS_TEMPLATES, openWhatsApp } from "@/lib/whatsappTemplates";
+import { useAutomationSettings } from "@/hooks/useAutomation";
 import { QRCodeSVG } from 'qrcode.react';
 import RepairCaseForm from "./RepairCaseForm";
 import PaymentLinkModal from "../payments/PaymentLinkModal";
