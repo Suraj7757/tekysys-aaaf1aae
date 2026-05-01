@@ -994,6 +994,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          customer_mobile: string | null
+          customer_name: string
+          id: string
+          job_id: string | null
+          rating: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          customer_mobile?: string | null
+          customer_name: string
+          id?: string
+          job_id?: string | null
+          rating: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          customer_mobile?: string | null
+          customer_name?: string
+          id?: string
+          job_id?: string | null
+          rating?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shop_settings: {
         Row: {
           address: string
@@ -1162,6 +1198,51 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_config: {
+        Row: {
+          access_token: string
+          business_account_id: string | null
+          created_at: string
+          enabled: boolean
+          id: string
+          phone_number_id: string
+          template_delivered: string | null
+          template_in_progress: string | null
+          template_ready: string | null
+          template_received: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string
+          business_account_id?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          phone_number_id?: string
+          template_delivered?: string | null
+          template_in_progress?: string | null
+          template_ready?: string | null
+          template_received?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          business_account_id?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          phone_number_id?: string
+          template_delivered?: string | null
+          template_in_progress?: string | null
+          template_ready?: string | null
+          template_received?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wholesale_catalog: {
         Row: {
           active: boolean
@@ -1295,6 +1376,7 @@ export type Database = {
         Returns: string
       }
       get_shop_by_slug: { Args: { _slug: string }; Returns: Json }
+      get_shop_rating_summary: { Args: { _user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

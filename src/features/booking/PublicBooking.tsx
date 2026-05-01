@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Wrench, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ShopReviews } from './ShopReviews';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 
 export default function PublicBooking() {
   const { slug } = useParams<{ slug: string }>();
@@ -99,7 +101,14 @@ export default function PublicBooking() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">Powered by RepairXpert</p>
+        <div className="mt-6">
+          <ShopReviews shopUserId={shop.user_id} />
+        </div>
+
+        <div className="flex items-center justify-center gap-3 mt-6">
+          <LanguageSwitcher />
+        </div>
+        <p className="text-center text-xs text-muted-foreground mt-3">Powered by RepairXpert</p>
       </div>
     </div>
   );

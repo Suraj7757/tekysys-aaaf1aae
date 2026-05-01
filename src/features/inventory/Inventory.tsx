@@ -11,8 +11,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { Plus, Search, AlertTriangle, Trash2, Package, Headphones, Settings as SettingsIcon, Pencil, Info } from "lucide-react";
+import { Plus, Search, AlertTriangle, Trash2, Package, Headphones, Settings as SettingsIcon, Pencil, Info, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 
 export default function Inventory() {
   const { user } = useAuth();
@@ -24,6 +25,21 @@ export default function Inventory() {
   const [form, setForm] = useState({ name: '', sku: '', category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' });
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+
+  const handleScanned = (code: string) => {
+    setSearch(code);
+    const found = items.find((i: any) => i.sku?.toLowerCase() === code.toLowerCase());
+    if (found) {
+      toast.success(`Found: ${found.name}`);
+      openEdit(found);
+    } else {
+      toast.info('No item with this SKU. Add as new?');
+      setEditingItem(null);
+      setForm({ name: '', sku: code, category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' });
+      setOpen(true);
+    }
+  };
 
   const filtered = useMemo(() => {
     return items.filter((i: any) => {
@@ -102,11 +118,16 @@ export default function Inventory() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search name or SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-11 rounded-xl border-2 focus-visible:ring-primary/20" />
             </div>
+            <Button variant="outline" onClick={() => setScanOpen(true)} className="h-11 px-4 rounded-xl gap-2">
+              <ScanLine className="h-4 w-4" /> Scan
+            </Button>
             <Button onClick={() => { setEditingItem(null); setForm({ name: '', sku: '', category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' }); setOpen(true); }} className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20">
               <Plus className="h-5 w-5 mr-1" /> Add Stock
             </Button>
           </div>
         </div>
+
+        <BarcodeScanner open={scanOpen} onClose={() => setScanOpen(false)} onScan={handleScanned} />
 
         {/* Category Tabs */}
         <Tabs value={categoryTab} onValueChange={setCategoryTab} className="w-full">
