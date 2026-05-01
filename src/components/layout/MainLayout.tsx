@@ -1,12 +1,12 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { motion } from "framer-motion";
 
 import { WhatsAppButton } from "@/components/common/WhatsAppButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { InstallPWAPrompt } from "@/components/common/InstallPWAPrompt";
 import { OfflineBanner } from "@/components/common/OfflineBanner";
-
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,8 +34,15 @@ export function MainLayout({ children, title }: LayoutProps) {
             </div>
             <Header />
           </header>
-          <main className="flex-1 p-6 lg:p-8 pb-24 md:pb-8 animate-fade-in overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
-            {children}
+          <main className="flex-1 p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              {children}
+            </motion.div>
           </main>
           {/* Chatbot mounted globally in App.tsx */}
           <WhatsAppButton />

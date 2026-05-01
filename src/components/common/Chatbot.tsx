@@ -1,9 +1,24 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X, Send, User, Bot, Phone, Mail, Sparkles } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  User,
+  Bot,
+  Phone,
+  Mail,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -46,7 +61,11 @@ export function Chatbot() {
     const text = input.trim();
     if (!text || isStreaming) return;
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
+    const userMsg: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: text,
+    };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsStreaming(true);
@@ -65,9 +84,14 @@ export function Chatbot() {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.id === assistantId) {
-          return prev.map((m) => (m.id === assistantId ? { ...m, content: assistantText } : m));
+          return prev.map((m) =>
+            m.id === assistantId ? { ...m, content: assistantText } : m,
+          );
         }
-        return [...prev, { id: assistantId, role: "assistant", content: assistantText }];
+        return [
+          ...prev,
+          { id: assistantId, role: "assistant", content: assistantText },
+        ];
       });
     };
 
@@ -151,7 +175,9 @@ export function Chatbot() {
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-white">RepairXpert AI</CardTitle>
+                <CardTitle className="text-sm font-bold text-white">
+                  RepairXpert AI
+                </CardTitle>
                 <div className="flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
                   <span className="text-[10px] text-white/70 font-medium">
@@ -160,36 +186,54 @@ export function Chatbot() {
                 </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10" onClick={() => setIsOpen(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white hover:bg-white/10"
+              onClick={() => setIsOpen(false)}
+            >
               <X className="h-4 w-4" />
             </Button>
           </CardHeader>
-          <CardContent className="p-4 h-80 overflow-y-auto flex flex-col gap-3 bg-slate-50" ref={scrollRef}>
+          <CardContent
+            className="p-4 h-80 overflow-y-auto flex flex-col gap-3 bg-slate-50"
+            ref={scrollRef}
+          >
             {messages.map((m) => (
               <div
                 key={m.id}
                 className={cn(
                   "flex items-start gap-2 max-w-[85%]",
-                  m.role === "user" ? "ml-auto flex-row-reverse" : ""
+                  m.role === "user" ? "ml-auto flex-row-reverse" : "",
                 )}
               >
                 <div
                   className={cn(
                     "h-6 w-6 rounded-full flex items-center justify-center shrink-0 mt-1",
-                    m.role === "assistant" ? "bg-primary/10 text-primary" : "bg-primary text-primary-foreground"
+                    m.role === "assistant"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-primary text-primary-foreground",
                   )}
                 >
-                  {m.role === "assistant" ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                  {m.role === "assistant" ? (
+                    <Bot className="h-3.5 w-3.5" />
+                  ) : (
+                    <User className="h-3.5 w-3.5" />
+                  )}
                 </div>
                 <div
                   className={cn(
                     "p-3 rounded-2xl text-[13px] shadow-sm leading-relaxed",
                     m.role === "assistant"
                       ? "bg-white text-slate-700 rounded-tl-none border border-slate-100 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-slate-900"
-                      : "bg-primary text-primary-foreground rounded-tr-none"
+                      : "bg-primary text-primary-foreground rounded-tr-none",
                   )}
                 >
-                  {m.role === "assistant" ? <ReactMarkdown>{m.content || "…"}</ReactMarkdown> : m.content}
+                  {m.role === "assistant" ? (
+                    <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))}
@@ -223,16 +267,29 @@ export function Chatbot() {
                 disabled={isStreaming}
                 className="flex-1 h-10 bg-slate-50 border-slate-200 focus-visible:ring-primary/20 text-[13px]"
               />
-              <Button type="submit" size="icon" disabled={isStreaming || !input.trim()} className="h-10 w-10 shrink-0 rounded-full shadow-sm">
+              <Button
+                type="submit"
+                size="icon"
+                disabled={isStreaming || !input.trim()}
+                className="h-10 w-10 shrink-0 rounded-full shadow-sm"
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
           </CardFooter>
           <div className="px-4 py-2 bg-slate-50 border-t flex justify-center gap-4">
-            <a href={`https://wa.me/91${SUPPORT_WHATSAPP}`} target="_blank" rel="noreferrer" className="text-[11px] font-medium text-slate-500 hover:text-green-600 flex items-center gap-1.5 transition-colors">
+            <a
+              href={`https://wa.me/91${SUPPORT_WHATSAPP}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] font-medium text-slate-500 hover:text-green-600 flex items-center gap-1.5 transition-colors"
+            >
               <Phone className="h-3 w-3" /> WhatsApp
             </a>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[11px] font-medium text-slate-500 hover:text-primary flex items-center gap-1.5 transition-colors">
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className="text-[11px] font-medium text-slate-500 hover:text-primary flex items-center gap-1.5 transition-colors"
+            >
               <Mail className="h-3 w-3" /> Email
             </a>
           </div>
@@ -242,11 +299,17 @@ export function Chatbot() {
         size="icon"
         className={cn(
           "h-14 w-14 rounded-full shadow-2xl transition-all duration-300 hover:scale-110",
-          isOpen ? "rotate-90 bg-destructive hover:bg-destructive" : "gradient-primary"
+          isOpen
+            ? "rotate-90 bg-destructive hover:bg-destructive"
+            : "gradient-primary",
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {isOpen ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <MessageCircle className="h-6 w-6" />
+        )}
       </Button>
     </div>
   );

@@ -46,7 +46,10 @@ export function useAutomationSettings() {
     const { error } = await (supabase as any)
       .from("automation_settings")
       .upsert(merged, { onConflict: "user_id" });
-    if (error) { toast.error("Save failed"); return false; }
+    if (error) {
+      toast.error("Save failed");
+      return false;
+    }
     setSettings(merged);
     return true;
   };
@@ -54,8 +57,19 @@ export function useAutomationSettings() {
   return { settings, loading, save };
 }
 
-interface Job { id: string; job_id: string; status: string; updated_at: string; customer_name: string; }
-interface Inv { id: string; name: string; quantity: number; min_stock: number; }
+interface Job {
+  id: string;
+  job_id: string;
+  status: string;
+  updated_at: string;
+  customer_name: string;
+}
+interface Inv {
+  id: string;
+  name: string;
+  quantity: number;
+  min_stock: number;
+}
 
 export function useAutomationAlerts() {
   const { settings } = useAutomationSettings();
@@ -65,13 +79,19 @@ export function useAutomationAlerts() {
   const pendingJobs = useMemo(() => {
     const cutoff = Date.now() - settings.pending_threshold_days * 86400000;
     return jobs.filter(
-      (j) => j.status !== "Delivered" && j.status !== "Ready" && new Date(j.updated_at).getTime() < cutoff
+      (j) =>
+        j.status !== "Delivered" &&
+        j.status !== "Ready" &&
+        new Date(j.updated_at).getTime() < cutoff,
     );
   }, [jobs, settings.pending_threshold_days]);
 
   const lowStockItems = useMemo(
-    () => inventory.filter((i) => settings.low_stock_alerts && i.quantity <= (i.min_stock || 5)),
-    [inventory, settings.low_stock_alerts]
+    () =>
+      inventory.filter(
+        (i) => settings.low_stock_alerts && i.quantity <= (i.min_stock || 5),
+      ),
+    [inventory, settings.low_stock_alerts],
   );
 
   return { pendingJobs, lowStockItems, settings };

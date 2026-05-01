@@ -1,25 +1,68 @@
-import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/services/supabase';
-import { Users, Wallet, Gift, Monitor, Shield, Search, Trash2, CheckCircle, XCircle, Plus, Tag, IndianRupee, Eye, Image, BarChart3, TrendingUp, Smartphone, Settings, Download, Megaphone, AlertTriangle, Ban, RotateCcw, ToggleLeft } from 'lucide-react';
-import AdminRefunds from './AdminRefunds';
-import BroadcastMessage from './BroadcastMessage';
-import { toast } from 'sonner';
-
-const ADMIN_EMAIL = 'krs715665@gmail.com';
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/services/supabase";
+import {
+  Users,
+  Wallet,
+  Gift,
+  Monitor,
+  Shield,
+  Search,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Plus,
+  Tag,
+  IndianRupee,
+  Eye,
+  Image,
+  BarChart3,
+  TrendingUp,
+  Smartphone,
+  Settings,
+  Download,
+  Megaphone,
+  AlertTriangle,
+  Ban,
+  RotateCcw,
+  ToggleLeft,
+} from "lucide-react";
+import AdminRefunds from "./AdminRefunds";
+import BroadcastMessage from "./BroadcastMessage";
+import { toast } from "sonner";
+import { SUPER_ADMIN_EMAIL } from "@/lib/accountType";
 
 export default function AdminPanel() {
-  const { user, role } = useAuth();
+  const { user, role, isSuperAdmin } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [wallets, setWallets] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
@@ -31,59 +74,96 @@ export default function AdminPanel() {
   const [allJobs, setAllJobs] = useState<any[]>([]);
   const [allPayments, setAllPayments] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   // Ad dialog
   const [adOpen, setAdOpen] = useState(false);
-  const [adTitle, setAdTitle] = useState('');
-  const [adDesc, setAdDesc] = useState('');
-  const [adReward, setAdReward] = useState('0.5');
-  const [adLimit, setAdLimit] = useState('10');
-  const [adLink, setAdLink] = useState('');
+  const [adTitle, setAdTitle] = useState("");
+  const [adDesc, setAdDesc] = useState("");
+  const [adReward, setAdReward] = useState("0.5");
+  const [adLimit, setAdLimit] = useState("10");
+  const [adLink, setAdLink] = useState("");
 
   // Promo dialog
   const [promoOpen, setPromoOpen] = useState(false);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoValidity, setPromoValidity] = useState('7');
-  const [promoLimit, setPromoLimit] = useState('1');
-  const [promoExpiry, setPromoExpiry] = useState('');
+  const [promoCode, setPromoCode] = useState("");
+  const [promoValidity, setPromoValidity] = useState("7");
+  const [promoLimit, setPromoLimit] = useState("1");
+  const [promoExpiry, setPromoExpiry] = useState("");
 
   // User edit dialog
   const [editUser, setEditUser] = useState<any>(null);
-  const [editName, setEditName] = useState('');
-  const [editRole, setEditRole] = useState('staff');
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("staff");
 
   // Screenshot preview
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewUrl, setPreviewUrl] = useState("");
 
   // System actions
-  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [broadcastMsg, setBroadcastMsg] = useState("");
   const [maintenance, setMaintenance] = useState(false);
 
   // Edit User details
-  const [editPlan, setEditPlan] = useState('free');
-  const [editPlanExpiry, setEditPlanExpiry] = useState('');
+  const [editPlan, setEditPlan] = useState("free");
+  const [editPlanExpiry, setEditPlanExpiry] = useState("");
 
-  const isAdmin = user?.email === ADMIN_EMAIL || role === 'admin';
+  const isAdmin = role === "admin";
 
-  useEffect(() => { if (isAdmin) fetchAll(); }, [isAdmin]);
+  useEffect(() => {
+    if (isAdmin) fetchAll();
+  }, [isAdmin]);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [profilesRes, walletsRes, withdrawRes, referralsRes, adsRes, subsRes, paySubsRes, promoRes, jobsRes, paymentsRes, configRes, featuresRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }) as any,
-      supabase.from('wallets').select('*') as any,
-      supabase.from('withdraw_requests').select('*').order('created_at', { ascending: false }) as any,
-      supabase.from('referrals').select('*').order('created_at', { ascending: false }) as any,
-      supabase.from('ads').select('*').order('created_at', { ascending: false }) as any,
-      supabase.from('subscriptions').select('*') as any,
-      supabase.from('payment_submissions').select('*').order('created_at', { ascending: false }) as any,
-      supabase.from('promo_codes').select('*').order('created_at', { ascending: false }) as any,
-      supabase.from('repair_jobs').select('*') as any,
-      supabase.from('payments').select('*') as any,
-      supabase.from('system_config').select('*').eq('id', 'maintenance').maybeSingle() as any,
-      supabase.from('features').select('*').order('name') as any,
+    const [
+      profilesRes,
+      walletsRes,
+      withdrawRes,
+      referralsRes,
+      adsRes,
+      subsRes,
+      paySubsRes,
+      promoRes,
+      jobsRes,
+      paymentsRes,
+      configRes,
+      featuresRes,
+    ] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false }) as any,
+      supabase.from("wallets").select("*") as any,
+      supabase
+        .from("withdraw_requests")
+        .select("*")
+        .order("created_at", { ascending: false }) as any,
+      supabase
+        .from("referrals")
+        .select("*")
+        .order("created_at", { ascending: false }) as any,
+      supabase
+        .from("ads")
+        .select("*")
+        .order("created_at", { ascending: false }) as any,
+      supabase.from("subscriptions").select("*") as any,
+      supabase
+        .from("payment_submissions")
+        .select("*")
+        .order("created_at", { ascending: false }) as any,
+      supabase
+        .from("promo_codes")
+        .select("*")
+        .order("created_at", { ascending: false }) as any,
+      supabase.from("repair_jobs").select("*") as any,
+      supabase.from("payments").select("*") as any,
+      supabase
+        .from("system_config")
+        .select("*")
+        .eq("id", "maintenance")
+        .maybeSingle() as any,
+      supabase.from("features").select("*").order("name") as any,
     ]);
     setUsers(profilesRes.data || []);
     setWallets(walletsRes.data || []);
@@ -102,23 +182,39 @@ export default function AdminPanel() {
     setLoading(false);
   };
 
-  const getWallet = (userId: string) => wallets.find(w => w.user_id === userId);
-  const getSub = (userId: string) => subscriptions.find(s => s.user_id === userId);
+  const getWallet = (userId: string) =>
+    wallets.find((w) => w.user_id === userId);
+  const getSub = (userId: string) =>
+    subscriptions.find((s) => s.user_id === userId);
 
   const handleWithdrawal = async (id: string, status: string) => {
-    const { error } = await supabase.from('withdraw_requests').update({ status, processed_at: new Date().toISOString() } as any).eq('id', id);
-    if (error) toast.error('Update failed');
-    else { toast.success(`Withdrawal ${status}`); fetchAll(); }
+    const { error } = await supabase
+      .from("withdraw_requests")
+      .update({ status, processed_at: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) toast.error("Update failed");
+    else {
+      toast.success(`Withdrawal ${status}`);
+      fetchAll();
+    }
   };
 
   const handlePaymentApproval = async (sub: any, status: string) => {
-    await supabase.from('payment_submissions').update({ status, processed_at: new Date().toISOString() } as any).eq('id', sub.id);
-    if (status === 'approved') {
+    await supabase
+      .from("payment_submissions")
+      .update({ status, processed_at: new Date().toISOString() } as any)
+      .eq("id", sub.id);
+    if (status === "approved") {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
-      await supabase.from('subscriptions').update({
-        status: 'active', plan: sub.plan, expires_at: expiresAt.toISOString(),
-      } as any).eq('user_id', sub.user_id);
+      await supabase
+        .from("subscriptions")
+        .update({
+          status: "active",
+          plan: sub.plan,
+          expires_at: expiresAt.toISOString(),
+        } as any)
+        .eq("user_id", sub.user_id);
     }
     toast.success(`Payment ${status}`);
     fetchAll();
@@ -126,108 +222,170 @@ export default function AdminPanel() {
 
   const handleCreateAd = async () => {
     if (!adTitle || !user) return;
-    const { error } = await supabase.from('ads').insert({
-      title: adTitle, description: adDesc, reward_amount: parseFloat(adReward) || 0.5,
-      daily_limit: parseInt(adLimit) || 10, link_url: adLink, created_by: user.id,
+    const { error } = await supabase.from("ads").insert({
+      title: adTitle,
+      description: adDesc,
+      reward_amount: parseFloat(adReward) || 0.5,
+      daily_limit: parseInt(adLimit) || 10,
+      link_url: adLink,
+      created_by: user.id,
     } as any);
-    if (error) toast.error('Failed to create ad');
-    else { toast.success('Ad created'); setAdOpen(false); setAdTitle(''); setAdDesc(''); fetchAll(); }
+    if (error) toast.error("Failed to create ad");
+    else {
+      toast.success("Ad created");
+      setAdOpen(false);
+      setAdTitle("");
+      setAdDesc("");
+      fetchAll();
+    }
   };
 
   const handleCreatePromo = async () => {
     if (!promoCode || !user) return;
-    const { error } = await supabase.from('promo_codes').insert({
-      code: promoCode.toUpperCase(), validity_days: parseInt(promoValidity) || 7,
-      usage_limit: parseInt(promoLimit) || 1, created_by: user.id,
+    const { error } = await supabase.from("promo_codes").insert({
+      code: promoCode.toUpperCase(),
+      validity_days: parseInt(promoValidity) || 7,
+      usage_limit: parseInt(promoLimit) || 1,
+      created_by: user.id,
       expiry_date: promoExpiry ? new Date(promoExpiry).toISOString() : null,
     } as any);
     if (error) toast.error(error.message);
-    else { toast.success('Promo code created'); setPromoOpen(false); setPromoCode(''); fetchAll(); }
+    else {
+      toast.success("Promo code created");
+      setPromoOpen(false);
+      setPromoCode("");
+      fetchAll();
+    }
   };
 
   const toggleAd = async (id: string, active: boolean) => {
-    await supabase.from('ads').update({ active: !active } as any).eq('id', id);
+    await supabase
+      .from("ads")
+      .update({ active: !active } as any)
+      .eq("id", id);
     fetchAll();
   };
 
   const toggleFeature = async (id: string, isEnabled: boolean) => {
-    await supabase.from('features').update({ is_enabled: !isEnabled } as any).eq('id', id);
-    toast.success('Feature toggled successfully');
+    await supabase
+      .from("features")
+      .update({ is_enabled: !isEnabled } as any)
+      .eq("id", id);
+    toast.success("Feature toggled successfully");
     fetchAll();
   };
 
   const deleteAd = async (id: string) => {
-    await supabase.from('ads').delete().eq('id', id);
+    await supabase.from("ads").delete().eq("id", id);
     fetchAll();
   };
 
   const deletePromo = async (id: string) => {
-    await supabase.from('promo_codes').delete().eq('id', id);
-    toast.success('Promo deleted');
+    await supabase.from("promo_codes").delete().eq("id", id);
+    toast.success("Promo deleted");
     fetchAll();
   };
 
   const handleUpdateUser = async () => {
     if (!editUser) return;
-    await supabase.from('profiles').update({ 
-      display_name: editName,
-      plan_type: editPlan,
-      plan_expires_at: editPlanExpiry ? new Date(editPlanExpiry).toISOString() : null
-    } as any).eq('user_id', editUser.user_id);
-    await supabase.from('user_roles').update({ role: editRole } as any).eq('user_id', editUser.user_id);
-    
+    await supabase
+      .from("profiles")
+      .update({
+        display_name: editName,
+        plan_type: editPlan,
+        plan_expires_at: editPlanExpiry
+          ? new Date(editPlanExpiry).toISOString()
+          : null,
+      } as any)
+      .eq("user_id", editUser.user_id);
+    await supabase
+      .from("user_roles")
+      .update({ role: editRole } as any)
+      .eq("user_id", editUser.user_id);
+
     // Also update subscriptions table to keep it backwards compatible
-    await supabase.from('subscriptions').upsert({
+    await supabase.from("subscriptions").upsert({
       user_id: editUser.user_id,
       plan: editPlan,
-      status: editPlanExpiry ? (new Date(editPlanExpiry) > new Date() ? 'active' : 'expired') : 'active',
-      expires_at: editPlanExpiry ? new Date(editPlanExpiry).toISOString() : null
+      status: editPlanExpiry
+        ? new Date(editPlanExpiry) > new Date()
+          ? "active"
+          : "expired"
+        : "active",
+      expires_at: editPlanExpiry
+        ? new Date(editPlanExpiry).toISOString()
+        : null,
     } as any);
 
-    toast.success('User updated');
+    toast.success("User updated");
     setEditUser(null);
     fetchAll();
   };
 
   const toggleUserBan = async (userId: string, currentBanStatus: boolean) => {
     // If RPC doesn't exist, we fallback to updating profiles directly
-    const { error } = await supabase.from('profiles').update({ is_banned: !currentBanStatus } as any).eq('user_id', userId);
-    if (error) toast.error('Failed to update ban status');
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_banned: !currentBanStatus } as any)
+      .eq("user_id", userId);
+    if (error) toast.error("Failed to update ban status");
     else {
-      toast.success(currentBanStatus ? 'User unbanned successfully' : 'User banned successfully');
+      toast.success(
+        currentBanStatus
+          ? "User unbanned successfully"
+          : "User banned successfully",
+      );
       fetchAll();
     }
   };
 
   const [userDetail, setUserDetail] = useState<any>(null);
   const showUserDetail = (u: any) => {
-    const userJobs = allJobs.filter(j => j.user_id === u.user_id);
-    const userPayments = allPayments.filter(p => p.user_id === u.user_id);
-    const totalRevenue = userPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-    const totalProfit = userPayments.reduce((s, p) => s + (Number(p.admin_share) || 0), 0); // Assuming admin share is shop profit
-    
+    const userJobs = allJobs.filter((j) => j.user_id === u.user_id);
+    const userPayments = allPayments.filter((p) => p.user_id === u.user_id);
+    const totalRevenue = userPayments.reduce(
+      (s, p) => s + (Number(p.amount) || 0),
+      0,
+    );
+    const totalProfit = userPayments.reduce(
+      (s, p) => s + (Number(p.admin_share) || 0),
+      0,
+    ); // Assuming admin share is shop profit
+
     setUserDetail({
       ...u,
       jobCount: userJobs.length,
-      sellCount: userPayments.filter(p => !p.repair_job_id).length,
+      sellCount: userPayments.filter((p) => !p.repair_job_id).length,
       totalRevenue,
       totalProfit,
       wallet: getWallet(u.user_id),
-      sub: getSub(u.user_id)
+      sub: getSub(u.user_id),
     });
   };
 
-  const filteredUsers = users.filter(u =>
-    u.display_name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.referral_code?.toLowerCase().includes(search.toLowerCase())
+  const filteredUsers = users.filter(
+    (u) =>
+      u.display_name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.referral_code?.toLowerCase().includes(search.toLowerCase()),
   );
 
   const exportCSV = (data: any[], filename: string) => {
-    if (!data.length) { toast.error('No data to export'); return; }
+    if (!data.length) {
+      toast.error("No data to export");
+      return;
+    }
     const keys = Object.keys(data[0]);
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + keys.join(",") + "\n"
-      + data.map(row => keys.map(k => `"${(row[k] || '').toString().replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      keys.join(",") +
+      "\n" +
+      data
+        .map((row) =>
+          keys
+            .map((k) => `"${(row[k] || "").toString().replace(/"/g, '""')}"`)
+            .join(","),
+        )
+        .join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -240,49 +398,89 @@ export default function AdminPanel() {
 
   const handleBroadcast = () => {
     if (!broadcastMsg) return;
-    toast.success('Global broadcast sent to all users!');
-    setBroadcastMsg('');
+    toast.success("Global broadcast sent to all users!");
+    setBroadcastMsg("");
   };
 
-  if (!isAdmin) {
+  if (!isAdmin && !isSuperAdmin) {
     return (
       <MainLayout title="Admin Panel">
-        <Card className="shadow-card"><CardContent className="p-8 text-center">
-          <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-foreground">Access Denied</h2>
-          <p className="text-muted-foreground mt-2">Only admin users can access this panel.</p>
-        </CardContent></Card>
+        <Card className="shadow-card">
+          <CardContent className="p-8 text-center">
+            <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-foreground">Access Denied</h2>
+            <p className="text-muted-foreground mt-2">
+              Only admin users can access this panel.
+            </p>
+          </CardContent>
+        </Card>
       </MainLayout>
     );
   }
 
-  if (loading) return <MainLayout title="Admin Panel"><p className="text-center p-8 text-muted-foreground">Loading...</p></MainLayout>;
+  if (loading)
+    return (
+      <MainLayout title="Admin Panel">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-black">Admin Management</h1>
+          {isSuperAdmin && (
+             <Button variant="outline" className="gap-2 border-2" onClick={() => window.location.href='/dev-panel'}>
+                <Shield className="h-4 w-4" /> Dev Control
+             </Button>
+          )}
+        </div>
+        <p className="text-center p-8 text-muted-foreground">Loading...</p>
+      </MainLayout>
+    );
 
   return (
     <MainLayout title="Admin Panel">
       <div className="space-y-6 animate-fade-in">
-        {/* Stats */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-black">Admin Management</h1>
+          {isSuperAdmin && (
+             <Button variant="outline" className="gap-2 border-2" onClick={() => window.location.href='/dev-panel'}>
+                <Shield className="h-4 w-4" /> Dev Control
+             </Button>
+          )}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="p-4 text-center">
-            <Wallet className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">₹{wallets.reduce((s, w) => s + Number(w.balance), 0).toFixed(0)}</p>
-            <p className="text-xs text-muted-foreground">Total Wallets</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4 text-center">
-            <Gift className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">{referrals.length}</p>
-            <p className="text-xs text-muted-foreground">Referrals</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4 text-center">
-            <IndianRupee className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">{paymentSubs.filter(p => p.status === 'pending').length}</p>
-            <p className="text-xs text-muted-foreground">Pending Payments</p>
-          </CardContent></Card>
-          <Card><CardContent className="p-4 text-center">
-            <Tag className="h-6 w-6 text-primary mx-auto mb-1" />
-            <p className="text-2xl font-bold text-foreground">{promoCodes.length}</p>
-            <p className="text-xs text-muted-foreground">Promo Codes</p>
-          </CardContent></Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Wallet className="h-6 w-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold text-foreground">
+                ₹{wallets.reduce((s, w) => s + Number(w.balance), 0).toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Total Wallets</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Gift className="h-6 w-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold text-foreground">
+                {referrals.length}
+              </p>
+              <p className="text-xs text-muted-foreground">Referrals</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <IndianRupee className="h-6 w-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold text-foreground">
+                {paymentSubs.filter((p) => p.status === "pending").length}
+              </p>
+              <p className="text-xs text-muted-foreground">Pending Payments</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Tag className="h-6 w-6 text-primary mx-auto mb-1" />
+              <p className="text-2xl font-bold text-foreground">
+                {promoCodes.length}
+              </p>
+              <p className="text-xs text-muted-foreground">Promo Codes</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="analytics">
@@ -292,63 +490,96 @@ export default function AdminPanel() {
             <TabsTrigger value="promos">Promos</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="refunds" className="flex items-center gap-1"><RotateCcw className="h-3 w-3" />Refunds</TabsTrigger>
-            <TabsTrigger value="broadcast" className="flex items-center gap-1"><Megaphone className="h-3 w-3" />Broadcast</TabsTrigger>
-            <TabsTrigger value="features" className="flex items-center gap-1"><ToggleLeft className="h-3 w-3" />Features</TabsTrigger>
+            <TabsTrigger value="refunds" className="flex items-center gap-1">
+              <RotateCcw className="h-3 w-3" />
+              Refunds
+            </TabsTrigger>
+            <TabsTrigger value="broadcast" className="flex items-center gap-1">
+              <Megaphone className="h-3 w-3" />
+              Broadcast
+            </TabsTrigger>
+            <TabsTrigger value="features" className="flex items-center gap-1">
+              <ToggleLeft className="h-3 w-3" />
+              Features
+            </TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
           </TabsList>
 
           {/* Deep Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-foreground">Deep CRM Analytics</h3>
-              <Badge variant="outline" className="text-primary border-primary bg-primary/5">System-Wide Data</Badge>
+              <h3 className="text-xl font-bold text-foreground">
+                Deep CRM Analytics
+              </h3>
+              <Badge
+                variant="outline"
+                className="text-primary border-primary bg-primary/5"
+              >
+                System-Wide Data
+              </Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <Card className="border-primary/10 shadow-sm bg-primary/5">
-                 <CardContent className="p-6">
-                   <div className="flex items-center gap-4">
-                     <div className="h-12 w-12 rounded-xl bg-primary text-white flex items-center justify-center">
-                       <BarChart3 className="h-6 w-6" />
-                     </div>
-                     <div>
-                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Total Repair Jobs</p>
-                       <p className="text-4xl font-black text-foreground">{allJobs.length}</p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-               <Card className="border-green-500/10 shadow-sm bg-green-500/5">
-                 <CardContent className="p-6">
-                   <div className="flex items-center gap-4">
-                     <div className="h-12 w-12 rounded-xl bg-green-500 text-white flex items-center justify-center">
-                       <TrendingUp className="h-6 w-6" />
-                     </div>
-                     <div>
-                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Total Shop Revenue</p>
-                       <p className="text-4xl font-black text-foreground">₹{allPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0).toLocaleString()}</p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-               <Card className="border-blue-500/10 shadow-sm bg-blue-500/5">
-                 <CardContent className="p-6">
-                   <div className="flex items-center gap-4">
-                     <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center">
-                       <Smartphone className="h-6 w-6" />
-                     </div>
-                     <div>
-                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Completed Jobs</p>
-                       <p className="text-4xl font-black text-foreground">{allJobs.filter(j => j.status === 'Delivered').length}</p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
+              <Card className="border-primary/10 shadow-sm bg-primary/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-primary text-white flex items-center justify-center">
+                      <BarChart3 className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+                        Total Repair Jobs
+                      </p>
+                      <p className="text-4xl font-black text-foreground">
+                        {allJobs.length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-green-500/10 shadow-sm bg-green-500/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-green-500 text-white flex items-center justify-center">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+                        Total Shop Revenue
+                      </p>
+                      <p className="text-4xl font-black text-foreground">
+                        ₹
+                        {allPayments
+                          .reduce((acc, p) => acc + (Number(p.amount) || 0), 0)
+                          .toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-blue-500/10 shadow-sm bg-blue-500/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-blue-500 text-white flex items-center justify-center">
+                      <Smartphone className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+                        Completed Jobs
+                      </p>
+                      <p className="text-4xl font-black text-foreground">
+                        {allJobs.filter((j) => j.status === "Delivered").length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            
+
             <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="text-lg">Recent System Activity (Last 5 Jobs)</CardTitle>
+                <CardTitle className="text-lg">
+                  Recent System Activity (Last 5 Jobs)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -362,16 +593,28 @@ export default function AdminPanel() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {allJobs.slice(0, 5).map(job => (
+                    {allJobs.slice(0, 5).map((job) => (
                       <TableRow key={job.id}>
-                        <TableCell className="font-bold">{job.job_id}</TableCell>
-                        <TableCell>{job.device_brand} {job.device_model}</TableCell>
+                        <TableCell className="font-bold">
+                          {job.job_id}
+                        </TableCell>
+                        <TableCell>
+                          {job.device_brand} {job.device_model}
+                        </TableCell>
                         <TableCell>{job.customer_name}</TableCell>
-                        <TableCell><Badge variant="outline">{job.status}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{job.status}</Badge>
+                        </TableCell>
                         <TableCell>₹{job.estimated_cost}</TableCell>
                       </TableRow>
                     ))}
-                    {allJobs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-4">No jobs yet.</TableCell></TableRow>}
+                    {allJobs.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          No jobs yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -380,52 +623,95 @@ export default function AdminPanel() {
 
           {/* Payment Verification Tab */}
           <TabsContent value="payments" className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">UPI Payment Verification</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              UPI Payment Verification
+            </h3>
             <div className="rounded-md border overflow-auto">
               <Table>
-                <TableHeader><TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>UTR</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Screenshot</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>UTR</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Screenshot</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
-                  {paymentSubs.map(p => {
-                    const profile = users.find(u => u.user_id === p.user_id);
+                  {paymentSubs.map((p) => {
+                    const profile = users.find((u) => u.user_id === p.user_id);
                     return (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{profile?.display_name || 'Unknown'}</TableCell>
-                        <TableCell className="font-mono text-xs">{p.utr_number}</TableCell>
+                        <TableCell className="font-medium">
+                          {profile?.display_name || "Unknown"}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {p.utr_number}
+                        </TableCell>
                         <TableCell className="font-bold">₹{p.amount}</TableCell>
-                        <TableCell><Badge variant="outline">{p.plan}</Badge></TableCell>
                         <TableCell>
-                          {p.screenshot_url ? (
-                            <Button size="sm" variant="ghost" onClick={async () => {
-                              const val = p.screenshot_url as string;
-                              if (val.startsWith('http')) { setPreviewUrl(val); return; }
-                              const { data, error } = await supabase.storage.from('payment-screenshots').createSignedUrl(val, 300);
-                              if (error || !data) { toast.error('Cannot load screenshot'); return; }
-                              setPreviewUrl(data.signedUrl);
-                            }}>
-                              <Image className="h-4 w-4" />
-                            </Button>
-                          ) : '-'}
+                          <Badge variant="outline">{p.plan}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={p.status === 'approved' ? 'default' : p.status === 'rejected' ? 'destructive' : 'secondary'}>
+                          {p.screenshot_url ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={async () => {
+                                const val = p.screenshot_url as string;
+                                if (val.startsWith("http")) {
+                                  setPreviewUrl(val);
+                                  return;
+                                }
+                                const { data, error } = await supabase.storage
+                                  .from("payment-screenshots")
+                                  .createSignedUrl(val, 300);
+                                if (error || !data) {
+                                  toast.error("Cannot load screenshot");
+                                  return;
+                                }
+                                setPreviewUrl(data.signedUrl);
+                              }}
+                            >
+                              <Image className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              p.status === "approved"
+                                ? "default"
+                                : p.status === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
                             {p.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="flex gap-1">
-                          {p.status === 'pending' && (
+                          {p.status === "pending" && (
                             <>
-                              <Button size="sm" onClick={() => handlePaymentApproval(p, 'approved')}>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handlePaymentApproval(p, "approved")
+                                }
+                              >
                                 <CheckCircle className="h-3 w-3 mr-1" /> Approve
                               </Button>
-                              <Button size="sm" variant="destructive" onClick={() => handlePaymentApproval(p, 'rejected')}>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handlePaymentApproval(p, "rejected")
+                                }
+                              >
                                 <XCircle className="h-3 w-3 mr-1" /> Reject
                               </Button>
                             </>
@@ -434,7 +720,16 @@ export default function AdminPanel() {
                       </TableRow>
                     );
                   })}
-                  {paymentSubs.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No payment submissions</TableCell></TableRow>}
+                  {paymentSubs.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center text-muted-foreground py-8"
+                      >
+                        No payment submissions
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -444,43 +739,111 @@ export default function AdminPanel() {
           <TabsContent value="users" className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} />
+              <Input
+                className="pl-9"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
             <div className="rounded-md border overflow-auto">
               <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Referral Code</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Referral Code</TableHead>
+                    <TableHead>Balance</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
-                  {filteredUsers.map(u => {
+                  {filteredUsers.map((u) => {
                     const w = getWallet(u.user_id);
                     const sub = getSub(u.user_id);
                     return (
                       <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.display_name}</TableCell>
-                        <TableCell><Badge variant="outline">{u.referral_code || 'N/A'}</Badge></TableCell>
-                        <TableCell>₹{Number(w?.balance || 0).toFixed(2)}</TableCell>
-                        <TableCell><Badge>{u.plan_type || sub?.plan || 'free'}</Badge></TableCell>
+                        <TableCell className="font-medium">
+                          {u.display_name}
+                        </TableCell>
                         <TableCell>
-                          {u.is_banned ? <Badge variant="destructive"><Ban className="h-3 w-3 mr-1"/> Banned</Badge> : <Badge variant="default">Active</Badge>}
+                          <Badge variant="outline">
+                            {u.referral_code || "N/A"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          ₹{Number(w?.balance || 0).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge>{u.plan_type || sub?.plan || "free"}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {u.is_banned ? (
+                            <Badge variant="destructive">
+                              <Ban className="h-3 w-3 mr-1" /> Banned
+                            </Badge>
+                          ) : (
+                            <Badge variant="default">Active</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => showUserDetail(u)}><Eye className="h-4 w-4" /></Button>
-                            <Button size="sm" variant="outline" onClick={() => { 
-                              setEditUser(u); 
-                              setEditName(u.display_name);
-                              setEditPlan(u.plan_type || sub?.plan || 'free');
-                              setEditPlanExpiry(u.plan_expires_at ? new Date(u.plan_expires_at).toISOString().split('T')[0] : (sub?.expires_at ? new Date(sub.expires_at).toISOString().split('T')[0] : ''));
-                            }}>Edit</Button>
-                            <Button size="sm" variant={u.is_banned ? "default" : "destructive"} onClick={() => toggleUserBan(u.user_id, !!u.is_banned)}>
-                              {u.is_banned ? 'Unban' : 'Ban'}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => showUserDetail(u)}
+                            >
+                              <Eye className="h-4 w-4" />
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditUser(u);
+                                setEditName(u.display_name);
+                                setEditPlan(u.plan_type || sub?.plan || "free");
+                                setEditPlanExpiry(
+                                  u.plan_expires_at
+                                    ? new Date(u.plan_expires_at)
+                                        .toISOString()
+                                        .split("T")[0]
+                                    : sub?.expires_at
+                                      ? new Date(sub.expires_at)
+                                          .toISOString()
+                                          .split("T")[0]
+                                      : "",
+                                );
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={u.is_banned ? "default" : "destructive"}
+                              onClick={() =>
+                                toggleUserBan(u.user_id, !!u.is_banned)
+                              }
+                            >
+                              {u.is_banned ? "Unban" : "Ban"}
+                            </Button>
+                            {isSuperAdmin && u.email !== SUPER_ADMIN_EMAIL && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={async () => {
+                                  if (!confirm("Are you sure you want to PERMANENTLY delete this user? This cannot be undone.")) return;
+                                  const { error } = await supabase.from('profiles').delete().eq('user_id', u.user_id);
+                                  if (error) toast.error("Delete failed: " + error.message);
+                                  else {
+                                    toast.success("User permanently deleted");
+                                    fetchAll();
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -493,31 +856,62 @@ export default function AdminPanel() {
 
           {/* Promo Codes Tab */}
           <TabsContent value="promos" className="space-y-4">
-            <Button onClick={() => setPromoOpen(true)}><Plus className="h-4 w-4 mr-1" /> Create Promo Code</Button>
+            <Button onClick={() => setPromoOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Create Promo Code
+            </Button>
             <div className="rounded-md border overflow-auto">
               <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Validity</TableHead>
-                  <TableHead>Usage</TableHead>
-                  <TableHead>Expiry</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Validity</TableHead>
+                    <TableHead>Usage</TableHead>
+                    <TableHead>Expiry</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
-                  {promoCodes.map(pc => (
+                  {promoCodes.map((pc) => (
                     <TableRow key={pc.id}>
-                      <TableCell className="font-mono font-bold">{pc.code}</TableCell>
+                      <TableCell className="font-mono font-bold">
+                        {pc.code}
+                      </TableCell>
                       <TableCell>{pc.validity_days} days</TableCell>
-                      <TableCell>{pc.used_count}/{pc.usage_limit}</TableCell>
-                      <TableCell className="text-sm">{pc.expiry_date ? new Date(pc.expiry_date).toLocaleDateString() : 'No expiry'}</TableCell>
-                      <TableCell><Badge variant={pc.active ? 'default' : 'secondary'}>{pc.active ? 'Active' : 'Inactive'}</Badge></TableCell>
                       <TableCell>
-                        <Button size="sm" variant="destructive" onClick={() => deletePromo(pc.id)}><Trash2 className="h-3 w-3" /></Button>
+                        {pc.used_count}/{pc.usage_limit}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {pc.expiry_date
+                          ? new Date(pc.expiry_date).toLocaleDateString()
+                          : "No expiry"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={pc.active ? "default" : "secondary"}>
+                          {pc.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deletePromo(pc.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {promoCodes.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No promo codes</TableCell></TableRow>}
+                  {promoCodes.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground py-8"
+                      >
+                        No promo codes
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -525,32 +919,63 @@ export default function AdminPanel() {
 
           {/* Ads Tab */}
           <TabsContent value="ads" className="space-y-4">
-            <Button onClick={() => setAdOpen(true)}><Plus className="h-4 w-4 mr-1" /> Create Ad</Button>
+            <Button onClick={() => setAdOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Create Ad
+            </Button>
             <div className="rounded-md border overflow-auto">
               <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Reward</TableHead>
-                  <TableHead>Limit</TableHead>
-                  <TableHead>Views</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Reward</TableHead>
+                    <TableHead>Limit</TableHead>
+                    <TableHead>Views</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
-                  {ads.map(ad => (
+                  {ads.map((ad) => (
                     <TableRow key={ad.id}>
                       <TableCell className="font-medium">{ad.title}</TableCell>
-                      <TableCell>₹{Number(ad.reward_amount).toFixed(2)}</TableCell>
+                      <TableCell>
+                        ₹{Number(ad.reward_amount).toFixed(2)}
+                      </TableCell>
                       <TableCell>{ad.daily_limit}/day</TableCell>
                       <TableCell>{ad.impressions}</TableCell>
-                      <TableCell><Badge variant={ad.active ? 'default' : 'secondary'}>{ad.active ? 'Active' : 'Paused'}</Badge></TableCell>
+                      <TableCell>
+                        <Badge variant={ad.active ? "default" : "secondary"}>
+                          {ad.active ? "Active" : "Paused"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => toggleAd(ad.id, ad.active)}>{ad.active ? 'Pause' : 'Resume'}</Button>
-                        <Button size="sm" variant="destructive" onClick={() => deleteAd(ad.id)}><Trash2 className="h-3 w-3" /></Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleAd(ad.id, ad.active)}
+                        >
+                          {ad.active ? "Pause" : "Resume"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteAd(ad.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {ads.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No ads</TableCell></TableRow>}
+                  {ads.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground py-8"
+                      >
+                        No ads
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -560,36 +985,78 @@ export default function AdminPanel() {
           <TabsContent value="withdrawals" className="space-y-4">
             <div className="rounded-md border overflow-auto">
               <Table>
-                <TableHeader><TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
-                  {withdrawals.map(w => {
-                    const profile = users.find(u => u.user_id === w.user_id);
+                  {withdrawals.map((w) => {
+                    const profile = users.find((u) => u.user_id === w.user_id);
                     return (
                       <TableRow key={w.id}>
-                        <TableCell>{profile?.display_name || 'Unknown'}</TableCell>
-                        <TableCell className="font-bold">₹{Number(w.amount).toFixed(2)}</TableCell>
                         <TableCell>
-                          <Badge variant={w.status === 'approved' ? 'default' : w.status === 'rejected' ? 'destructive' : 'secondary'}>{w.status}</Badge>
+                          {profile?.display_name || "Unknown"}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-bold">
+                          ₹{Number(w.amount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              w.status === "approved"
+                                ? "default"
+                                : w.status === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {w.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(w.created_at).toLocaleDateString()}
+                        </TableCell>
                         <TableCell className="flex gap-1">
-                          {w.status === 'pending' && (
+                          {w.status === "pending" && (
                             <>
-                              <Button size="sm" onClick={() => handleWithdrawal(w.id, 'approved')}><CheckCircle className="h-3 w-3 mr-1" /> Approve</Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleWithdrawal(w.id, 'rejected')}><XCircle className="h-3 w-3 mr-1" /> Reject</Button>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleWithdrawal(w.id, "approved")
+                                }
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handleWithdrawal(w.id, "rejected")
+                                }
+                              >
+                                <XCircle className="h-3 w-3 mr-1" /> Reject
+                              </Button>
                             </>
                           )}
                         </TableCell>
                       </TableRow>
                     );
                   })}
-                  {withdrawals.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No withdrawal requests</TableCell></TableRow>}
+                  {withdrawals.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-muted-foreground py-8"
+                      >
+                        No withdrawal requests
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -618,25 +1085,36 @@ export default function AdminPanel() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {features.map(f => (
+                  {features.map((f) => (
                     <TableRow key={f.id}>
                       <TableCell className="font-bold">{f.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{f.description || 'No description'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {f.description || "No description"}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant={f.is_enabled ? 'default' : 'secondary'}>
-                          {f.is_enabled ? 'Enabled' : 'Disabled'}
+                        <Badge variant={f.is_enabled ? "default" : "secondary"}>
+                          {f.is_enabled ? "Enabled" : "Disabled"}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant={f.is_enabled ? 'outline' : 'default'} onClick={() => toggleFeature(f.id, f.is_enabled)}>
-                          {f.is_enabled ? 'Disable' : 'Enable'}
+                        <Button
+                          size="sm"
+                          variant={f.is_enabled ? "outline" : "default"}
+                          onClick={() => toggleFeature(f.id, f.is_enabled)}
+                        >
+                          {f.is_enabled ? "Disable" : "Enable"}
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                   {features.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No features found in database.</TableCell>
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-muted-foreground py-8"
+                      >
+                        No features found in database.
+                      </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -650,48 +1128,108 @@ export default function AdminPanel() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="shadow-card border-primary/20">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><Download className="h-5 w-5 text-primary" /> Data Export (CSV)</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Download className="h-5 w-5 text-primary" /> Data Export
+                    (CSV)
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground mb-4">Download system data for offline analysis and backup.</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Download system data for offline analysis and backup.
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" onClick={() => exportCSV(users, 'users_export')}><Download className="h-4 w-4 mr-2" /> Export Users</Button>
-                    <Button variant="outline" onClick={() => exportCSV(allJobs, 'jobs_export')}><Download className="h-4 w-4 mr-2" /> Export All Jobs</Button>
-                    <Button variant="outline" onClick={() => exportCSV(paymentSubs, 'payments_export')}><Download className="h-4 w-4 mr-2" /> Export Sub Payments</Button>
-                    <Button variant="outline" onClick={() => exportCSV(wallets, 'wallets_export')}><Download className="h-4 w-4 mr-2" /> Export Wallets</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => exportCSV(users, "users_export")}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export Users
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => exportCSV(allJobs, "jobs_export")}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export All Jobs
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => exportCSV(paymentSubs, "payments_export")}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export Sub Payments
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => exportCSV(wallets, "wallets_export")}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export Wallets
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="shadow-card border-amber-500/20">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><Megaphone className="h-5 w-5 text-amber-500" /> Global Broadcast</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Megaphone className="h-5 w-5 text-amber-500" /> Global
+                    Broadcast
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">Send an urgent notification or update to all users in the CRM.</p>
-                  <Input value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Type broadcast message..." />
-                  <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white" onClick={handleBroadcast}>Send Broadcast</Button>
+                  <p className="text-sm text-muted-foreground">
+                    Send an urgent notification or update to all users in the
+                    CRM.
+                  </p>
+                  <Input
+                    value={broadcastMsg}
+                    onChange={(e) => setBroadcastMsg(e.target.value)}
+                    placeholder="Type broadcast message..."
+                  />
+                  <Button
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                    onClick={handleBroadcast}
+                  >
+                    Send Broadcast
+                  </Button>
                 </CardContent>
               </Card>
 
               <Card className="shadow-card border-destructive/20 md:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2 text-destructive"><AlertTriangle className="h-5 w-5" /> Danger Zone & Config</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" /> Danger Zone & Config
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-between p-6 bg-destructive/5 rounded-xl border border-destructive/10">
                   <div>
-                    <h4 className="font-bold text-destructive">Maintenance Mode</h4>
-                    <p className="text-sm text-muted-foreground">Temporarily block all users from logging in (except Super Admin).</p>
+                    <h4 className="font-bold text-destructive">
+                      Maintenance Mode
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Temporarily block all users from logging in (except Super
+                      Admin).
+                    </p>
                   </div>
-                  <Button variant={maintenance ? 'destructive' : 'outline'} onClick={async () => {
-                    const newStatus = !maintenance;
-                    await supabase.from('system_config').upsert({ id: 'maintenance', value: { enabled: newStatus } });
-                    setMaintenance(newStatus);
-                    toast(newStatus ? 'Maintenance Mode Enabled' : 'Maintenance Mode Disabled', {
-                      description: newStatus ? 'Non-admins are now blocked.' : 'All users can now login.',
-                    });
-                  }}>
-                    {maintenance ? 'Disable Maintenance' : 'Enable Maintenance'}
+                  <Button
+                    variant={maintenance ? "destructive" : "outline"}
+                    onClick={async () => {
+                      const newStatus = !maintenance;
+                      await supabase.from("system_config").upsert({
+                        id: "maintenance",
+                        value: { enabled: newStatus },
+                      });
+                      setMaintenance(newStatus);
+                      toast(
+                        newStatus
+                          ? "Maintenance Mode Enabled"
+                          : "Maintenance Mode Disabled",
+                        {
+                          description: newStatus
+                            ? "Non-admins are now blocked."
+                            : "All users can now login.",
+                        },
+                      );
+                    }}
+                  >
+                    {maintenance ? "Disable Maintenance" : "Enable Maintenance"}
                   </Button>
                 </CardContent>
               </Card>
@@ -702,49 +1240,130 @@ export default function AdminPanel() {
         {/* Create Ad Dialog */}
         <Dialog open={adOpen} onOpenChange={setAdOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Create New Ad</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Create New Ad</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3">
-              <div><Label>Title</Label><Input value={adTitle} onChange={e => setAdTitle(e.target.value)} /></div>
-              <div><Label>Description</Label><Input value={adDesc} onChange={e => setAdDesc(e.target.value)} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Reward (₹)</Label><Input type="number" value={adReward} onChange={e => setAdReward(e.target.value)} /></div>
-                <div><Label>Daily Limit</Label><Input type="number" value={adLimit} onChange={e => setAdLimit(e.target.value)} /></div>
+              <div>
+                <Label>Title</Label>
+                <Input
+                  value={adTitle}
+                  onChange={(e) => setAdTitle(e.target.value)}
+                />
               </div>
-              <div><Label>Link URL</Label><Input value={adLink} onChange={e => setAdLink(e.target.value)} placeholder="https://..." /></div>
+              <div>
+                <Label>Description</Label>
+                <Input
+                  value={adDesc}
+                  onChange={(e) => setAdDesc(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Reward (₹)</Label>
+                  <Input
+                    type="number"
+                    value={adReward}
+                    onChange={(e) => setAdReward(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Daily Limit</Label>
+                  <Input
+                    type="number"
+                    value={adLimit}
+                    onChange={(e) => setAdLimit(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Link URL</Label>
+                <Input
+                  value={adLink}
+                  onChange={(e) => setAdLink(e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
             </div>
-            <DialogFooter><Button onClick={handleCreateAd}>Create Ad</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={handleCreateAd}>Create Ad</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Create Promo Dialog */}
         <Dialog open={promoOpen} onOpenChange={setPromoOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Create Promo Code</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Create Promo Code</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3">
-              <div><Label>Code</Label><Input value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())} placeholder="e.g. SAVE50" className="font-mono" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Validity (days)</Label><Input type="number" value={promoValidity} onChange={e => setPromoValidity(e.target.value)} /></div>
-                <div><Label>Usage Limit</Label><Input type="number" value={promoLimit} onChange={e => setPromoLimit(e.target.value)} /></div>
+              <div>
+                <Label>Code</Label>
+                <Input
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. SAVE50"
+                  className="font-mono"
+                />
               </div>
-              <div><Label>Expiry Date (optional)</Label><Input type="date" value={promoExpiry} onChange={e => setPromoExpiry(e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Validity (days)</Label>
+                  <Input
+                    type="number"
+                    value={promoValidity}
+                    onChange={(e) => setPromoValidity(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Usage Limit</Label>
+                  <Input
+                    type="number"
+                    value={promoLimit}
+                    onChange={(e) => setPromoLimit(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Expiry Date (optional)</Label>
+                <Input
+                  type="date"
+                  value={promoExpiry}
+                  onChange={(e) => setPromoExpiry(e.target.value)}
+                />
+              </div>
             </div>
-            <DialogFooter><Button onClick={handleCreatePromo}>Create Promo</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={handleCreatePromo}>Create Promo</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Edit User Dialog */}
         <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
           <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Edit User — Super Admin Controls</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Edit User — Super Admin Controls</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
               <div className="text-xs text-muted-foreground">
-                <span className="font-semibold">{editUser?.display_name}</span> · {editUser?.account_type || 'shopkeeper'}
+                <span className="font-semibold">{editUser?.display_name}</span>{" "}
+                · {editUser?.account_type || "shopkeeper"}
               </div>
-              <div><Label>Display Name</Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
+              <div>
+                <Label>Display Name</Label>
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
               <div>
                 <Label>Role</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Admin (Shopkeeper)</SelectItem>
                     <SelectItem value="staff">Staff</SelectItem>
@@ -760,7 +1379,9 @@ export default function AdminPanel() {
               <div>
                 <Label>Plan Type</Label>
                 <Select value={editPlan} onValueChange={setEditPlan}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="free">Free Trial</SelectItem>
                     <SelectItem value="pro">Pro Plan</SelectItem>
@@ -768,47 +1389,113 @@ export default function AdminPanel() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Plan Expiry Date</Label><Input type="date" value={editPlanExpiry} onChange={e => setEditPlanExpiry(e.target.value)} /></div>
+              <div>
+                <Label>Plan Expiry Date</Label>
+                <Input
+                  type="date"
+                  value={editPlanExpiry}
+                  onChange={(e) => setEditPlanExpiry(e.target.value)}
+                />
+              </div>
 
               <div className="pt-2 border-t mt-2">
-                <Label className="text-primary font-bold">Wallet Adjustment</Label>
+                <Label className="text-primary font-bold">
+                  Wallet Adjustment
+                </Label>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Input type="number" placeholder="Amount (+/-)" id="walletDelta" />
+                <Input
+                  type="number"
+                  placeholder="Amount (+/-)"
+                  id="walletDelta"
+                />
                 <Input placeholder="Note" id="walletNote" />
               </div>
-              <Button size="sm" variant="outline" onClick={async () => {
-                const delta = parseFloat((document.getElementById('walletDelta') as HTMLInputElement)?.value || '0');
-                const note = (document.getElementById('walletNote') as HTMLInputElement)?.value || 'Admin adjustment';
-                if (!delta || !editUser) return;
-                const { error } = await (supabase as any).rpc('admin_adjust_wallet', { _user_id: editUser.user_id, _delta: delta, _note: note });
-                if (error) toast.error(error.message); else { toast.success('Wallet updated'); fetchAll(); }
-              }}>Apply Wallet Change</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const delta = parseFloat(
+                    (document.getElementById("walletDelta") as HTMLInputElement)
+                      ?.value || "0",
+                  );
+                  const note =
+                    (document.getElementById("walletNote") as HTMLInputElement)
+                      ?.value || "Admin adjustment";
+                  if (!delta || !editUser) return;
+                  const { error } = await (supabase as any).rpc(
+                    "admin_adjust_wallet",
+                    { _user_id: editUser.user_id, _delta: delta, _note: note },
+                  );
+                  if (error) toast.error(error.message);
+                  else {
+                    toast.success("Wallet updated");
+                    fetchAll();
+                  }
+                }}
+              >
+                Apply Wallet Change
+              </Button>
 
               <div className="pt-2 border-t mt-2">
-                <Label className="text-primary font-bold">Custom Discount</Label>
+                <Label className="text-primary font-bold">
+                  Custom Discount
+                </Label>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Input type="number" placeholder="Percent (e.g. 20)" id="discPct" />
+                <Input
+                  type="number"
+                  placeholder="Percent (e.g. 20)"
+                  id="discPct"
+                />
                 <Input placeholder="Reason" id="discReason" />
               </div>
-              <Button size="sm" variant="outline" onClick={async () => {
-                const pct = parseFloat((document.getElementById('discPct') as HTMLInputElement)?.value || '0');
-                const reason = (document.getElementById('discReason') as HTMLInputElement)?.value || 'Admin grant';
-                if (!pct || !editUser) return;
-                const { error } = await (supabase as any).rpc('admin_apply_discount', { _user_id: editUser.user_id, _percent: pct, _reason: reason });
-                if (error) toast.error(error.message); else toast.success('Discount applied');
-              }}>Grant Discount</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const pct = parseFloat(
+                    (document.getElementById("discPct") as HTMLInputElement)
+                      ?.value || "0",
+                  );
+                  const reason =
+                    (document.getElementById("discReason") as HTMLInputElement)
+                      ?.value || "Admin grant";
+                  if (!pct || !editUser) return;
+                  const { error } = await (supabase as any).rpc(
+                    "admin_apply_discount",
+                    {
+                      _user_id: editUser.user_id,
+                      _percent: pct,
+                      _reason: reason,
+                    },
+                  );
+                  if (error) toast.error(error.message);
+                  else toast.success("Discount applied");
+                }}
+              >
+                Grant Discount
+              </Button>
             </div>
-            <DialogFooter><Button onClick={handleUpdateUser}>Save Changes</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={handleUpdateUser}>Save Changes</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Screenshot Preview Dialog */}
-        <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl('')}>
+        <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl("")}>
           <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Payment Screenshot</DialogTitle></DialogHeader>
-            {previewUrl && <img src={previewUrl} alt="Payment screenshot" className="w-full rounded-lg" />}
+            <DialogHeader>
+              <DialogTitle>Payment Screenshot</DialogTitle>
+            </DialogHeader>
+            {previewUrl && (
+              <img
+                src={previewUrl}
+                alt="Payment screenshot"
+                className="w-full rounded-lg"
+              />
+            )}
           </DialogContent>
         </Dialog>
 
@@ -817,50 +1504,91 @@ export default function AdminPanel() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" /> User Statistics & Details
+                <Users className="h-5 w-5 text-primary" /> User Statistics &
+                Details
               </DialogTitle>
             </DialogHeader>
             {userDetail && (
               <div className="grid gap-6">
                 <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div>
-                    <p className="text-xl font-bold">{userDetail.display_name}</p>
-                    <p className="text-sm text-muted-foreground">{userDetail.referral_code || 'No Referral'}</p>
+                    <p className="text-xl font-bold">
+                      {userDetail.display_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {userDetail.referral_code || "No Referral"}
+                    </p>
                   </div>
-                  <Badge className="text-lg px-4 py-1">{userDetail.plan_type || userDetail.sub?.plan || 'free'}</Badge>
+                  <Badge className="text-lg px-4 py-1">
+                    {userDetail.plan_type || userDetail.sub?.plan || "free"}
+                  </Badge>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-3 border rounded-lg text-center">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Jobs</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">
+                      Total Jobs
+                    </p>
                     <p className="text-2xl font-black">{userDetail.jobCount}</p>
                   </div>
                   <div className="p-3 border rounded-lg text-center">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Sells</p>
-                    <p className="text-2xl font-black">{userDetail.sellCount}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">
+                      Total Sells
+                    </p>
+                    <p className="text-2xl font-black">
+                      {userDetail.sellCount}
+                    </p>
                   </div>
                   <div className="p-3 border rounded-lg text-center">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Revenue</p>
-                    <p className="text-2xl font-black text-green-600">₹{userDetail.totalRevenue}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">
+                      Total Revenue
+                    </p>
+                    <p className="text-2xl font-black text-green-600">
+                      ₹{userDetail.totalRevenue}
+                    </p>
                   </div>
                   <div className="p-3 border rounded-lg text-center">
-                    <p className="text-xs text-muted-foreground uppercase font-bold">Total Profit</p>
-                    <p className="text-2xl font-black text-primary">₹{userDetail.totalProfit}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">
+                      Total Profit
+                    </p>
+                    <p className="text-2xl font-black text-primary">
+                      ₹{userDetail.totalProfit}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Wallet Balance:</span>
-                    <span className="font-bold">₹{Number(userDetail.wallet?.balance || 0).toFixed(2)}</span>
+                    <span className="text-muted-foreground">
+                      Wallet Balance:
+                    </span>
+                    <span className="font-bold">
+                      ₹{Number(userDetail.wallet?.balance || 0).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Plan Expiry:</span>
-                    <span className="font-bold">{userDetail.plan_expires_at ? new Date(userDetail.plan_expires_at).toLocaleDateString() : (userDetail.sub?.expires_at ? new Date(userDetail.sub.expires_at).toLocaleDateString() : 'N/A')}</span>
+                    <span className="font-bold">
+                      {userDetail.plan_expires_at
+                        ? new Date(
+                            userDetail.plan_expires_at,
+                          ).toLocaleDateString()
+                        : userDetail.sub?.expires_at
+                          ? new Date(
+                              userDetail.sub.expires_at,
+                            ).toLocaleDateString()
+                          : "N/A"}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Account Status:</span>
-                    <Badge variant={userDetail.is_banned ? "destructive" : "default"}>{userDetail.is_banned ? "Suspended" : "Active"}</Badge>
+                    <span className="text-muted-foreground">
+                      Account Status:
+                    </span>
+                    <Badge
+                      variant={userDetail.is_banned ? "destructive" : "default"}
+                    >
+                      {userDetail.is_banned ? "Suspended" : "Active"}
+                    </Badge>
                   </div>
                 </div>
               </div>

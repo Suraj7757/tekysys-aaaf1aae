@@ -49,12 +49,20 @@ export function InstallPWAPrompt() {
             <Button size="sm" onClick={install} className="h-8 text-xs">
               Install
             </Button>
-            <Button size="sm" variant="ghost" onClick={dismiss} className="h-8 text-xs">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={dismiss}
+              className="h-8 text-xs"
+            >
               Baad me
             </Button>
           </div>
         </div>
-        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground">
+        <button
+          onClick={dismiss}
+          className="text-muted-foreground hover:text-foreground"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>

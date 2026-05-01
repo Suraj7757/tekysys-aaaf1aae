@@ -1,17 +1,19 @@
-import { MessageCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import { MessageCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 
-const ADMIN_WHATSAPP = '7319884599';
+const ADMIN_WHATSAPP = "7319884599";
 
 export function WhatsAppButton() {
   const { user } = useAuth();
 
   const handleWhatsAppClick = () => {
     const text = user
-      ? encodeURIComponent(`Hello, I need help with RepairXpert. My account email is ${user.email}`)
-      : encodeURIComponent('Hello, I need help with RepairXpert.');
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${text}`, '_blank');
+      ? encodeURIComponent(
+          `Hello, I need help with RepairXpert. My account email is ${user.email}`,
+        )
+      : encodeURIComponent("Hello, I need help with RepairXpert.");
+    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${text}`, "_blank");
   };
 
   return (

@@ -1,13 +1,13 @@
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle } from "lucide-react";
 
-const ADMIN_WHATSAPP = '917319884599';
-const DEFAULT_MESSAGE = 'Hello Suraj, I need help with RepairDesk CRM';
+const ADMIN_WHATSAPP = "917319884599";
+const DEFAULT_MESSAGE = "Hello Suraj, I need help with RepairDesk CRM";
 
 export function WhatsAppHelpButton() {
   const openWhatsApp = () => {
     window.open(
       `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(DEFAULT_MESSAGE)}`,
-      '_blank'
+      "_blank",
     );
   };
 

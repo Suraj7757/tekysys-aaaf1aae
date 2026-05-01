@@ -40,7 +40,10 @@ export function AutomationBanner() {
               {lowStockItems.length} items low on stock
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              {lowStockItems.slice(0, 3).map((i) => i.name).join(", ")}
+              {lowStockItems
+                .slice(0, 3)
+                .map((i) => i.name)
+                .join(", ")}
             </p>
           </div>
         </button>

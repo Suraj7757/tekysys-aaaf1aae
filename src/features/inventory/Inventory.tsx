@@ -5,72 +5,139 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery, useSoftDelete } from "@/hooks/useSupabaseData";
 import { supabase } from "@/services/supabase";
-import { Plus, Search, AlertTriangle, Trash2, Package, Headphones, Settings as SettingsIcon, Pencil, Info, ScanLine } from "lucide-react";
+import {
+  Plus,
+  Search,
+  AlertTriangle,
+  Trash2,
+  Package,
+  Headphones,
+  Settings as SettingsIcon,
+  Pencil,
+  Info,
+  ScanLine,
+} from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScanner } from "@/components/common/BarcodeScanner";
 
 export default function Inventory() {
   const { user } = useAuth();
-  const { data: items, loading, refetch } = useSupabaseQuery<any>('inventory');
+  const { data: items, loading, refetch } = useSupabaseQuery<any>("inventory");
   const { softDelete } = useSoftDelete();
   const [search, setSearch] = useState("");
   const [categoryTab, setCategoryTab] = useState("all");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', sku: '', category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' });
+  const [form, setForm] = useState({
+    name: "",
+    sku: "",
+    category: "Accessories",
+    quantity: "",
+    minStock: "5",
+    costPrice: "",
+    sellPrice: "",
+    gstPercent: "18",
+  });
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
 
   const handleScanned = (code: string) => {
     setSearch(code);
-    const found = items.find((i: any) => i.sku?.toLowerCase() === code.toLowerCase());
+    const found = items.find(
+      (i: any) => i.sku?.toLowerCase() === code.toLowerCase(),
+    );
     if (found) {
       toast.success(`Found: ${found.name}`);
       openEdit(found);
     } else {
-      toast.info('No item with this SKU. Add as new?');
+      toast.info("No item with this SKU. Add as new?");
       setEditingItem(null);
-      setForm({ name: '', sku: code, category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' });
+      setForm({
+        name: "",
+        sku: code,
+        category: "Accessories",
+        quantity: "",
+        minStock: "5",
+        costPrice: "",
+        sellPrice: "",
+        gstPercent: "18",
+      });
       setOpen(true);
     }
   };
 
   const filtered = useMemo(() => {
     return items.filter((i: any) => {
-      const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = categoryTab === 'all' || i.category === categoryTab;
+      const matchesSearch =
+        i.name.toLowerCase().includes(search.toLowerCase()) ||
+        i.sku.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory =
+        categoryTab === "all" || i.category === categoryTab;
       return matchesSearch && matchesCategory;
     });
   }, [items, search, categoryTab]);
 
   const handleAdd = async () => {
-    if (!form.name || !form.sku || !user) { toast.error("Name and SKU required"); return; }
+    if (!form.name || !form.sku || !user) {
+      toast.error("Name and SKU required");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const payload = {
-        name: form.name, sku: form.sku, category: form.category || 'Accessories',
-        quantity: parseInt(form.quantity) || 0, min_stock: parseInt(form.minStock) || 5,
-        cost_price: parseFloat(form.costPrice) || 0, sell_price: parseFloat(form.sellPrice) || 0,
+        name: form.name,
+        sku: form.sku,
+        category: form.category || "Accessories",
+        quantity: parseInt(form.quantity) || 0,
+        min_stock: parseInt(form.minStock) || 5,
+        cost_price: parseFloat(form.costPrice) || 0,
+        sell_price: parseFloat(form.sellPrice) || 0,
         gst_percent: parseFloat(form.gstPercent) || 18,
       };
 
       if (editingItem) {
-        await supabase.from('inventory').update(payload).eq('id', editingItem.id);
+        await supabase
+          .from("inventory")
+          .update(payload)
+          .eq("id", editingItem.id);
         toast.success("Item updated");
       } else {
-        await supabase.from('inventory').insert({ user_id: user.id, ...payload });
+        await supabase
+          .from("inventory")
+          .insert({ user_id: user.id, ...payload });
         toast.success("Item added");
       }
       refetch();
       setOpen(false);
       setEditingItem(null);
-      setForm({ name: '', sku: '', category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' });
+      setForm({
+        name: "",
+        sku: "",
+        category: "Accessories",
+        quantity: "",
+        minStock: "5",
+        costPrice: "",
+        sellPrice: "",
+        gstPercent: "18",
+      });
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Operation failed");
@@ -82,22 +149,32 @@ export default function Inventory() {
   const openEdit = (item: any) => {
     setEditingItem(item);
     setForm({
-      name: item.name, sku: item.sku, category: item.category || 'Accessories',
-      quantity: String(item.quantity), minStock: String(item.min_stock),
-      costPrice: String(item.cost_price), sellPrice: String(item.sell_price),
-      gstPercent: String(item.gst_percent)
+      name: item.name,
+      sku: item.sku,
+      category: item.category || "Accessories",
+      quantity: String(item.quantity),
+      minStock: String(item.min_stock),
+      costPrice: String(item.cost_price),
+      sellPrice: String(item.sell_price),
+      gstPercent: String(item.gst_percent),
     });
     setOpen(true);
   };
 
   const handleDelete = async (item: any) => {
-    const ok = await softDelete('inventory', item.id, item.name);
+    const ok = await softDelete("inventory", item.id, item.name);
     if (ok) {
       toast("Item moved to trash", {
-        action: { label: "Undo", onClick: async () => {
-          await supabase.from('inventory').update({ deleted: false, deleted_at: null }).eq('id', item.id);
-          refetch();
-        }},
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            await supabase
+              .from("inventory")
+              .update({ deleted: false, deleted_at: null })
+              .eq("id", item.id);
+            refetch();
+          },
+        },
         duration: 5000,
       });
       refetch();
@@ -110,35 +187,81 @@ export default function Inventory() {
         {/* Header Stats & Search */}
         <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
           <div className="space-y-1">
-             <h2 className="text-2xl font-black tracking-tight text-foreground">Stock Management</h2>
-             <p className="text-sm text-muted-foreground">Manage your Accessories and Spare Parts inventory.</p>
+            <h2 className="text-2xl font-black tracking-tight text-foreground">
+              Stock Management
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Manage your Accessories and Spare Parts inventory.
+            </p>
           </div>
           <div className="flex flex-wrap gap-3 w-full lg:w-auto">
             <div className="relative flex-1 lg:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search name or SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-11 rounded-xl border-2 focus-visible:ring-primary/20" />
+              <Input
+                placeholder="Search name or SKU..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-11 rounded-xl border-2 focus-visible:ring-primary/20"
+              />
             </div>
-            <Button variant="outline" onClick={() => setScanOpen(true)} className="h-11 px-4 rounded-xl gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setScanOpen(true)}
+              className="h-11 px-4 rounded-xl gap-2"
+            >
               <ScanLine className="h-4 w-4" /> Scan
             </Button>
-            <Button onClick={() => { setEditingItem(null); setForm({ name: '', sku: '', category: 'Accessories', quantity: '', minStock: '5', costPrice: '', sellPrice: '', gstPercent: '18' }); setOpen(true); }} className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20">
+            <Button
+              onClick={() => {
+                setEditingItem(null);
+                setForm({
+                  name: "",
+                  sku: "",
+                  category: "Accessories",
+                  quantity: "",
+                  minStock: "5",
+                  costPrice: "",
+                  sellPrice: "",
+                  gstPercent: "18",
+                });
+                setOpen(true);
+              }}
+              className="h-11 px-6 rounded-xl font-bold shadow-lg shadow-primary/20"
+            >
               <Plus className="h-5 w-5 mr-1" /> Add Stock
             </Button>
           </div>
         </div>
 
-        <BarcodeScanner open={scanOpen} onClose={() => setScanOpen(false)} onScan={handleScanned} />
+        <BarcodeScanner
+          open={scanOpen}
+          onClose={() => setScanOpen(false)}
+          onScan={handleScanned}
+        />
 
         {/* Category Tabs */}
-        <Tabs value={categoryTab} onValueChange={setCategoryTab} className="w-full">
+        <Tabs
+          value={categoryTab}
+          onValueChange={setCategoryTab}
+          className="w-full"
+        >
           <TabsList className="bg-muted/50 p-1 rounded-2xl h-14 w-full sm:w-auto grid grid-cols-3 sm:flex">
-            <TabsTrigger value="all" className="rounded-xl px-8 h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold gap-2">
+            <TabsTrigger
+              value="all"
+              className="rounded-xl px-8 h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold gap-2"
+            >
               <Package className="h-4 w-4" /> All
             </TabsTrigger>
-            <TabsTrigger value="Accessories" className="rounded-xl px-8 h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold gap-2">
+            <TabsTrigger
+              value="Accessories"
+              className="rounded-xl px-8 h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold gap-2"
+            >
               <Headphones className="h-4 w-4" /> Accessories
             </TabsTrigger>
-            <TabsTrigger value="Spare Parts" className="rounded-xl px-8 h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold gap-2">
+            <TabsTrigger
+              value="Spare Parts"
+              className="rounded-xl px-8 h-12 data-[state=active]:bg-background data-[state=active]:shadow-sm font-bold gap-2"
+            >
               <SettingsIcon className="h-4 w-4" /> Spare Parts
             </TabsTrigger>
           </TabsList>
@@ -150,53 +273,99 @@ export default function Inventory() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/20">
-                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Item Details</th>
-                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px] hidden md:table-cell">Category</th>
-                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Stock Status</th>
-                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px] hidden lg:table-cell">Cost (Unit)</th>
-                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Selling Price</th>
-                  <th className="p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px] text-center">Actions</th>
+                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">
+                    Item Details
+                  </th>
+                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px] hidden md:table-cell">
+                    Category
+                  </th>
+                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">
+                    Stock Status
+                  </th>
+                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px] hidden lg:table-cell">
+                    Cost (Unit)
+                  </th>
+                  <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">
+                    Selling Price
+                  </th>
+                  <th className="p-4 font-bold text-muted-foreground uppercase tracking-widest text-[10px] text-center">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-muted/10">
                 {filtered.map((item: any) => (
-                  <tr key={item.id} className="hover:bg-muted/30 transition-all group">
+                  <tr
+                    key={item.id}
+                    className="hover:bg-muted/30 transition-all group"
+                  >
                     <td className="p-4">
                       <div className="space-y-0.5">
-                        <p className="font-black text-foreground text-base group-hover:text-primary transition-colors">{item.name}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground font-bold">{item.sku}</p>
+                        <p className="font-black text-foreground text-base group-hover:text-primary transition-colors">
+                          {item.name}
+                        </p>
+                        <p className="text-[10px] font-mono text-muted-foreground font-bold">
+                          {item.sku}
+                        </p>
                       </div>
                     </td>
                     <td className="p-4 hidden md:table-cell">
-                      <Badge variant="outline" className="rounded-lg px-3 py-1 font-bold text-[10px] bg-background">
-                        {item.category || 'Accessories'}
+                      <Badge
+                        variant="outline"
+                        className="rounded-lg px-3 py-1 font-bold text-[10px] bg-background"
+                      >
+                        {item.category || "Accessories"}
                       </Badge>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`h-2.5 w-24 rounded-full bg-muted overflow-hidden relative`}>
-                           <div 
-                             className={`h-full absolute left-0 top-0 transition-all duration-500 ${item.quantity <= item.min_stock ? 'bg-destructive' : 'bg-success'}`} 
-                             style={{ width: `${Math.min(100, (item.quantity / (item.min_stock * 2)) * 100)}%` }} 
-                           />
+                        <div
+                          className={`h-2.5 w-24 rounded-full bg-muted overflow-hidden relative`}
+                        >
+                          <div
+                            className={`h-full absolute left-0 top-0 transition-all duration-500 ${item.quantity <= item.min_stock ? "bg-destructive" : "bg-success"}`}
+                            style={{
+                              width: `${Math.min(100, (item.quantity / (item.min_stock * 2)) * 100)}%`,
+                            }}
+                          />
                         </div>
-                        <Badge className={`${item.quantity <= item.min_stock ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success'} border-0 font-black text-xs min-w-[3rem] justify-center`}>
+                        <Badge
+                          className={`${item.quantity <= item.min_stock ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"} border-0 font-black text-xs min-w-[3rem] justify-center`}
+                        >
                           {item.quantity}
                         </Badge>
-                        {item.quantity <= item.min_stock && <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />}
+                        {item.quantity <= item.min_stock && (
+                          <AlertTriangle className="h-4 w-4 text-destructive animate-pulse" />
+                        )}
                       </div>
                     </td>
-                    <td className="p-4 hidden lg:table-cell font-bold text-muted-foreground">₹{Number(item.cost_price).toLocaleString()}</td>
+                    <td className="p-4 hidden lg:table-cell font-bold text-muted-foreground">
+                      ₹{Number(item.cost_price).toLocaleString()}
+                    </td>
                     <td className="p-4">
-                      <p className="font-black text-lg text-foreground">₹{Number(item.sell_price).toLocaleString()}</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">GST {item.gst_percent}% incl.</p>
+                      <p className="font-black text-lg text-foreground">
+                        ₹{Number(item.sell_price).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground font-medium">
+                        GST {item.gst_percent}% incl.
+                      </p>
                     </td>
                     <td className="p-4">
                       <div className="flex justify-center gap-2">
-                        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(item)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary"
+                          onClick={() => openEdit(item)}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(item)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-10 w-10 rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => handleDelete(item)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -208,8 +377,12 @@ export default function Inventory() {
                     <td colSpan={6} className="p-20 text-center space-y-3">
                       <Package className="h-16 w-16 mx-auto text-muted-foreground/20" />
                       <div>
-                        <p className="text-lg font-bold text-muted-foreground">No items found</p>
-                        <p className="text-sm text-muted-foreground/60">Try searching for something else or add a new item.</p>
+                        <p className="text-lg font-bold text-muted-foreground">
+                          No items found
+                        </p>
+                        <p className="text-sm text-muted-foreground/60">
+                          Try searching for something else or add a new item.
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -225,28 +398,50 @@ export default function Inventory() {
             <div className="bg-gradient-to-br from-primary to-primary/80 p-8 text-primary-foreground">
               <DialogHeader>
                 <DialogTitle className="text-3xl font-black tracking-tight flex items-center gap-3">
-                  <Package className="h-8 w-8" /> {editingItem ? 'Edit Item' : 'New Stock Item'}
+                  <Package className="h-8 w-8" />{" "}
+                  {editingItem ? "Edit Item" : "New Stock Item"}
                 </DialogTitle>
-                <p className="text-primary-foreground/70 font-medium">Fill in the details to update your inventory levels.</p>
+                <p className="text-primary-foreground/70 font-medium">
+                  Fill in the details to update your inventory levels.
+                </p>
               </DialogHeader>
             </div>
-            
+
             <div className="p-8 space-y-6 bg-background">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Item Name *</Label>
-                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl" placeholder="e.g. iPhone 13 Screen" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Item Name *
+                  </Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="h-12 rounded-xl"
+                    placeholder="e.g. iPhone 13 Screen"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">SKU / Model ID *</Label>
-                  <Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} className="h-12 rounded-xl" placeholder="SCR-IPH13-ORG" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    SKU / Model ID *
+                  </Label>
+                  <Input
+                    value={form.sku}
+                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                    className="h-12 rounded-xl"
+                    placeholder="SCR-IPH13-ORG"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Category</Label>
-                  <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Category
+                  </Label>
+                  <Select
+                    value={form.category}
+                    onValueChange={(v) => setForm({ ...form, category: v })}
+                  >
                     <SelectTrigger className="h-12 rounded-xl font-bold">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
@@ -258,44 +453,103 @@ export default function Inventory() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quantity</Label>
-                  <Input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} className="h-12 rounded-xl font-bold" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Quantity
+                  </Label>
+                  <Input
+                    type="number"
+                    value={form.quantity}
+                    onChange={(e) =>
+                      setForm({ ...form, quantity: e.target.value })
+                    }
+                    className="h-12 rounded-xl font-bold"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Low Stock Alert</Label>
-                  <Input type="number" value={form.minStock} onChange={e => setForm({ ...form, minStock: e.target.value })} className="h-12 rounded-xl font-bold" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Low Stock Alert
+                  </Label>
+                  <Input
+                    type="number"
+                    value={form.minStock}
+                    onChange={(e) =>
+                      setForm({ ...form, minStock: e.target.value })
+                    }
+                    className="h-12 rounded-xl font-bold"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Cost Price (₹)</Label>
-                  <Input type="number" value={form.costPrice} onChange={e => setForm({ ...form, costPrice: e.target.value })} className="h-12 rounded-xl font-bold" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Cost Price (₹)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={form.costPrice}
+                    onChange={(e) =>
+                      setForm({ ...form, costPrice: e.target.value })
+                    }
+                    className="h-12 rounded-xl font-bold"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Sell Price (₹)</Label>
-                  <Input type="number" value={form.sellPrice} onChange={e => setForm({ ...form, sellPrice: e.target.value })} className="h-12 rounded-xl font-bold border-primary/20" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Sell Price (₹)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={form.sellPrice}
+                    onChange={(e) =>
+                      setForm({ ...form, sellPrice: e.target.value })
+                    }
+                    className="h-12 rounded-xl font-bold border-primary/20"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">GST %</Label>
-                  <Input type="number" value={form.gstPercent} onChange={e => setForm({ ...form, gstPercent: e.target.value })} className="h-12 rounded-xl font-bold" />
+                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    GST %
+                  </Label>
+                  <Input
+                    type="number"
+                    value={form.gstPercent}
+                    onChange={(e) =>
+                      setForm({ ...form, gstPercent: e.target.value })
+                    }
+                    className="h-12 rounded-xl font-bold"
+                  />
                 </div>
               </div>
-              
+
               <div className="bg-primary/5 p-4 rounded-2xl flex items-start gap-3 border border-primary/10">
                 <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-primary/80 font-medium leading-relaxed uppercase tracking-tight">
-                  This item will be available in the **Sales** module for checkout once added to stock.
+                  This item will be available in the **Sales** module for
+                  checkout once added to stock.
                 </p>
               </div>
             </div>
-            
+
             <DialogFooter className="p-8 pt-0 bg-background flex gap-3">
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting} className="h-14 flex-1 rounded-2xl font-black border-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isSubmitting}
+                className="h-14 flex-1 rounded-2xl font-black border-2"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleAdd} disabled={isSubmitting} className="h-14 flex-[2] rounded-2xl font-black text-lg shadow-xl shadow-primary/20">
-                {isSubmitting ? "Processing..." : (editingItem ? 'Update Stock' : 'Confirm & Add')}
+              <Button
+                onClick={handleAdd}
+                disabled={isSubmitting}
+                className="h-14 flex-[2] rounded-2xl font-black text-lg shadow-xl shadow-primary/20"
+              >
+                {isSubmitting
+                  ? "Processing..."
+                  : editingItem
+                    ? "Update Stock"
+                    : "Confirm & Add"}
               </Button>
             </DialogFooter>
           </DialogContent>

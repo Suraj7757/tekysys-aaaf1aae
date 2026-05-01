@@ -45,14 +45,18 @@ export function AutomationSettingsCard() {
         <div className="flex items-center justify-between gap-3 pt-2 border-t">
           <div>
             <Label className="text-sm">Pending threshold (days)</Label>
-            <p className="text-xs text-muted-foreground">Itne din se stuck job → alert</p>
+            <p className="text-xs text-muted-foreground">
+              Itne din se stuck job → alert
+            </p>
           </div>
           <Input
             type="number"
             min={1}
             max={30}
             value={settings.pending_threshold_days}
-            onChange={(e) => save({ pending_threshold_days: parseInt(e.target.value) || 3 })}
+            onChange={(e) =>
+              save({ pending_threshold_days: parseInt(e.target.value) || 3 })
+            }
             className="w-20 h-9 text-center"
           />
         </div>
@@ -61,7 +65,17 @@ export function AutomationSettingsCard() {
   );
 }
 
-function Row({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Row({
+  label,
+  desc,
+  checked,
+  onChange,
+}: {
+  label: string;
+  desc: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex-1">

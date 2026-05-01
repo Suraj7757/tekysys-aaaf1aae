@@ -1,6 +1,12 @@
-export type JobStatus = 'Received' | 'In Progress' | 'Ready' | 'Delivered' | 'Rejected' | 'Unrepairable';
-export type PaymentMethod = 'Cash' | 'UPI/QR' | 'Due';
-export type UserRole = 'admin' | 'staff';
+export type JobStatus =
+  | "Received"
+  | "In Progress"
+  | "Ready"
+  | "Delivered"
+  | "Rejected"
+  | "Unrepairable";
+export type PaymentMethod = "Cash" | "UPI/QR" | "Due";
+export type UserRole = "admin" | "staff";
 
 export interface Customer {
   id: string;

@@ -1,109 +1,432 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
-import Landing from '@/features/dashboard/Landing';
-import Auth from '@/features/auth/Auth';
-import TrackOrder from '@/features/jobs/TrackOrder';
-import Dashboard from '@/features/dashboard/Dashboard';
-import Customers from '@/features/customers/Customers';
-import RepairJobs from '@/features/jobs/RepairJobs';
-import Payments from '@/features/payments/Payments';
-import Settlements from '@/features/payments/Settlements';
-import Inventory from '@/features/inventory/Inventory';
-import Sells from '@/features/inventory/Sells';
-import Reports from '@/features/dashboard/Reports';
-import Settings from '@/features/settings/Settings';
-import Trash from '@/features/admin/Trash';
-import ResetPassword from '@/features/auth/ResetPassword';
-import AdminPanel from '@/features/admin/AdminPanel';
-import WalletPage from '@/features/wallet/WalletPage';
-import Subscription from '@/features/settings/Subscription';
-import ServicesManagement from '@/features/services/ServicesManagement';
-import EnterpriseModules from '@/features/enterprise/EnterpriseModules';
-import StaffManagement from '@/features/staff/StaffManagement';
-import Financials from '@/features/dashboard/Financials';
-import Analytics from '@/features/dashboard/Analytics';
-import PrivacyPolicy from '@/features/dashboard/PrivacyPolicy';
-import TermsConditions from '@/features/dashboard/TermsConditions';
-import NotFound from '@/components/common/NotFound';
-import Branches from '@/features/branches/Branches';
-import Expenses from '@/features/expenses/Expenses';
-import Loyalty from '@/features/loyalty/Loyalty';
-import BookingsAdmin from '@/features/booking/BookingsAdmin';
-import PublicBooking from '@/features/booking/PublicBooking';
-import WholesaleDashboard from '@/features/wholesale/WholesaleDashboard';
-import CustomerDashboard from '@/features/customer/CustomerDashboard';
-import { homePathFor, isSuperAdmin } from '@/lib/accountType';
+import Landing from "@/features/dashboard/Landing";
+import Auth from "@/features/auth/Auth";
+import TrackOrder from "@/features/jobs/TrackOrder";
+import Dashboard from "@/features/dashboard/Dashboard";
+import Customers from "@/features/customers/Customers";
+import RepairJobs from "@/features/jobs/RepairJobs";
+import Payments from "@/features/payments/Payments";
+import Settlements from "@/features/payments/Settlements";
+import Inventory from "@/features/inventory/Inventory";
+import Sells from "@/features/inventory/Sells";
+import Reports from "@/features/dashboard/Reports";
+import Settings from "@/features/settings/Settings";
+import Trash from "@/features/admin/Trash";
+import ResetPassword from "@/features/auth/ResetPassword";
+import AdminPanel from "@/features/admin/AdminPanel";
+import DevPanel from "@/features/admin/DevPanel";
+import WalletPage from "@/features/wallet/WalletPage";
+import Subscription from "@/features/settings/Subscription";
+import ServicesManagement from "@/features/services/ServicesManagement";
+import EnterpriseModules from "@/features/enterprise/EnterpriseModules";
+import StaffManagement from "@/features/staff/StaffManagement";
+import Financials from "@/features/dashboard/Financials";
+import Analytics from "@/features/dashboard/Analytics";
+import PrivacyPolicy from "@/features/dashboard/PrivacyPolicy";
+import TermsConditions from "@/features/dashboard/TermsConditions";
+import NotFound from "@/components/common/NotFound";
+import Branches from "@/features/branches/Branches";
+import Expenses from "@/features/expenses/Expenses";
+import Loyalty from "@/features/loyalty/Loyalty";
+import BookingsAdmin from "@/features/booking/BookingsAdmin";
+import PublicBooking from "@/features/booking/PublicBooking";
+import WholesaleDashboard from "@/features/wholesale/WholesaleDashboard";
+import CustomerDashboard from "@/features/customer/CustomerDashboard";
+import AiDiagnosticCenter from "@/features/ai/AiDiagnosticCenter";
+import MarketingDashboard from "@/features/marketing/MarketingDashboard";
+import { homePathFor, isSuperAdmin } from "@/lib/accountType";
 
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Chatbot } from '@/components/common/Chatbot';
-import { Suspense } from 'react';
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Chatbot } from "@/components/common/Chatbot";
+import { Suspense } from "react";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, allowExpired = false }: { children: React.ReactNode, allowExpired?: boolean }) {
-  const { user, loading, isPlanExpired, isBanned, isMaintenance } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+function ProtectedRoute({
+  children,
+  allowExpired = false,
+}: {
+  children: React.ReactNode;
+  allowExpired?: boolean;
+}) {
+  const { user, role, loading, isPlanExpired, isBanned, isMaintenance, isSuperAdmin } =
+    useAuth();
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   if (!user) return <Navigate to="/auth" replace />;
-  if (isMaintenance && user.email !== 'krs715665@gmail.com') return <Navigate to="/auth" replace />;
-  if (isBanned) return <Navigate to="/auth" replace />;
-  if (isPlanExpired && !allowExpired && user.email !== 'krs715665@gmail.com') {
+  if (isMaintenance && role !== "admin" && !isSuperAdmin) return <Navigate to="/auth" replace />;
+  if (isBanned && !isSuperAdmin) return <Navigate to="/auth" replace />;
+  if (isPlanExpired && !allowExpired && role !== "admin" && !isSuperAdmin) {
     return <Navigate to="/subscription" replace />;
   }
   return <>{children}</>;
 }
 
 function AppRoutes() {
-  const { user, loading, accountType } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
-  const home = user ? homePathFor(accountType, isSuperAdmin(user)) : '/';
+  const { user, role, loading, accountType } = useAuth();
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  const home = user ? homePathFor(accountType, role === "admin") : "/";
 
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        }
+      >
         <Routes>
-          <Route path="/" element={user ? <Navigate to={home} replace /> : <Landing />} />
-          <Route path="/auth" element={(() => {
-            const hash = typeof window !== 'undefined' ? window.location.hash : '';
-            const hashParams = new URLSearchParams(hash.replace('#', '?'));
-            const isEmailConfirm = hashParams.get('type') === 'signup' || hashParams.get('type') === 'magiclink';
-            if (user && !isEmailConfirm) return <Navigate to={home} replace />;
-            return <Auth />;
-          })()} />
-          <Route path="/wholesale" element={<ProtectedRoute><WholesaleDashboard /></ProtectedRoute>} />
-          <Route path="/customer" element={<ProtectedRoute><CustomerDashboard /></ProtectedRoute>} />
+          <Route
+            path="/"
+            element={user ? <Navigate to={home} replace /> : <Landing />}
+          />
+          <Route
+            path="/auth"
+            element={(() => {
+              const hash =
+                typeof window !== "undefined" ? window.location.hash : "";
+              const hashParams = new URLSearchParams(hash.replace("#", "?"));
+              const isEmailConfirm =
+                hashParams.get("type") === "signup" ||
+                hashParams.get("type") === "magiclink";
+              if (user && !isEmailConfirm)
+                return <Navigate to={home} replace />;
+              return <Auth />;
+            })()}
+          />
+          <Route
+            path="/wholesale"
+            element={
+              <ProtectedRoute>
+                <WholesaleDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer"
+            element={
+              <ProtectedRoute>
+                <CustomerDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Dashboard />}</ProtectedRoute>} />
-          <Route path="/customers" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Customers />}</ProtectedRoute>} />
-          <Route path="/jobs" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <RepairJobs />}</ProtectedRoute>} />
-          <Route path="/payments" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Payments />}</ProtectedRoute>} />
-          <Route path="/settlements" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Settlements />}</ProtectedRoute>} />
-          <Route path="/inventory" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Inventory />}</ProtectedRoute>} />
-          <Route path="/sells" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Sells />}</ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Reports />}</ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Analytics />}</ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/trash" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Trash />}</ProtectedRoute>} />
-          <Route path="/wallet" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <WalletPage />}</ProtectedRoute>} />
-          <Route path="/subscription" element={<ProtectedRoute allowExpired>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Subscription />}</ProtectedRoute>} />
-          <Route path="/services" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <ServicesManagement />}</ProtectedRoute>} />
-          <Route path="/enterprise" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <EnterpriseModules />}</ProtectedRoute>} />
-          <Route path="/staff" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <StaffManagement />}</ProtectedRoute>} />
-          <Route path="/financials" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Financials />}</ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-          <Route path="/branches" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Branches />}</ProtectedRoute>} />
-          <Route path="/expenses" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Expenses />}</ProtectedRoute>} />
-          <Route path="/loyalty" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <Loyalty />}</ProtectedRoute>} />
-          <Route path="/bookings" element={<ProtectedRoute>{user?.email === 'krs715665@gmail.com' ? <Navigate to="/admin" replace /> : <BookingsAdmin />}</ProtectedRoute>} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Dashboard />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Customers />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <RepairJobs />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Payments />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settlements"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Settlements />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Inventory />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sells"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Sells />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Reports />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Analytics />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trash"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Trash />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <WalletPage />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute allowExpired>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Subscription />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <ServicesManagement />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/enterprise"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <EnterpriseModules />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-diagnostics"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <AiDiagnosticCenter />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/marketing"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <MarketingDashboard />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <StaffManagement />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/financials"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Financials />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dev-panel"
+            element={
+              <ProtectedRoute>
+                <DevPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/branches"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Branches />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Expenses />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/loyalty"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <Loyalty />
+                )}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                {role === "admin" ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <BookingsAdmin />
+                )}
+              </ProtectedRoute>
+            }
+          />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsConditions />} />
-          <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
+          <Route
+            path="*"
+            element={
+              <ErrorBoundary>
+                <NotFound />
+              </ErrorBoundary>
+            }
+          />
         </Routes>
       </Suspense>
     </ErrorBoundary>
@@ -112,10 +435,10 @@ function AppRoutes() {
 
 export default function App() {
   useEffect(() => {
-    localStorage.setItem('rx-skin', 'default');
-    const layout = localStorage.getItem('rx-layout') || 'default';
-    document.documentElement.setAttribute('data-skin', 'default');
-    document.documentElement.setAttribute('data-layout', layout);
+    localStorage.setItem("rx-skin", "default");
+    const layout = localStorage.getItem("rx-layout") || "modern";
+    document.documentElement.setAttribute("data-skin", "default");
+    document.documentElement.setAttribute("data-layout", layout);
   }, []);
 
   return (

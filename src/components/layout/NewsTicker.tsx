@@ -5,7 +5,7 @@ const NEWS = [
   "Refer your friends and earn rewards automatically. 💰",
   "Daily bug fixes and security updates deployed. 🛡️",
   "PDF & Excel exports added for better tracking. 📊",
-  "Coming Soon: AI-powered diagnostic assistant! 🤖"
+  "Coming Soon: AI-powered diagnostic assistant! 🤖",
 ];
 
 export function NewsTicker() {
@@ -18,7 +18,10 @@ export function NewsTicker() {
         <div className="flex-1 overflow-hidden pointer-events-none">
           <div className="flex gap-24 animate-marquee whitespace-nowrap whitespace-nowrap hover:pause">
             {[...NEWS, ...NEWS].map((news, i) => (
-              <span key={i} className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+              <span
+                key={i}
+                className="text-sm font-bold text-foreground/80 flex items-center gap-2"
+              >
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" /> {news}
               </span>
             ))}

@@ -1,5 +1,11 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Wrench, Plus, ShoppingCart, Menu } from "lucide-react";
+import {
+  LayoutDashboard,
+  Wrench,
+  Plus,
+  ShoppingCart,
+  Menu,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
@@ -31,7 +37,9 @@ export function MobileBottomNav() {
               <span className="h-12 w-12 rounded-full gradient-primary flex items-center justify-center shadow-lg ring-4 ring-background hover:scale-105 transition-transform">
                 <Icon className="h-6 w-6 text-primary-foreground" />
               </span>
-              <span className="text-[10px] font-medium mt-1 text-muted-foreground">{item.label}</span>
+              <span className="text-[10px] font-medium mt-1 text-muted-foreground">
+                {item.label}
+              </span>
             </button>
           );
         }
@@ -41,7 +49,9 @@ export function MobileBottomNav() {
             to={item.to}
             className={cn(
               "flex flex-col items-center justify-center px-3 py-1 rounded-lg transition-colors",
-              active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              active
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-5 w-5" />

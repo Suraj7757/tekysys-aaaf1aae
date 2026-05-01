@@ -1,18 +1,36 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { supabase } from '@/services/supabase';
-import { useAuth } from '@/context/AuthContext';
+import { useState } from "react";
 import {
-  RotateCcw, User, IndianRupee, AlertCircle,
-  Banknote, Smartphone, Building2, CheckCircle
-} from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { supabase } from "@/services/supabase";
+import { useAuth } from "@/context/AuthContext";
+import {
+  RotateCcw,
+  User,
+  IndianRupee,
+  AlertCircle,
+  Banknote,
+  Smartphone,
+  Building2,
+  CheckCircle,
+} from "lucide-react";
 
 interface RefundModalProps {
   open: boolean;
@@ -28,49 +46,60 @@ interface RefundModalProps {
 }
 
 const refundReasons = [
-  'Device not repairable',
-  'Overcharged by mistake',
-  'Service cancelled by customer',
-  'Quality complaint',
-  'Warranty claim',
-  'Duplicate payment',
-  'Customer dissatisfied',
-  'Other',
+  "Device not repairable",
+  "Overcharged by mistake",
+  "Service cancelled by customer",
+  "Quality complaint",
+  "Warranty claim",
+  "Duplicate payment",
+  "Customer dissatisfied",
+  "Other",
 ];
 
-export default function RefundModal({ open, onClose, payment, onSuccess }: RefundModalProps) {
+export default function RefundModal({
+  open,
+  onClose,
+  payment,
+  onSuccess,
+}: RefundModalProps) {
   const { user } = useAuth();
-  const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
-  const [refundAmount, setRefundAmount] = useState('');
-  const [reason, setReason] = useState('');
-  const [notes, setNotes] = useState('');
-  const [method, setMethod] = useState('cash');
-  const [upiOrAccount, setUpiOrAccount] = useState('');
+  const [refundType, setRefundType] = useState<"full" | "partial">("full");
+  const [refundAmount, setRefundAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
+  const [method, setMethod] = useState("cash");
+  const [upiOrAccount, setUpiOrAccount] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const finalAmount = refundType === 'full' ? (payment?.amount || 0) : (parseFloat(refundAmount) || 0);
+  const finalAmount =
+    refundType === "full"
+      ? payment?.amount || 0
+      : parseFloat(refundAmount) || 0;
 
   const handleRefund = async () => {
     if (!user || !payment) return;
-    if (!reason) { toast.error('Please select a refund reason'); return; }
-    if (refundType === 'partial' && (!refundAmount || finalAmount <= 0)) {
-      toast.error('Enter a valid refund amount');
+    if (!reason) {
+      toast.error("Please select a refund reason");
+      return;
+    }
+    if (refundType === "partial" && (!refundAmount || finalAmount <= 0)) {
+      toast.error("Enter a valid refund amount");
       return;
     }
     if (finalAmount > (payment.amount || 0)) {
-      toast.error('Refund amount cannot exceed original amount');
+      toast.error("Refund amount cannot exceed original amount");
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('payment_refunds').insert({
+      const { error } = await supabase.from("payment_refunds").insert({
         job_id: payment.job_id,
         payment_id: payment.id || null,
         user_id: user.id,
-        customer_name: payment.customer_name || '',
-        customer_phone: (payment as any).customer_mobile || '',
+        customer_name: payment.customer_name || "",
+        customer_phone: (payment as any).customer_mobile || "",
         original_amount: payment.amount,
         refund_amount: finalAmount,
         refund_method: method,
@@ -80,16 +109,23 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
       if (error) throw error;
 
       // Deduct from wallet if exists
-      const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).maybeSingle();
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (wallet) {
-        await supabase.from('wallets').update({
-          balance: Math.max(0, Number(wallet.balance) - finalAmount),
-        }).eq('user_id', user.id);
+        await supabase
+          .from("wallets")
+          .update({
+            balance: Math.max(0, Number(wallet.balance) - finalAmount),
+          })
+          .eq("user_id", user.id);
 
-        await supabase.from('wallet_transactions').insert({
+        await supabase.from("wallet_transactions").insert({
           user_id: user.id,
-          type: 'withdrawal',
-          source: 'business',
+          type: "withdrawal",
+          source: "business",
           amount: finalAmount,
           description: `Refund for Job ${payment.job_id}: ${reason}`,
         } as any);
@@ -97,26 +133,29 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
 
       // Mark payment as refunded
       if (payment.id) {
-        await supabase.from('payments').update({ method: 'Refunded' as any }).eq('id', payment.id);
+        await supabase
+          .from("payments")
+          .update({ method: "Refunded" as any })
+          .eq("id", payment.id);
       }
 
       setDone(true);
       toast.success(`Refund of ₹${finalAmount.toLocaleString()} processed!`);
       onSuccess?.();
     } catch (e) {
-      toast.error('Failed to process refund');
+      toast.error("Failed to process refund");
     }
     setLoading(false);
   };
 
   const handleClose = () => {
     setDone(false);
-    setRefundType('full');
-    setRefundAmount('');
-    setReason('');
-    setNotes('');
-    setMethod('cash');
-    setUpiOrAccount('');
+    setRefundType("full");
+    setRefundAmount("");
+    setReason("");
+    setNotes("");
+    setMethod("cash");
+    setUpiOrAccount("");
     onClose();
   };
 
@@ -137,15 +176,19 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-orange-100 text-sm">
                 <User className="h-3.5 w-3.5" />
-                <span>{payment.customer_name || 'Customer'}</span>
+                <span>{payment.customer_name || "Customer"}</span>
               </div>
               <div className="flex items-center gap-1 text-white">
                 <span className="text-xs text-orange-200">Original Paid:</span>
                 <IndianRupee className="h-4 w-4" />
-                <span className="font-black text-xl">{payment.amount.toLocaleString()}</span>
+                <span className="font-black text-xl">
+                  {payment.amount.toLocaleString()}
+                </span>
               </div>
             </div>
-            <Badge className="bg-white/20 text-white border-0">Job #{payment.job_id}</Badge>
+            <Badge className="bg-white/20 text-white border-0">
+              Job #{payment.job_id}
+            </Badge>
           </div>
         </div>
 
@@ -155,36 +198,57 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <h3 className="font-bold text-lg">Refund Processed!</h3>
-            <p className="text-muted-foreground text-sm">₹{finalAmount.toLocaleString()} refund has been recorded via {method}.</p>
-            <Button className="w-full" onClick={handleClose}>Done</Button>
+            <p className="text-muted-foreground text-sm">
+              ₹{finalAmount.toLocaleString()} refund has been recorded via{" "}
+              {method}.
+            </p>
+            <Button className="w-full" onClick={handleClose}>
+              Done
+            </Button>
           </div>
         ) : (
           <>
             <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
               {/* Refund Type */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refund Type</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Refund Type
+                </Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {[{ val: 'full', label: 'Full Refund', amount: `₹${payment.amount.toLocaleString()}` },
-                    { val: 'partial', label: 'Partial Refund', amount: 'Custom' }].map(opt => (
+                  {[
+                    {
+                      val: "full",
+                      label: "Full Refund",
+                      amount: `₹${payment.amount.toLocaleString()}`,
+                    },
+                    {
+                      val: "partial",
+                      label: "Partial Refund",
+                      amount: "Custom",
+                    },
+                  ].map((opt) => (
                     <button
                       key={opt.val}
                       onClick={() => setRefundType(opt.val as any)}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
                         refundType === opt.val
-                          ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                          : 'border-border hover:border-orange-300'
+                          ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20"
+                          : "border-border hover:border-orange-300"
                       }`}
                     >
                       <div className="font-bold text-sm">{opt.label}</div>
-                      <div className={`text-xs mt-0.5 ${refundType === opt.val ? 'text-orange-600' : 'text-muted-foreground'}`}>{opt.amount}</div>
+                      <div
+                        className={`text-xs mt-0.5 ${refundType === opt.val ? "text-orange-600" : "text-muted-foreground"}`}
+                      >
+                        {opt.amount}
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Partial Amount */}
-              {refundType === 'partial' && (
+              {refundType === "partial" && (
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold">Refund Amount (₹)</Label>
                   <div className="relative">
@@ -194,7 +258,7 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
                       className="pl-8 font-bold text-orange-600 border-orange-300 focus-visible:ring-orange-400"
                       placeholder="Enter amount"
                       value={refundAmount}
-                      onChange={e => setRefundAmount(e.target.value)}
+                      onChange={(e) => setRefundAmount(e.target.value)}
                       max={payment.amount}
                     />
                   </div>
@@ -209,20 +273,28 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
 
               {/* Refund Amount Summary */}
               <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Refund Amount</span>
-                <span className="text-xl font-black text-orange-600">₹{finalAmount.toLocaleString()}</span>
+                <span className="text-sm font-medium text-orange-700 dark:text-orange-400">
+                  Refund Amount
+                </span>
+                <span className="text-xl font-black text-orange-600">
+                  ₹{finalAmount.toLocaleString()}
+                </span>
               </div>
 
               {/* Reason */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refund Reason *</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Refund Reason *
+                </Label>
                 <Select value={reason} onValueChange={setReason}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select reason..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {refundReasons.map(r => (
-                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    {refundReasons.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -230,59 +302,100 @@ export default function RefundModal({ open, onClose, payment, onSuccess }: Refun
 
               {/* Notes */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Additional Notes
+                </Label>
                 <Textarea
                   placeholder="Internal notes about this refund..."
                   className="resize-none min-h-[70px] text-sm"
                   value={notes}
-                  onChange={e => setNotes(e.target.value)}
+                  onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
 
               {/* Refund Method */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refund Method</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Refund Method
+                </Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { val: 'cash', label: 'Cash', icon: Banknote, color: 'green' },
-                    { val: 'upi', label: 'UPI', icon: Smartphone, color: 'blue' },
-                    { val: 'bank_transfer', label: 'Bank', icon: Building2, color: 'purple' },
-                  ].map(m => (
+                    {
+                      val: "cash",
+                      label: "Cash",
+                      icon: Banknote,
+                      color: "green",
+                    },
+                    {
+                      val: "upi",
+                      label: "UPI",
+                      icon: Smartphone,
+                      color: "blue",
+                    },
+                    {
+                      val: "bank_transfer",
+                      label: "Bank",
+                      icon: Building2,
+                      color: "purple",
+                    },
+                  ].map((m) => (
                     <button
                       key={m.val}
                       onClick={() => setMethod(m.val)}
                       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all ${
-                        method === m.val ? `border-${m.color}-500 bg-${m.color}-50 dark:bg-${m.color}-950/20` : 'border-border hover:border-muted-foreground/30'
+                        method === m.val
+                          ? `border-${m.color}-500 bg-${m.color}-50 dark:bg-${m.color}-950/20`
+                          : "border-border hover:border-muted-foreground/30"
                       }`}
                     >
-                      <m.icon className={`h-5 w-5 ${method === m.val ? `text-${m.color}-600` : 'text-muted-foreground'}`} />
-                      <span className={`text-xs font-bold ${method === m.val ? `text-${m.color}-600` : 'text-muted-foreground'}`}>{m.label}</span>
+                      <m.icon
+                        className={`h-5 w-5 ${method === m.val ? `text-${m.color}-600` : "text-muted-foreground"}`}
+                      />
+                      <span
+                        className={`text-xs font-bold ${method === m.val ? `text-${m.color}-600` : "text-muted-foreground"}`}
+                      >
+                        {m.label}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {(method === 'upi' || method === 'bank_transfer') && (
+              {(method === "upi" || method === "bank_transfer") && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">{method === 'upi' ? 'UPI ID' : 'Account / IFSC'}</Label>
+                  <Label className="text-xs font-bold">
+                    {method === "upi" ? "UPI ID" : "Account / IFSC"}
+                  </Label>
                   <Input
-                    placeholder={method === 'upi' ? 'customer@upi' : 'Account number or IFSC'}
+                    placeholder={
+                      method === "upi"
+                        ? "customer@upi"
+                        : "Account number or IFSC"
+                    }
                     value={upiOrAccount}
-                    onChange={e => setUpiOrAccount(e.target.value)}
+                    onChange={(e) => setUpiOrAccount(e.target.value)}
                   />
                 </div>
               )}
             </div>
 
             <DialogFooter className="p-4 border-t bg-muted/30 gap-2">
-              <Button variant="outline" onClick={handleClose} className="flex-1">Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
               <Button
                 onClick={handleRefund}
                 disabled={loading || !reason || finalAmount <= 0}
                 className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                {loading ? 'Processing...' : `Refund ₹${finalAmount.toLocaleString()}`}
+                {loading
+                  ? "Processing..."
+                  : `Refund ₹${finalAmount.toLocaleString()}`}
               </Button>
             </DialogFooter>
           </>

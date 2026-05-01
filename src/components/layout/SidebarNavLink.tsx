@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
-import { SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Link } from "react-router-dom";
+import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SidebarNavLinkProps {
   to: string;
@@ -11,7 +11,13 @@ interface SidebarNavLinkProps {
   collapsed: boolean;
 }
 
-export function SidebarNavLink({ to, icon: Icon, label, active, collapsed }: SidebarNavLinkProps) {
+export function SidebarNavLink({
+  to,
+  icon: Icon,
+  label,
+  active,
+  collapsed,
+}: SidebarNavLinkProps) {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -19,9 +25,10 @@ export function SidebarNavLink({ to, icon: Icon, label, active, collapsed }: Sid
         isActive={active}
         tooltip={label}
         className={cn(
-          'group relative transition-all duration-200 hover:translate-x-0.5',
-          active && 'bg-sidebar-primary/15 text-sidebar-primary-foreground font-semibold shadow-sm',
-          !active && 'hover:bg-sidebar-accent/60'
+          "group relative transition-all duration-200 hover:translate-x-0.5",
+          active &&
+            "bg-sidebar-primary/15 text-sidebar-primary-foreground font-semibold shadow-sm",
+          !active && "hover:bg-sidebar-accent/60",
         )}
       >
         <Link to={to} className="flex items-center gap-3">
@@ -30,8 +37,8 @@ export function SidebarNavLink({ to, icon: Icon, label, active, collapsed }: Sid
           )}
           <Icon
             className={cn(
-              'h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110',
-              active && 'text-sidebar-primary'
+              "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
+              active && "text-sidebar-primary",
             )}
           />
           {!collapsed && <span className="truncate">{label}</span>}

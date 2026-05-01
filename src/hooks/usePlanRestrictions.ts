@@ -2,7 +2,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useSupabaseQuery } from "./useSupabaseData";
 import { useMemo } from "react";
 
-export type PlanType = 'free' | 'basic' | 'standard' | 'enterprise' | 'premium' | 'pro';
+export type PlanType =
+  | "free"
+  | "basic"
+  | "standard"
+  | "enterprise"
+  | "premium"
+  | "pro";
 
 export const PLAN_LIMITS = {
   free: {
@@ -23,7 +29,8 @@ export const PLAN_LIMITS = {
     hasEnterprise: false,
     hasBranches: false,
   },
-  pro: { // 'pro' was used in some places as a general paid tier
+  pro: {
+    // 'pro' was used in some places as a general paid tier
     maxJobs: Infinity,
     maxEmployees: 6,
     hasInventory: true,
@@ -58,24 +65,24 @@ export const PLAN_LIMITS = {
     hasReports: true,
     hasEnterprise: true,
     hasBranches: true,
-  }
+  },
 };
 
 export function usePlanRestrictions() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   // We can fetch the plan from profiles or subscriptions
-  const { data: profiles } = useSupabaseQuery<any>('profiles');
-  
+  const { data: profiles } = useSupabaseQuery<any>("profiles");
+
   const userProfile = useMemo(() => {
     if (!user || !profiles.length) return null;
     return profiles.find((p: any) => p.user_id === user.id);
   }, [user, profiles]);
 
-  const planType = (userProfile?.plan_type || 'free').toLowerCase() as PlanType;
+  const planType = (userProfile?.plan_type || "free").toLowerCase() as PlanType;
   const limits = PLAN_LIMITS[planType] || PLAN_LIMITS.free;
 
   const isFeatureLocked = (feature: keyof typeof PLAN_LIMITS.free) => {
-    if (user?.email === 'krs715665@gmail.com') return false;
+    if (role === "admin") return false;
     return !limits[feature];
   };
 
@@ -83,6 +90,6 @@ export function usePlanRestrictions() {
     planType,
     limits,
     isFeatureLocked,
-    userProfile
+    userProfile,
   };
 }
