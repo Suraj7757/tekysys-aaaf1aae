@@ -9,6 +9,7 @@ import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -35,6 +36,7 @@ export function Header() {
 
   return (
     <div className="flex items-center gap-2">
+      <LanguageSwitcher />
       <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
