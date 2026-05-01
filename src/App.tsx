@@ -105,7 +105,10 @@ function AppRoutes() {
               const isEmailConfirm =
                 hashParams.get("type") === "signup" ||
                 hashParams.get("type") === "magiclink";
-              if (user && !isEmailConfirm)
+              
+              const { isBanned, isMaintenance } = useAuth();
+              
+              if (user && !isEmailConfirm && !isBanned && !isMaintenance)
                 return <Navigate to={home} replace />;
               return <Auth />;
             })()}
