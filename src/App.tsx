@@ -40,6 +40,12 @@ import WholesaleDashboard from "@/features/wholesale/WholesaleDashboard";
 import CustomerDashboard from "@/features/customer/CustomerDashboard";
 import AiDiagnosticCenter from "@/features/ai/AiDiagnosticCenter";
 import MarketingDashboard from "@/features/marketing/MarketingDashboard";
+import Marketplace from "@/features/marketplace/Marketplace";
+import ListingDetail from "@/features/marketplace/ListingDetail";
+import Cart from "@/features/marketplace/Cart";
+import Checkout from "@/features/marketplace/Checkout";
+import MyOrders from "@/features/marketplace/MyOrders";
+import SellerListings from "@/features/marketplace/SellerListings";
 import { homePathFor, isSuperAdmin } from "@/lib/accountType";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -420,6 +426,13 @@ function AppRoutes() {
             }
           />
           <Route path="/book/:slug" element={<PublicBooking />} />
+          {/* Marketplace (public browse) */}
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/marketplace/:id" element={<ListingDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/my-listings" element={<ProtectedRoute><SellerListings /></ProtectedRoute>} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsConditions />} />
           <Route

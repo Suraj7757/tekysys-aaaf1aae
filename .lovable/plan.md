@@ -1,104 +1,138 @@
-# Multi-Account Types + Super Admin God-Mode
 
-## Goal
-1. Signup pe user choose kare: **Customer / Shopkeeper / Wholesaler** (Repair shop ke alawa). Har type ka apna dashboard.
-2. Super Admin (krs715665@gmail.com) ke paas **har** user, plan, promo, referral, discount, wallet, subscription pe full edit/control.
+## Project Analysis (current state)
 
----
+**Site ka core:** RepairXpert — ek SaaS jo 4 user-types ko jodti hai:
+`Customer ↔ Shopkeeper (repair shop) ↔ Wholesaler ↔ Super-Admin (krs715665@gmail.com)`
 
-## Part 1 — Account Types & Dashboards
-
-### Database changes (migration)
-- Extend `app_role` enum: add `'customer'`, `'shopkeeper'`, `'wholesaler'` (keep existing `admin`, `staff`).
-- Add `account_type text` column to `profiles` (values: `shopkeeper` | `wholesaler` | `customer`; default `shopkeeper` for backward compat).
-- Update `handle_new_user()` trigger:
-  - Read `raw_user_meta_data->>'account_type'` from signup metadata.
-  - Insert correct `account_type` into profiles.
-  - Assign matching role into `user_roles`.
-  - Skip creating `shop_settings`/`job_counter`/`sell_counter` for `customer` accounts (not needed).
-- New table `wholesale_catalog` (id, user_id, item_name, sku, bulk_price, moq, stock, category, created_at) with RLS — owner manage, public select for active items.
-- New table `customer_orders` (id, customer_id auth.uid, shopkeeper_id, items jsonb, total, status, created_at) — RLS for customer + target shopkeeper.
-
-### Auth UI (`src/features/auth/Auth.tsx`)
-- Add "Account Type" tab/segment on signup form: Shopkeeper (default) | Wholesaler | Customer.
-- Pass `account_type` in `signUp` metadata via `AuthContext.signUp`.
-
-### Routing (`src/App.tsx`)
-- After login, route based on `account_type`:
-  - `admin` (super) → `/admin`
-  - `shopkeeper` / `staff` → existing `/dashboard`
-  - `wholesaler` → new `/wholesale`
-  - `customer` → new `/customer`
-- Add `<Route path="/wholesale">` → `WholesaleDashboard` (catalog mgmt, bulk orders).
-- Add `<Route path="/customer">` → `CustomerDashboard` (browse shops, my repair orders via `/track`, my bookings).
-- Update `ProtectedRoute` to check `account_type` and redirect mismatched routes.
-
-### New pages
-- `src/features/wholesale/WholesaleDashboard.tsx` — catalog CRUD, incoming orders, revenue.
-- `src/features/customer/CustomerDashboard.tsx` — my bookings (`booking_requests` filtered by email), order tracking shortcut, browse shops, loyalty points across shops.
-
-### Sidebar (`src/components/layout/Sidebar.tsx`)
-- Render different nav based on `account_type` (re-use existing components).
+**Kya already bana hai (working):**
+- Auth (email/password + Google), 7-day trial, RBAC, account types
+- Shopkeeper CRM: jobs, payments, inventory, sells, expenses, branches, settlements
+- Customer dashboard: shop browse + repair/buy request submit + order tracking
+- Wholesale dashboard: catalog + incoming orders
+- Public booking page `/book/:slug`, public order tracking `/track`
+- Reviews, i18n (EN/HI/BN), barcode scanner, WhatsApp Business config
+- AI repair assistant (Lovable AI), notifications, loyalty, wallet, ads
+- Super-Admin god-mode RLS + admin RPCs
 
 ---
 
-## Part 2 — Super Admin God-Mode
+## Issues / Breaks Identified (must-fix before new features)
 
-Super admin already has `/admin`. Extend it with full control:
+### Critical — Security
+1. **Wallet self-update vulnerability (ERROR level)** — `wallets` table par user khud apna `balance` update kar sakta hai. Ye paise se related table hai → exploit ka risk.
+2. **Leaked password protection disabled** (warn) — HIBP enable karna hai.
 
-### Database (RLS additions via migration)
-Add admin-level policies (using `has_role(auth.uid(), 'admin')`) to allow **SELECT/UPDATE/DELETE** on:
-- `subscriptions` (already SELECT, add UPDATE for plan/expiry change)
-- `profiles` (already covered)
-- `wallets` (already covered)
-- `referrals` (add UPDATE/DELETE for admin)
-- `promo_codes` (already ALL)
-- `loyalty_settings` (add admin override)
-- `shop_settings` (add admin SELECT/UPDATE)
-- `repair_jobs`, `sells`, `payments`, `inventory`, `expenses`, `branches`, `booking_requests` — add admin SELECT (read-only audit) + UPDATE/DELETE.
-- `wholesale_catalog`, `customer_orders` (admin full).
-
-### Admin RPCs (SECURITY DEFINER, admin-only)
-- `admin_set_user_plan(_user_id, _plan, _expires_at)` — update profiles + subscriptions.
-- `admin_set_role(_user_id, _role)` — change user_roles.
-- `admin_adjust_wallet(_user_id, _delta, _note)` — credit/debit + log txn.
-- `admin_apply_discount(_user_id, _percent, _reason)` — store in new `admin_discounts` table.
-- `admin_force_delete_user(_user_id)` — soft-ban + cascade soft delete.
-
-### Admin Panel UI (`src/features/admin/AdminPanel.tsx`)
-Add new tabs / extend existing:
-- **Users tab**: filter by `account_type` (All / Shopkeeper / Wholesaler / Customer / Staff). Per-row actions: Edit Plan, Change Role, Adjust Wallet, Apply Discount, Ban/Unban, Impersonate-view (read-only drill into their data).
-- **Plans tab**: bulk update plans, set custom expiry, grant free trial extensions.
-- **Promo & Discounts tab**: existing promo + new "Custom Discount per User" form.
-- **Referrals tab**: approve/reject, modify reward amount, mark paid.
-- **Wholesale tab**: view all catalogs, moderate listings.
-- **Customer Orders tab**: view all customer→shopkeeper orders.
-- **Audit tab**: read-only feed of `activity_log` across all users.
-
-### Super-admin override everywhere
-- All ProtectedRoute checks already bypass for `krs715665@gmail.com` — keep that pattern.
-- Add helper `isSuperAdmin(user)` in `src/lib/utils.ts` and use uniformly.
+### Functional gaps (likely break user flow)
+3. **Customer → Wholesaler order placement** ka koi UI nahi hai. `customer_orders` table to hai but customer kahin se bhi browse/buy nahi kar sakta wholesale items.
+4. **Customer dashboard "Buy Item"** request bas `booking_requests` me jaata hai — wholesaler ko nahi pahunchta.
+5. **Wholesale catalog discoverability zero** — koi public marketplace page nahi.
+6. **Booking → Job conversion** RPC banaa hai (`convert_booking_to_job`) but customer-buy-request alag flow chahiye.
+7. **Shop discovery search/filter** customer ke liye nahi (sirf 20 shops list).
+8. **Customer ke "buy request"** ka data wholesaler ko nahi milta — sab shopkeeper-side jaata hai.
 
 ---
 
-## Files to Create
-- `supabase/migrations/<ts>_account_types_and_admin_godmode.sql`
-- `src/features/wholesale/WholesaleDashboard.tsx`
-- `src/features/customer/CustomerDashboard.tsx`
-- `src/features/admin/tabs/UsersAdvanced.tsx` (extracted)
-- `src/features/admin/tabs/DiscountsTab.tsx`
-- `src/lib/accountType.ts` (helpers)
+## Plan: Fix + Marketplace Expansion (10 phases)
 
-## Files to Edit
-- `src/features/auth/Auth.tsx` — account type selector
-- `src/context/AuthContext.tsx` — signUp passes account_type, expose `accountType`
-- `src/App.tsx` — new routes + redirect logic
-- `src/components/layout/Sidebar.tsx` — role-based nav
-- `src/features/admin/AdminPanel.tsx` — new tabs & controls
-- `src/lib/utils.ts` — `isSuperAdmin()`
+Aap chahein to ek-ek phase approve karein, ya saare ek saath bolein.
 
-## Out of scope (will confirm before doing)
-- Payment gateway for customer→shopkeeper orders (manual UPI for now).
-- Wholesale → shopkeeper purchase order workflow with invoicing (basic only this phase).
+### Phase 0 — Critical Fixes (MUST do first)
+- Wallet UPDATE policy hatake `admin_adjust_wallet` jaisi RPC route force karna
+- Leaked password protection enable karna
+- RLS policies ke `WITH CHECK` clauses tighten karna
+- AI assistant streaming errors silent-fail handling
 
-Approve karein to mai migration + code dono ek saath implement kar dunga.
+### Phase 1 — Marketplace Backbone (Customer ↔ Wholesaler ↔ Shopkeeper bridge)
+**New tables / changes:**
+- `marketplace_listings` (unified: shopkeepers + wholesalers dono products list kar sakein)
+  - fields: `seller_id, seller_type (shop|wholesale), title, category, price, mrp, stock, moq, images[], description, location, active, featured, rating_avg`
+- `marketplace_orders` (`customer_orders` ko extend / replace)
+  - fields: `buyer_id, seller_id, items jsonb, subtotal, shipping, total, address, payment_status, fulfillment_status, tracking_id`
+- `cart_items` (per-user cart, persistent)
+- `wishlists`
+- RPC: `place_marketplace_order()` — atomic stock decrement + order creation
+
+**New pages:**
+- `/marketplace` — public + logged-in browse with category, search, location filter
+- `/marketplace/:id` — product detail, add-to-cart, buy-now
+- `/cart`, `/checkout`, `/orders/:id`
+
+### Phase 2 — Service Booking Marketplace (Repair services)
+- `service_offerings` table: shopkeepers list services with fixed prices (Screen replace ₹1500, Battery ₹800…)
+- `/services` public page — customer apne area me service price compare kare
+- "Book Now" → existing `booking_requests` me jaata hai with `service_id`
+- Auto-quote generation
+
+### Phase 3 — Quote / RFQ System (Bulk inquiries)
+- `quote_requests` — customer or shopkeeper RFQ post kare ("Need 50 iPhone 12 batteries")
+- Multiple wholesalers competitive quotes submit karein
+- `quote_responses` table
+- Auto-notify matching wholesalers via WhatsApp/Email
+- Best quote accept → `marketplace_order` ban jaata hai
+
+### Phase 4 — Chat / Messaging
+- `conversations` + `messages` tables (realtime via Supabase channels)
+- Customer ↔ Shopkeeper, Customer ↔ Wholesaler, Shopkeeper ↔ Wholesaler
+- Per-order thread + general inquiry thread
+- File/image attachments via storage bucket
+
+### Phase 5 — Payments & Escrow
+- Razorpay/UPI deep-link integration for marketplace orders
+- Manual UTR upload fallback (already exists)
+- Optional escrow: payment hold till delivery confirm
+- Auto-payout to seller wallet on order completion
+- Platform commission (configurable, default 2%)
+
+### Phase 6 — Logistics / Delivery
+- `delivery_options` per seller: Self-pickup | Local courier | Shiprocket integration
+- Pin-code serviceability check
+- Tracking webhook → status updates
+- Customer side delivery timeline UI
+
+### Phase 7 — Trust & Safety
+- Seller verification badges (KYC docs upload)
+- `seller_verifications` table with admin approval flow
+- Buyer protection policy page
+- Dispute / Return request system (`disputes` table)
+- Auto-refund on dispute resolution
+
+### Phase 8 — Discovery & Marketing
+- Featured listings (paid promotion → wallet debit)
+- Banner ads on `/marketplace` (using existing `ads` table)
+- Email/WA campaigns to past customers
+- Coupon engine extend → marketplace coupons
+- "Shops near me" geolocation
+
+### Phase 9 — Analytics for all roles
+- Wholesaler: top-selling SKU, revenue trend, customer cohorts
+- Shopkeeper: marketplace vs walk-in revenue split
+- Customer: spending insights, points balance, savings
+- Super-Admin: GMV, take-rate, top sellers leaderboard
+
+### Phase 10 — Mobile-first polish
+- PWA install prompt (already), push notifications via FCM
+- Bottom-nav for `/marketplace`, `/cart`, `/orders`, `/chat`, `/account`
+- Offline cart cache
+- Skeleton loaders + image lazy-loading
+
+---
+
+## Suggested Order of Execution
+
+```text
+Sprint 1 → Phase 0 (security fixes)        [1 step]
+Sprint 2 → Phase 1 (marketplace + cart)    [biggest, most value]
+Sprint 3 → Phase 4 (chat) + Phase 2 (services)
+Sprint 4 → Phase 5 (payments) + Phase 6 (logistics)
+Sprint 5 → Phase 3 (RFQ) + Phase 7 (trust)
+Sprint 6 → Phase 8, 9, 10 polish
+```
+
+---
+
+## Approval
+
+Bataiye:
+1. **Phase 0 + Phase 1 dono ek saath** start karein (recommended)?  
+2. Ya sirf Phase 0 fix karein pehle, fir aap aage decide karein?  
+3. Ya kisi specific phase ko priority dein?

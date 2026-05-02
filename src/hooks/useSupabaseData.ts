@@ -39,7 +39,7 @@ export function useSupabaseQuery<T>(table: TableName, includeDeleted = false) {
     queryKey: [table, user?.id, includeDeleted],
     queryFn: async () => {
       if (!user) return [];
-      let query = supabase.from(table).select("*") as any;
+      let query = (supabase as any).from(table).select("*") as any;
       if (!["customer_feedback", "system_config", "features"].includes(table)) {
         query = query.eq("user_id", user.id);
       }
@@ -94,7 +94,7 @@ export function useActivityLog() {
       details?: Record<string, unknown>,
     ) => {
       if (!user) return;
-      await supabase.from("activity_log").insert({
+      await (supabase as any).from("activity_log").insert({
         user_id: user.id,
         action,
         entity_type: entityType,
@@ -114,12 +114,12 @@ export function useSoftDelete() {
 
   const softDelete = useCallback(
     async (table: TableName, id: string, entityName?: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from(table)
         .update({
           deleted: true,
           deleted_at: new Date().toISOString(),
-        } as any)
+        })
         .eq("id", id);
       if (error) {
         toast.error("Delete failed");
@@ -133,12 +133,12 @@ export function useSoftDelete() {
 
   const restore = useCallback(
     async (table: TableName, id: string, entityName?: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from(table)
         .update({
           deleted: false,
           deleted_at: null,
-        } as any)
+        })
         .eq("id", id);
       if (error) {
         toast.error("Restore failed");
@@ -152,7 +152,7 @@ export function useSoftDelete() {
 
   const permanentDelete = useCallback(
     async (table: TableName, id: string, entityName?: string) => {
-      const { error } = await supabase.from(table).delete().eq("id", id);
+      const { error } = await (supabase as any).from(table).delete().eq("id", id);
       if (error) {
         toast.error("Permanent delete failed");
         return false;
