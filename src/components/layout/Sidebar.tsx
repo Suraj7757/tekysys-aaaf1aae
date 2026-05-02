@@ -58,6 +58,8 @@ const secondaryItems = [
   { title: "Marketing", url: "/marketing", icon: Megaphone },
   { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Sells", url: "/sells", icon: ShoppingCart },
+  { title: "Marketplace", url: "/marketplace", icon: ShoppingCart },
+  { title: "My Listings", url: "/my-listings", icon: Package },
   { title: "Bookings", url: "/bookings", icon: CalendarCheck },
   { title: "Loyalty", url: "/loyalty", icon: Gift },
   { title: "Branches", url: "/branches", icon: Building2 },
