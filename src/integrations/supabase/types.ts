@@ -283,6 +283,38 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          quantity: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          quantity?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          quantity?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_orders: {
         Row: {
           created_at: string
@@ -547,6 +579,132 @@ export type Database = {
           reference_type?: string | null
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_listings: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          featured: boolean
+          id: string
+          images: string[] | null
+          location: string | null
+          moq: number
+          mrp: number | null
+          price: number
+          rating_avg: number | null
+          rating_count: number | null
+          seller_id: string
+          seller_type: string
+          stock: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          moq?: number
+          mrp?: number | null
+          price?: number
+          rating_avg?: number | null
+          rating_count?: number | null
+          seller_id: string
+          seller_type?: string
+          stock?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          featured?: boolean
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          moq?: number
+          mrp?: number | null
+          price?: number
+          rating_avg?: number | null
+          rating_count?: number | null
+          seller_id?: string
+          seller_type?: string
+          stock?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketplace_orders: {
+        Row: {
+          buyer_address: string | null
+          buyer_id: string
+          buyer_mobile: string | null
+          buyer_name: string | null
+          created_at: string
+          fulfillment_status: string | null
+          id: string
+          items: Json
+          notes: string | null
+          order_number: string
+          payment_method: string | null
+          payment_status: string | null
+          seller_id: string
+          shipping: number
+          subtotal: number
+          total: number
+          tracking_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          buyer_address?: string | null
+          buyer_id: string
+          buyer_mobile?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          fulfillment_status?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_number?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          seller_id: string
+          shipping?: number
+          subtotal?: number
+          total?: number
+          tracking_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          buyer_address?: string | null
+          buyer_id?: string
+          buyer_mobile?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          fulfillment_status?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_number?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          seller_id?: string
+          shipping?: number
+          subtotal?: number
+          total?: number
+          tracking_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1291,6 +1449,35 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       withdraw_requests: {
         Row: {
           admin_note: string | null
@@ -1375,6 +1562,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_marketplace_listing: { Args: { _id: string }; Returns: Json }
       get_shop_by_slug: { Args: { _slug: string }; Returns: Json }
       get_shop_rating_summary: { Args: { _user_id: string }; Returns: Json }
       has_role: {
@@ -1391,6 +1579,19 @@ export type Database = {
       }
       next_sell_id: {
         Args: { _item_name?: string; _user_id: string }
+        Returns: string
+      }
+      place_marketplace_order: {
+        Args: {
+          _buyer_address: string
+          _buyer_mobile: string
+          _buyer_name: string
+          _items: Json
+          _notes?: string
+          _payment_method?: string
+          _seller_id: string
+          _shipping?: number
+        }
         Returns: string
       }
       redeem_loyalty_points: {
