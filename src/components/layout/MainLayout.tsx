@@ -34,7 +34,7 @@ export function MainLayout({ children, title }: LayoutProps) {
             </div>
             <Header />
           </header>
-          <main className="flex-1 p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
+          <main className="flex-1 p-6 lg:p-8 pb-32 md:pb-8 overflow-y-auto relative scrollbar-thin scrollbar-thumb-primary/20">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

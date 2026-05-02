@@ -37,6 +37,7 @@ export default function BookingsAdmin() {
   const [slug, setSlug] = useState("");
   const [enabled, setEnabled] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -65,7 +66,7 @@ export default function BookingsAdmin() {
   }, [user]);
 
   const saveSettings = async () => {
-    if (!user) return;
+    if (!user || isSubmitting) return;
     const cleanSlug = slug
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "-")
@@ -75,29 +76,38 @@ export default function BookingsAdmin() {
       toast.error("Slug required");
       return;
     }
-    const { error } = await (supabase as any)
-      .from("shop_settings")
-      .update({ booking_slug: cleanSlug, booking_enabled: enabled })
-      .eq("user_id", user.id);
-    if (error) {
-      toast.error(error.message);
-      return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("shop_settings")
+        .update({ booking_slug: cleanSlug, booking_enabled: enabled })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setSlug(cleanSlug);
+      toast.success("Booking page settings saved");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save settings");
+    } finally {
+      setIsSubmitting(false);
     }
-    setSlug(cleanSlug);
-    toast.success("Booking page settings saved");
   };
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await (supabase as any)
-      .from("booking_requests")
-      .update({ status })
-      .eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("booking_requests")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success(`Marked ${status}`);
+      load();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update status");
+    } finally {
+      setIsSubmitting(false);
     }
-    toast.success(`Marked ${status}`);
-    load();
   };
 
   const url = slug ? `${window.location.origin}/book/${slug}` : "";
@@ -130,7 +140,7 @@ export default function BookingsAdmin() {
                   Customers can submit requests through your link.
                 </p>
               </div>
-              <Switch checked={enabled} onCheckedChange={setEnabled} />
+              <Switch checked={enabled} onCheckedChange={setEnabled} disabled={isSubmitting} />
             </div>
             <div>
               <Label>Your booking slug</Label>
@@ -139,8 +149,11 @@ export default function BookingsAdmin() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="my-shop-name"
+                  disabled={isSubmitting}
                 />
-                <Button onClick={saveSettings}>Save</Button>
+                <Button onClick={saveSettings} disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save"}
+                </Button>
               </div>
             </div>
             {url && enabled && (
@@ -211,6 +224,7 @@ export default function BookingsAdmin() {
                           <Button
                             size="sm"
                             onClick={() => updateStatus(b.id, "accepted")}
+                            disabled={isSubmitting}
                           >
                             <Check className="h-3 w-3 mr-1" /> Accept
                           </Button>
@@ -218,6 +232,7 @@ export default function BookingsAdmin() {
                             size="sm"
                             variant="outline"
                             onClick={() => updateStatus(b.id, "rejected")}
+                            disabled={isSubmitting}
                           >
                             <X className="h-3 w-3 mr-1" /> Reject
                           </Button>
@@ -236,6 +251,7 @@ export default function BookingsAdmin() {
                             });
                             setConvertOpen(true);
                           }}
+                          disabled={isSubmitting}
                         >
                           <Wrench className="h-3 w-3 mr-1" /> Convert to Job
                         </Button>
@@ -287,6 +303,7 @@ export default function BookingsAdmin() {
                       })
                     }
                     placeholder="Technician name"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div>
@@ -301,35 +318,41 @@ export default function BookingsAdmin() {
                       })
                     }
                     placeholder="0"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setConvertOpen(false)}>
+              <Button variant="outline" onClick={() => setConvertOpen(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
               <Button
+                disabled={isSubmitting}
                 onClick={async () => {
-                  if (!convertBooking) return;
-                  const { data, error } = await (supabase as any).rpc(
-                    "convert_booking_to_job",
-                    {
-                      _booking_id: convertBooking.id,
-                      _technician_name: convertForm.technician_name || null,
-                      _estimated_cost: Number(convertForm.estimated_cost) || 0,
-                    },
-                  );
-                  if (error) {
-                    toast.error(error.message);
-                    return;
+                  if (!convertBooking || isSubmitting) return;
+                  setIsSubmitting(true);
+                  try {
+                    const { data, error } = await (supabase as any).rpc(
+                      "convert_booking_to_job",
+                      {
+                        _booking_id: convertBooking.id,
+                        _technician_name: convertForm.technician_name || null,
+                        _estimated_cost: Number(convertForm.estimated_cost) || 0,
+                      },
+                    );
+                    if (error) throw error;
+                    toast.success(`Job created: ${data}`);
+                    setConvertOpen(false);
+                    load();
+                  } catch (error: any) {
+                    toast.error(error.message || "Conversion failed");
+                  } finally {
+                    setIsSubmitting(false);
                   }
-                  toast.success(`Job created: ${data}`);
-                  setConvertOpen(false);
-                  load();
                 }}
               >
-                Create Job
+                {isSubmitting ? "Converting..." : "Create Job"}
               </Button>
             </DialogFooter>
           </DialogContent>

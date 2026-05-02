@@ -133,7 +133,7 @@ export default function Sells() {
   };
 
   const handleSell = async () => {
-    if (!selectedItem || !user) return;
+    if (!selectedItem || !user || isSubmitting) return;
     if (qty > selectedItem.quantity) {
       toast.error("Not enough stock");
       return;

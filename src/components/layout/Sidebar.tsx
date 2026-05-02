@@ -101,7 +101,7 @@ export function Sidebar() {
     <>
       <BaseSidebar
         collapsible="icon"
-        className="border-r-0 shadow-xl ring-1 ring-white/5"
+        className="border-r border-white/10 dark:border-white/5 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.2)]"
       >
         <SidebarContent className="bg-sidebar pt-6">
           {/* Logo */}

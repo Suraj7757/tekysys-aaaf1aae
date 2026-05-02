@@ -192,6 +192,7 @@ export default function RepairJobs() {
   const [trackOpen, setTrackOpen] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -447,45 +448,52 @@ export default function RepairJobs() {
   };
 
   const handleReturn = async () => {
-    if (!selectedJob || !user) return;
-    const amount = parseFloat(returnNominalCharge) || 0;
+    if (!selectedJob || !user || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const amount = parseFloat(returnNominalCharge) || 0;
 
-    // 1. Update job status
-    await supabase
-      .from("repair_jobs")
-      .update({
-        status: "Returned" as any,
-        return_reason: returnReason,
-        delivered_at: new Date().toISOString(),
-      } as any)
-      .eq("id", selectedJob.id);
+      // 1. Update job status
+      await supabase
+        .from("repair_jobs")
+        .update({
+          status: "Returned" as any,
+          return_reason: returnReason,
+          delivered_at: new Date().toISOString(),
+        } as any)
+        .eq("id", selectedJob.id);
 
-    // 2. Record nominal charge if any
-    if (amount > 0) {
-      const splitEnabled = settings?.revenue_split_enabled !== false;
-      const adminPct = splitEnabled
-        ? (settings?.admin_share_percent ?? 50) / 100
-        : 1;
-      const staffPct = splitEnabled
-        ? (settings?.staff_share_percent ?? 50) / 100
-        : 0;
+      // 2. Record nominal charge if any
+      if (amount > 0) {
+        const splitEnabled = settings?.revenue_split_enabled !== false;
+        const adminPct = splitEnabled
+          ? (settings?.admin_share_percent ?? 50) / 100
+          : 1;
+        const staffPct = splitEnabled
+          ? (settings?.staff_share_percent ?? 50) / 100
+          : 0;
 
-      await supabase.from("payments").insert({
-        user_id: user.id,
-        job_id: selectedJob.job_id,
-        repair_job_id: selectedJob.id,
-        amount,
-        method: "Cash",
-        admin_share: amount * adminPct,
-        staff_share: amount * staffPct,
-      });
+        await supabase.from("payments").insert({
+          user_id: user.id,
+          job_id: selectedJob.job_id,
+          repair_job_id: selectedJob.id,
+          amount,
+          method: "Cash",
+          admin_share: amount * adminPct,
+          staff_share: amount * staffPct,
+        });
+      }
+
+      refetch();
+      refetchPayments();
+      setReturnOpen(false);
+      setSelectedJob(null);
+      toast.success(`Job ${selectedJob.job_id} returned to customer`);
+    } catch (error: any) {
+      toast.error("Return failed: " + error.message);
+    } finally {
+      setIsProcessing(false);
     }
-
-    refetch();
-    refetchPayments();
-    setReturnOpen(false);
-    setSelectedJob(null);
-    toast.success(`Job ${selectedJob.job_id} returned to customer`);
   };
 
   const handleDeleteJob = async (job: any) => {
@@ -509,83 +517,97 @@ export default function RepairJobs() {
   };
 
   const handlePayment = async () => {
-    if (!selectedJob || !user) return;
-    const amount = parseFloat(paymentAmount) || 0;
-    const receiver = qrReceiver === "Custom" ? customQr : qrReceiver;
-    const splitEnabled = settings?.revenue_split_enabled !== false;
-    const adminPct = splitEnabled
-      ? (settings?.admin_share_percent ?? 50) / 100
-      : 1;
-    const staffPct = splitEnabled
-      ? (settings?.staff_share_percent ?? 50) / 100
-      : 0;
+    if (!selectedJob || !user || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const amount = parseFloat(paymentAmount) || 0;
+      const receiver = qrReceiver === "Custom" ? customQr : qrReceiver;
+      const splitEnabled = settings?.revenue_split_enabled !== false;
+      const adminPct = splitEnabled
+        ? (settings?.admin_share_percent ?? 50) / 100
+        : 1;
+      const staffPct = splitEnabled
+        ? (settings?.staff_share_percent ?? 50) / 100
+        : 0;
 
-    await supabase
-      .from("repair_jobs")
-      .update({
-        status: "Delivered" as any,
-        delivered_at: new Date().toISOString(),
-      })
-      .eq("id", selectedJob.id);
-    await supabase.from("payments").insert({
-      user_id: user.id,
-      job_id: selectedJob.job_id,
-      repair_job_id: selectedJob.id,
-      amount,
-      method: paymentMethod as any,
-      qr_receiver: paymentMethod === "UPI/QR" ? receiver : null,
-      admin_share: amount * adminPct,
-      staff_share: amount * staffPct,
-    });
-    refetch();
-    refetchPayments();
-    setPaymentOpen(false);
-    setSelectedJob(null);
-    toast.success(`Job ${selectedJob.job_id} delivered & payment recorded`);
+      await supabase
+        .from("repair_jobs")
+        .update({
+          status: "Delivered" as any,
+          delivered_at: new Date().toISOString(),
+        })
+        .eq("id", selectedJob.id);
+      await supabase.from("payments").insert({
+        user_id: user.id,
+        job_id: selectedJob.job_id,
+        repair_job_id: selectedJob.id,
+        amount,
+        method: paymentMethod as any,
+        qr_receiver: paymentMethod === "UPI/QR" ? receiver : null,
+        admin_share: amount * adminPct,
+        staff_share: amount * staffPct,
+      });
+      refetch();
+      refetchPayments();
+      setPaymentOpen(false);
+      setSelectedJob(null);
+      toast.success(`Job ${selectedJob.job_id} delivered & payment recorded`);
+    } catch (error: any) {
+      toast.error("Payment failed: " + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleClearJobs = async () => {
-    if (!user) return;
-    const now = new Date().toISOString();
-    if (clearType === "all") {
-      await supabase
-        .from("repair_jobs")
-        .update({ deleted: true, deleted_at: now })
-        .eq("user_id", user.id)
-        .eq("deleted", false);
-      await supabase
-        .from("payments")
-        .update({ deleted: true, deleted_at: now })
-        .eq("user_id", user.id)
-        .eq("deleted", false);
-      // Reset job counter
-      await supabase
-        .from("job_counter")
-        .update({ counter: 0 } as any)
-        .eq("user_id", user.id);
-    } else {
-      const deliveredIds = jobs
-        .filter((j: any) => j.status === "Delivered")
-        .map((j: any) => j.id);
-      if (deliveredIds.length > 0) {
+    if (!user || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const now = new Date().toISOString();
+      if (clearType === "all") {
         await supabase
           .from("repair_jobs")
           .update({ deleted: true, deleted_at: now })
-          .in("id", deliveredIds);
+          .eq("user_id", user.id)
+          .eq("deleted", false);
         await supabase
           .from("payments")
           .update({ deleted: true, deleted_at: now })
-          .in("repair_job_id", deliveredIds);
+          .eq("user_id", user.id)
+          .eq("deleted", false);
+        // Reset job counter
+        await supabase
+          .from("job_counter")
+          .update({ counter: 0 } as any)
+          .eq("user_id", user.id);
+      } else {
+        const deliveredIds = jobs
+          .filter((j: any) => j.status === "Delivered")
+          .map((j: any) => j.id);
+        if (deliveredIds.length > 0) {
+          await supabase
+            .from("repair_jobs")
+            .update({ deleted: true, deleted_at: now })
+            .in("id", deliveredIds);
+          await supabase
+            .from("payments")
+            .update({ deleted: true, deleted_at: now })
+            .in("repair_job_id", deliveredIds);
+        }
       }
+      refetch();
+      refetchPayments();
+      setClearConfirmOpen(false);
+      toast.success(
+        clearType === "all"
+          ? "All jobs cleared & ID reset"
+          : "Delivered jobs moved to trash",
+      );
+    } catch (error: any) {
+      toast.error("Clear failed: " + error.message);
+    } finally {
+      setIsProcessing(false);
     }
-    refetch();
-    refetchPayments();
-    setClearConfirmOpen(false);
-    toast.success(
-      clearType === "all"
-        ? "All jobs cleared & ID reset"
-        : "Delivered jobs moved to trash",
-    );
   };
 
   const handleInvoice = (job: any) => {
@@ -1311,10 +1333,12 @@ export default function RepairJobs() {
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setPaymentOpen(false)}>
+              <Button variant="outline" onClick={() => setPaymentOpen(false)} disabled={isProcessing}>
                 Cancel
               </Button>
-              <Button onClick={handlePayment}>Confirm Payment</Button>
+              <Button onClick={handlePayment} disabled={isProcessing}>
+                {isProcessing ? "Processing..." : "Confirm Payment"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1379,14 +1403,15 @@ export default function RepairJobs() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setReturnOpen(false)}>
+              <Button variant="outline" onClick={() => setReturnOpen(false)} disabled={isProcessing}>
                 Cancel
               </Button>
               <Button
                 onClick={handleReturn}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                disabled={isProcessing}
               >
-                Confirm Return
+                {isProcessing ? "Processing..." : "Confirm Return"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1532,11 +1557,12 @@ export default function RepairJobs() {
               <Button
                 variant="outline"
                 onClick={() => setClearConfirmOpen(false)}
+                disabled={isProcessing}
               >
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleClearJobs}>
-                Yes, Move to Trash
+              <Button variant="destructive" onClick={handleClearJobs} disabled={isProcessing}>
+                {isProcessing ? "Clearing..." : "Yes, Move to Trash"}
               </Button>
             </DialogFooter>
           </DialogContent>

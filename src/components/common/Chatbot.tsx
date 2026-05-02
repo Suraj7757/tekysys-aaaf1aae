@@ -97,63 +97,30 @@ export function Chatbot() {
 
     try {
       abortRef.current = new AbortController();
-      const resp = await fetch(CHAT_URL, {
+      const response = await fetch("https://text.pollinations.ai/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
-          messages: history,
-          context: { isAuthed: !!user, route: location.pathname },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are RepairXpert AI, a helpful and professional CRM assistant for repair shops. You answer in concise Hindi-English mix (Hinglish) or English. You help users understand how to manage jobs, inventory, sales, and track repairs.",
+            },
+            ...history,
+          ],
         }),
         signal: abortRef.current.signal,
       });
 
-      if (!resp.ok) {
-        if (resp.status === 429) {
-          toast.error("Bahut zyada requests. Thodi der baad try karein.");
-        } else if (resp.status === 402) {
-          toast.error("AI credits khatam. Admin se contact karein.");
-        } else {
-          toast.error("AI assistant error.");
-        }
-        setIsStreaming(false);
-        return;
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
 
-      if (!resp.body) throw new Error("No response body");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let done = false;
-
-      while (!done) {
-        const { done: d, value } = await reader.read();
-        if (d) break;
-        buffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, nl);
-          buffer = buffer.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") {
-            done = true;
-            break;
-          }
-          try {
-            const parsed = JSON.parse(json);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) upsertAssistant(content);
-          } catch {
-            buffer = line + "\n" + buffer;
-            break;
-          }
-        }
-      }
+      const text = await response.text();
+      upsertAssistant(text);
     } catch (e: any) {
       if (e?.name !== "AbortError") {
         console.error("Chat error:", e);
@@ -166,7 +133,7 @@ export function Chatbot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="hidden md:flex fixed bottom-6 right-6 z-50 flex-col items-end">
       {isOpen && (
         <Card className="w-80 sm:w-96 mb-4 shadow-2xl border-primary/10 animate-in slide-in-from-bottom-5 duration-300 overflow-hidden">
           <CardHeader className="gradient-primary p-4 flex flex-row items-center justify-between space-y-0">

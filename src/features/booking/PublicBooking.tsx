@@ -26,6 +26,8 @@ export default function PublicBooking() {
     preferred_date: "",
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     (async () => {
       if (!slug) return;
@@ -39,7 +41,7 @@ export default function PublicBooking() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shop?.user_id) return;
+    if (!shop?.user_id || isSubmitting) return;
     if (
       !form.customer_name ||
       !form.customer_mobile ||
@@ -49,16 +51,20 @@ export default function PublicBooking() {
       toast.error("Please fill all required fields");
       return;
     }
-    const { error } = await (supabase as any).from("booking_requests").insert({
-      ...form,
-      user_id: shop.user_id,
-      preferred_date: form.preferred_date || null,
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await (supabase as any).from("booking_requests").insert({
+        ...form,
+        user_id: shop.user_id,
+        preferred_date: form.preferred_date || null,
+      });
+      if (error) throw error;
+      setSubmitted(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit request");
+    } finally {
+      setIsSubmitting(false);
     }
-    setSubmitted(true);
   };
 
   if (loading)
@@ -146,6 +152,7 @@ export default function PublicBooking() {
                     setForm({ ...form, customer_name: e.target.value })
                   }
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
@@ -156,6 +163,7 @@ export default function PublicBooking() {
                     setForm({ ...form, customer_mobile: e.target.value })
                   }
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
@@ -166,6 +174,7 @@ export default function PublicBooking() {
                   onChange={(e) =>
                     setForm({ ...form, customer_email: e.target.value })
                   }
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -178,6 +187,7 @@ export default function PublicBooking() {
                     }
                     placeholder="Samsung"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div>
@@ -188,6 +198,7 @@ export default function PublicBooking() {
                       setForm({ ...form, device_model: e.target.value })
                     }
                     placeholder="Galaxy A50"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -200,6 +211,7 @@ export default function PublicBooking() {
                   }
                   rows={3}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
@@ -211,10 +223,11 @@ export default function PublicBooking() {
                     setForm({ ...form, preferred_date: e.target.value })
                   }
                   min={new Date().toISOString().slice(0, 10)}
+                  disabled={isSubmitting}
                 />
               </div>
-              <Button type="submit" className="w-full" size="lg">
-                Submit Request
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit Request"}
               </Button>
             </form>
           </CardContent>
