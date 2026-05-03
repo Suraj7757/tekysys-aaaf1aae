@@ -34,7 +34,9 @@ import {
   TrendingDown,
   BrainCircuit,
   Megaphone,
+  LogOut,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -79,7 +81,7 @@ export function Sidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, isSuperAdmin } = useAuth();
+  const { role, isSuperAdmin, signOut } = useAuth();
   const collapsed = state === "collapsed";
   const isAdmin = role === "admin";
   const [createOpen, setCreateOpen] = useState(false);
@@ -236,6 +238,23 @@ export function Sidebar() {
                 {!collapsed && (
                   <span className="font-medium">WhatsApp Help</span>
                 )}
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await signOut();
+                    toast.success("Logged out");
+                    navigate("/auth");
+                  } catch {
+                    toast.error("Logout failed");
+                  }
+                }}
+                className={`md:hidden flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-all duration-200 group w-full mt-1 ${collapsed ? "justify-center" : ""}`}
+              >
+                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                  <LogOut className="h-4 w-4 text-destructive" />
+                </div>
+                {!collapsed && <span className="font-medium">Logout</span>}
               </button>
             </SidebarMenu>
           </SidebarGroup>
