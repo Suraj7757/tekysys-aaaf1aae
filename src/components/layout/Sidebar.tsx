@@ -34,7 +34,9 @@ import {
   TrendingDown,
   BrainCircuit,
   Megaphone,
+  LogOut,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
