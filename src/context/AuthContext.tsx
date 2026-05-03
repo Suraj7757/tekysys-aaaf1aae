@@ -8,6 +8,7 @@ import {
 } from "react";
 import { supabase } from "@/services/supabase";
 import { SUPER_ADMIN_EMAIL } from "@/lib/accountType";
+import { toast } from "sonner";
 
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -74,7 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle() as any,
     ]);
 
-    const currentRole = (rolesRes.data?.role as AppRole) || "staff";
+    const isSuper = userEmail === SUPER_ADMIN_EMAIL;
+    const currentRole = isSuper
+      ? ("admin" as AppRole)
+      : ((rolesRes.data?.role as AppRole) || "staff");
     setRole(currentRole);
     setAccountType(
       (profileRes.data?.account_type as AccountType) || "shopkeeper",
@@ -113,15 +117,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let hadUser = false;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        hadUser = true;
         setTimeout(() => fetchRole(session.user.id, session.user.email), 0);
       } else {
         setRole(null);
+        // Auto-redirect on session loss / token refresh failure
+        if (
+          hadUser &&
+          (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED")
+        ) {
+          hadUser = false;
+          if (!window.location.pathname.startsWith("/auth")) {
+            toast.error("Session expired. Please sign in again.");
+            window.location.replace("/auth");
+          }
+        }
       }
       setLoading(false);
     });
