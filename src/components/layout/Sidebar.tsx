@@ -399,6 +399,26 @@ export function Sidebar() {
           </AnimatePresence>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Logout from RepairXpert?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Aap apne account se logout ho jayenge. Dobara login karne ke liye email aur password chahiye hoga.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <LogOut className="h-4 w-4 mr-2" /> Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
