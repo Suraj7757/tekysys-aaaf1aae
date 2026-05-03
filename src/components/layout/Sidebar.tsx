@@ -40,6 +40,16 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -85,6 +95,17 @@ export function Sidebar() {
   const collapsed = state === "collapsed";
   const isAdmin = role === "admin";
   const [createOpen, setCreateOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  const performLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+      navigate("/auth", { replace: true });
+    } catch {
+      toast.error("Logout failed. Please try again.");
+    }
+  };
 
   const openWhatsApp = () => {
     window.open(
@@ -240,18 +261,10 @@ export function Sidebar() {
                 )}
               </button>
               <button
-                onClick={async () => {
-                  try {
-                    await signOut();
-                    toast.success("Logged out");
-                    navigate("/auth");
-                  } catch {
-                    toast.error("Logout failed");
-                  }
-                }}
+                onClick={() => setLogoutConfirmOpen(true)}
                 className={`md:hidden flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-all duration-200 group w-full mt-1 ${collapsed ? "justify-center" : ""}`}
               >
-                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0 group-hover:bg-destructive/20 transition-colors">
                   <LogOut className="h-4 w-4 text-destructive" />
                 </div>
                 {!collapsed && <span className="font-medium">Logout</span>}
@@ -386,6 +399,26 @@ export function Sidebar() {
           </AnimatePresence>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Logout from RepairXpert?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Aap apne account se logout ho jayenge. Dobara login karne ke liye email aur password chahiye hoga.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <LogOut className="h-4 w-4 mr-2" /> Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
